@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preciso · Panel</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">PRECISO <span>· Informes</span></div>
+  <nav>
+    <a href="index.html">Panel</a>
+  </nav>
+</div>
+
+<div class="container">
+  <h1 class="page-title">Panel de flota</h1>
+  <p class="page-subtitle" id="subtitulo">Últimos 30 días</p>
+
+  <div id="bannerSimulado" class="simulado-banner hidden">
+    ⚠️ Mostrando datos SIMULADOS — la API real de TTM está temporalmente fuera de servicio. La estructura de datos, la lógica de detección y los informes son exactamente los mismos que van a correr con datos reales.
+  </div>
+
+  <div id="loading" class="loading-state">Cargando flota…</div>
+  <div id="error" class="error-state hidden"></div>
+
+  <div id="contenido" class="hidden">
+    <div class="grid grid-3" id="stats"></div>
+
+    <div class="card">
+      <h3 style="margin-top:0; color:var(--color-navy);">Tu flota</h3>
+      <ul class="equipo-list" id="listaEquipos"></ul>
+    </div>
+  </div>
+
+  <p class="footer-note">Preciso · Módulo de informes y detección de anomalías — desarrollado por Puma Code</p>
+</div>
+
+<script src="assets/js/config.php"></script>
+<script src="assets/js/dashboard.js"></script>
+</body>
+</html>

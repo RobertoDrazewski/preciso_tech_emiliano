@@ -1,0 +1,7 @@
+backend/.env
+backend/storage/*.sqlite
+backend/storage/*.sqlite-journal
+backend/storage/*.sqlite-shm
+backend/storage/*.sqlite-wal
+*.log
+.DS_Store

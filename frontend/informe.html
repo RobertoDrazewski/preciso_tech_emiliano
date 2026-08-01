@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="tituloPagina">Preciso · Informe</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">PRECISO <span>· Informes</span></div>
+  <nav>
+    <a href="index.html">Panel</a>
+  </nav>
+</div>
+
+<div class="container">
+  <h1 class="page-title" id="titulo">Informe</h1>
+  <p class="page-subtitle" id="subtitulo"></p>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div id="bannerSimulado" class="simulado-banner hidden">
+    ⚠️ Mostrando datos SIMULADOS — la API real de TTM está temporalmente fuera de servicio. La estructura de datos, la lógica de detección y los informes son exactamente los mismos que van a correr con datos reales.
+  </div>
+
+  <div id="loading" class="loading-state">Generando informe… (esto llama a la API en vivo, puede tardar unos segundos)</div>
+  <div id="error" class="error-state hidden"></div>
+
+  <div id="contenido" class="hidden">
+    <div class="grid grid-3" id="stats"></div>
+
+    <div class="card">
+      <h3 style="margin-top:0; color:var(--color-navy);">Nivel de combustible (litros)</h3>
+      <canvas id="chartCombustible" height="90"></canvas>
+    </div>
+
+    <div class="card hidden" id="cardTanques">
+      <h3 style="margin-top:0; color:var(--color-navy);">Detalle por tanque</h3>
+      <canvas id="chartTanques" height="90"></canvas>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0; color:var(--color-navy);">Velocidad (km/h)</h3>
+      <canvas id="chartVelocidad" height="90"></canvas>
+    </div>
+
+    <div class="card hidden" id="cardMapa">
+      <h3 style="margin-top:0; color:var(--color-navy);">Recorrido</h3>
+      <div id="mapa"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0; color:var(--color-navy);">Anomalías del período</h3>
+      <div id="anomalias"></div>
+    </div>
+  </div>
+
+  <p class="footer-note">Preciso · Módulo de informes y detección de anomalías — desarrollado por Puma Code</p>
+</div>
+
+<script src="assets/js/config.php"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/js/informe.js"></script>
+</body>
+</html>

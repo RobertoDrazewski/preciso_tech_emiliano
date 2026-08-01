@@ -1,0 +1,254 @@
+/*
+  Paleta pensada para un sistema de gestión de combustible (navy + ámbar),
+  en la misma línea que la landing de preciso.tech ("Control y Gestión de
+  combustible"). No tuve acceso al CSS real del sitio desde este entorno —
+  para dejarlo idéntico, reemplazar estos hex por los reales de
+  preciso.tech/landing/index.php. El resto del archivo no necesita tocarse.
+*/
+:root {
+  --color-bg: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-navy: #0d1b2e;
+  --color-navy-light: #16273f;
+  --color-accent: #f2a71b;
+  --color-accent-dark: #d98c0a;
+  --color-danger: #c0392b;
+  --color-success: #1f9d55;
+  --color-text: #1c1f26;
+  --color-text-muted: #6b7280;
+  --color-border: #e5e9f0;
+  --radius: 10px;
+  --font: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+a { color: var(--color-accent-dark); }
+
+.topbar {
+  background: linear-gradient(120deg, var(--color-navy) 0%, var(--color-navy-light) 100%);
+  color: #fff;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar .brand {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.topbar .brand span { color: var(--color-accent); }
+
+.topbar nav a {
+  color: #cbd3dc;
+  text-decoration: none;
+  margin-left: 18px;
+  font-size: 14px;
+}
+.topbar nav a:hover { color: #fff; }
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 24px 60px 24px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: var(--color-navy);
+}
+.page-subtitle {
+  color: var(--color-text-muted);
+  margin: 0 0 22px 0;
+  font-size: 14px;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+@media (max-width: 720px) {
+  .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+
+.stat {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.stat .label {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--color-text-muted);
+}
+.stat .value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-navy);
+  margin-top: 4px;
+}
+.stat .value.danger { color: var(--color-danger); }
+.stat .value.success { color: var(--color-success); }
+
+.equipo-list { list-style: none; padding: 0; margin: 0; }
+.equipo-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.equipo-list li:last-child { border-bottom: none; }
+
+.equipo-nombre { font-weight: 600; color: var(--color-navy); }
+.equipo-id { color: var(--color-text-muted); font-size: 12.5px; }
+
+.btn {
+  display: inline-block;
+  background: var(--color-accent);
+  color: var(--color-navy);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-left: 6px;
+}
+.btn:hover { background: var(--color-accent-dark); color: #fff; }
+.btn.secondary {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-navy);
+}
+
+.tabs { margin-bottom: 18px; }
+.tabs a {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  color: var(--color-navy);
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-right: 8px;
+  border: 1px solid var(--color-border);
+}
+.tabs a.active {
+  background: var(--color-navy);
+  color: #fff;
+  border-color: var(--color-navy);
+}
+
+table.anomalias {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+table.anomalias th {
+  text-align: left;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--color-border);
+}
+table.anomalias td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.tag.descarga_detenido { background: #fdecea; color: var(--color-danger); }
+.tag.caida_instantanea { background: #fdecea; color: var(--color-danger); }
+.tag.consumo_anomalo { background: #fff4e0; color: var(--color-accent-dark); }
+
+.empty-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 30px 10px;
+  font-size: 14px;
+}
+
+#mapa { height: 320px; border-radius: var(--radius); }
+
+.footer-note {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  margin-top: 30px;
+}
+
+/* --- Estados de carga / error para el frontend fetch-driven --- */
+.loading-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 40px 10px;
+  font-size: 14px;
+}
+.loading-state::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: girar 0.7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+.error-state {
+  background: #fdecea;
+  border: 1px solid #f3c4bd;
+  color: var(--color-danger);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  font-size: 13.5px;
+}
+.error-state strong { display: block; margin-bottom: 6px; }
+.hidden { display: none !important; }
+
+.simulado-banner {
+  background: #fff4e0;
+  border: 1px solid #f0c67a;
+  color: #8a5a00;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
