@@ -1,0 +1,4966 @@
+[
+ {
+  "id": "1011",
+  "nombre": "AF668OJ (Scania - R410)"
+ },
+ {
+  "id": "1044",
+  "nombre": "FCK179 (Pessenti ... (Scania - R420)"
+ },
+ {
+  "id": "1049",
+  "nombre": "NKQ924 (Baspineir... (Volvo - 520)"
+ },
+ {
+  "id": "1060",
+  "nombre": "GJR645 (volvo - 420)"
+ },
+ {
+  "id": "1069",
+  "nombre": "AG484VK (Mercedez Benz - 2544)"
+ },
+ {
+  "id": "1070",
+  "nombre": "FVBF90 (Mercedez Benz - 1844)"
+ },
+ {
+  "id": "1072",
+  "nombre": "AG713EM (Volkswagen - 11.180)"
+ },
+ {
+  "id": "1073",
+  "nombre": "AF163VL (Mercedez Benz - 1016)"
+ },
+ {
+  "id": "1074",
+  "nombre": "NKE635 (Iveco - 330)"
+ },
+ {
+  "id": "1075",
+  "nombre": "AG713EE (Volkswagen - 11.180)"
+ },
+ {
+  "id": "1077",
+  "nombre": "AA205CU (Iveco - 330)"
+ },
+ {
+  "id": "1079",
+  "nombre": "OZB863 (Iveco - 410)"
+ },
+ {
+  "id": "1080",
+  "nombre": "AA440SI (Volkswagen - 19-420)"
+ },
+ {
+  "id": "1081",
+  "nombre": "OMN816 (Volvo - 370)"
+ },
+ {
+  "id": "1082",
+  "nombre": "PCN589 (Volvo - 370)"
+ },
+ {
+  "id": "1083",
+  "nombre": "AB629IX (Mercedez Benz - 1933)"
+ },
+ {
+  "id": "1084",
+  "nombre": "AB065WN (Scania - P360)"
+ },
+ {
+  "id": "1085",
+  "nombre": "NYB460 (Volvo - 440)"
+ },
+ {
+  "id": "1086",
+  "nombre": "OLW704 (Volvo - 370)"
+ },
+ {
+  "id": "1087",
+  "nombre": "ONZ859 (Volvo - 370)"
+ },
+ {
+  "id": "1088",
+  "nombre": "PEX667 (Iveco - 450E33T)"
+ },
+ {
+  "id": "1089",
+  "nombre": "ORZ204 (Volvo - 370)"
+ },
+ {
+  "id": "1090",
+  "nombre": "AA069YM (Iveco - 460)"
+ },
+ {
+  "id": "1091",
+  "nombre": "OMQ968 (Scania - P360)"
+ },
+ {
+  "id": "1094",
+  "nombre": "AC448GF (Volvo - 380)"
+ },
+ {
+  "id": "1095",
+  "nombre": "AA557OV (Mercedez Benz - 2636)"
+ },
+ {
+  "id": "1096",
+  "nombre": "AG944KW (Iveco - t600)"
+ },
+ {
+  "id": "1097",
+  "nombre": "AD455OW (Volvo - 380)"
+ },
+ {
+  "id": "1098",
+  "nombre": "AC702AT (Volvo - 380)"
+ },
+ {
+  "id": "1099",
+  "nombre": "AA915SY (Volvo - 380)"
+ },
+ {
+  "id": "1100",
+  "nombre": "PEN829 (Scania - P360)"
+ },
+ {
+  "id": "1101",
+  "nombre": "AB529VT (Volvo - 380)"
+ },
+ {
+  "id": "1102",
+  "nombre": "ONZ860 (Volvo - 370)"
+ },
+ {
+  "id": "1103",
+  "nombre": "AA468EI (Volvo - 380)"
+ },
+ {
+  "id": "1104",
+  "nombre": "AA815GA (Volvo - 380)"
+ },
+ {
+  "id": "1105",
+  "nombre": "AG262PW (Mercedez Benz - 2036)"
+ },
+ {
+  "id": "1106",
+  "nombre": "AD870ZU (Iveco - 480)"
+ },
+ {
+  "id": "1107",
+  "nombre": "AG826VB (Volvo - 410)"
+ },
+ {
+  "id": "1108",
+  "nombre": "AG877CH (Iveco - T530)"
+ },
+ {
+  "id": "1109",
+  "nombre": "AD636EM (Mercedez Benz - 2645)"
+ },
+ {
+  "id": "1110",
+  "nombre": "AC557ET (Volvo - 380)"
+ },
+ {
+  "id": "1111",
+  "nombre": "AB177UD (Scania - P360)"
+ },
+ {
+  "id": "1112",
+  "nombre": "AG772PK (Volkswagen - 11.180)"
+ },
+ {
+  "id": "1113",
+  "nombre": "OCV235 (Volvo - 440)"
+ },
+ {
+  "id": "1114",
+  "nombre": "AD430YM (Volvo - 380)"
+ },
+ {
+  "id": "1115",
+  "nombre": "AA069YL (Volvo - 370)"
+ },
+ {
+  "id": "1116",
+  "nombre": "AE536FP (Volvo - 420)"
+ },
+ {
+  "id": "1117",
+  "nombre": "AG702YR (Volvo - 410)"
+ },
+ {
+  "id": "1118",
+  "nombre": "AB529VU (Volvo - 380)"
+ },
+ {
+  "id": "1119",
+  "nombre": "AF797MX (Volvo - 420)"
+ },
+ {
+  "id": "1120",
+  "nombre": "AG860ZF (Volvo - 410)"
+ },
+ {
+  "id": "1121",
+  "nombre": "AG367FA (Iveco - t600)"
+ },
+ {
+  "id": "1122",
+  "nombre": "AF819KX (Volvo - 420)"
+ },
+ {
+  "id": "1123",
+  "nombre": "AC448GV (Volvo - 380)"
+ },
+ {
+  "id": "1124",
+  "nombre": "AB075KF (Volvo - 380)"
+ },
+ {
+  "id": "1125",
+  "nombre": "AG413VB (Iveco - t600)"
+ },
+ {
+  "id": "1126",
+  "nombre": "AH067CI (Scania - P420)"
+ },
+ {
+  "id": "1127",
+  "nombre": "AD455OV (Volvo - 420)"
+ },
+ {
+  "id": "1128",
+  "nombre": "AF642JO (Mercedez Benz - 2041)"
+ },
+ {
+  "id": "1129",
+  "nombre": "AD793DU (Volkswagen - 19.420)"
+ },
+ {
+  "id": "1130",
+  "nombre": "AH392VU (Scania - P420)"
+ },
+ {
+  "id": "1131",
+  "nombre": "AE536FQ (Volkswagen - 19.420)"
+ },
+ {
+  "id": "1132",
+  "nombre": "AD749YS (Volvo - 420)"
+ },
+ {
+  "id": "1134",
+  "nombre": "AD944AW (Iveco - 480)"
+ },
+ {
+  "id": "1138",
+  "nombre": "EEY037 (Iveco - 440)"
+ },
+ {
+  "id": "1140",
+  "nombre": "AG814FC (Volkswagen - 19.360)"
+ },
+ {
+  "id": "1146",
+  "nombre": "GYN223 (Scania - G380)"
+ },
+ {
+  "id": "1152",
+  "nombre": "KLW810 (Scania - G340)"
+ },
+ {
+  "id": "1154",
+  "nombre": "AA235XG (Iveco - 330)"
+ },
+ {
+  "id": "1155",
+  "nombre": "JQI299 (Volkswagen - 19320)"
+ },
+ {
+  "id": "1156",
+  "nombre": "NAZ365 (Volkswagen - 19320)"
+ },
+ {
+  "id": "1157",
+  "nombre": "EBW086 (Iveco - 440)"
+ },
+ {
+  "id": "1158",
+  "nombre": "OER054 (Iveco - 440)"
+ },
+ {
+  "id": "1159",
+  "nombre": "KQF998 (Renault - 440)"
+ },
+ {
+  "id": "1160",
+  "nombre": "AH067BO (Scania - P420)"
+ },
+ {
+  "id": "1162",
+  "nombre": "AA425QJ (Semi Fri..."
+ },
+ {
+  "id": "1163",
+  "nombre": "AB404LA (Volvo - 540)"
+ },
+ {
+  "id": "1169",
+  "nombre": "KPP063 (Semi Frio..."
+ },
+ {
+  "id": "1173",
+  "nombre": "PCZ055 (Mercedez Benz - 2035)"
+ },
+ {
+  "id": "1174",
+  "nombre": "IAD741 (Mercedez Benz - 1634)"
+ },
+ {
+  "id": "1175",
+  "nombre": "AA595DH (Semi Fri..."
+ },
+ {
+  "id": "1180",
+  "nombre": "AA448AB (Semi Fri..."
+ },
+ {
+  "id": "1181",
+  "nombre": "AH260VL (Mercedez Benz - 2651)"
+ },
+ {
+  "id": "1187",
+  "nombre": "DAH374 (Volvo - 380)"
+ },
+ {
+  "id": "1190",
+  "nombre": "AE397XJ (Iveco - 440)"
+ },
+ {
+  "id": "1196",
+  "nombre": "GSW974 (Semi Frio..."
+ },
+ {
+  "id": "1208",
+  "nombre": "AH067BC (Iveco - 360)"
+ },
+ {
+  "id": "1211",
+  "nombre": "FBO766 (Scania - R420)"
+ },
+ {
+  "id": "1216",
+  "nombre": "AH040SU (Volkswagen - 2428)"
+ },
+ {
+  "id": "1217",
+  "nombre": "JIX462 (Scania - R420)"
+ },
+ {
+  "id": "1218",
+  "nombre": "AF166PX (Iveco - 440)"
+ },
+ {
+  "id": "1221",
+  "nombre": "SLHR25 (Scania - R500)"
+ },
+ {
+  "id": "1222",
+  "nombre": "JRTX63 (Scania - R480)"
+ },
+ {
+  "id": "1223",
+  "nombre": "JP1345 (Semi Frio..."
+ },
+ {
+  "id": "1224",
+  "nombre": "JH2294 (Semi Frio..."
+ },
+ {
+  "id": "1226",
+  "nombre": "ODY389 (Ford - 1517)"
+ },
+ {
+  "id": "1227",
+  "nombre": "NKI274 (Volkswagen - 13.180)"
+ },
+ {
+  "id": "1228",
+  "nombre": "GDGF41 (Volvo - 480)"
+ },
+ {
+  "id": "1229",
+  "nombre": "JH6923 (Semi Frio..."
+ },
+ {
+  "id": "1230",
+  "nombre": "AC407TF (Volkswagen - 15190)"
+ },
+ {
+  "id": "1231",
+  "nombre": "MGH615 (Volkswagen - 13180)"
+ },
+ {
+  "id": "1232",
+  "nombre": "PEU481 (Ford - 1722)"
+ },
+ {
+  "id": "1233",
+  "nombre": "MYV703 (Volkswagen - 13.180)"
+ },
+ {
+  "id": "1234",
+  "nombre": "AA830SM (Ford - 15190)"
+ },
+ {
+  "id": "1236",
+  "nombre": "EYC730 (Ford - 1730)"
+ },
+ {
+  "id": "1238",
+  "nombre": "AF797MH (Iveco - 440)"
+ },
+ {
+  "id": "1241",
+  "nombre": "JRTX58 (Scania - R480)"
+ },
+ {
+  "id": "1242",
+  "nombre": "AD655KE (Volkswagen - 17.280)"
+ },
+ {
+  "id": "1250",
+  "nombre": "OKO877 (Semi Frio..."
+ },
+ {
+  "id": "1255",
+  "nombre": "ISC584 (Mercedez Benz - 2035)"
+ },
+ {
+  "id": "1259",
+  "nombre": "LLT618 (Scania - R500)"
+ },
+ {
+  "id": "1260",
+  "nombre": "AE692UQ (Volkswagen - 17.280)"
+ },
+ {
+  "id": "1278",
+  "nombre": "Tanque Fijo Belen"
+ },
+ {
+  "id": "1287",
+  "nombre": "AH753KE (Iveco - 360)"
+ },
+ {
+  "id": "1288",
+  "nombre": "AA925UJ INT17 (Volvo - 330)"
+ },
+ {
+  "id": "1289",
+  "nombre": "AH925UK INT01 (Volvo - 330)"
+ },
+ {
+  "id": "1290",
+  "nombre": "HYHL34 (Scania - G400)"
+ },
+ {
+  "id": "1291",
+  "nombre": "HYHL38 (Scania - G400)"
+ },
+ {
+  "id": "1292",
+  "nombre": "HYHL40 (Scania - G400)"
+ },
+ {
+  "id": "1293",
+  "nombre": "AH506RL (Mercedez Benz - 2545)"
+ },
+ {
+  "id": "1294",
+  "nombre": "NSB854 (Iveco - 410)"
+ },
+ {
+  "id": "1295",
+  "nombre": "AH119MV (Iveco - 440)"
+ },
+ {
+  "id": "1297",
+  "nombre": "AH104OW (Volkswagen - 28.460)"
+ },
+ {
+  "id": "1298",
+  "nombre": "FRK459 (Scania - R330)"
+ },
+ {
+  "id": "1300",
+  "nombre": "LZZG53 (Scania - R400)"
+ },
+ {
+  "id": "1301",
+  "nombre": "AH104OX (Volkswagen - METEOR 28.460)"
+ },
+ {
+  "id": "1302",
+  "nombre": "MCH485 (Scania  - G410)"
+ },
+ {
+  "id": "1306",
+  "nombre": "HLZB64 (Volvo - 460)"
+ },
+ {
+  "id": "1307",
+  "nombre": "AC679KE (Volvo - FM380)"
+ },
+ {
+  "id": "1309",
+  "nombre": "AA134PQ (Iveco - 440)"
+ },
+ {
+  "id": "1310",
+  "nombre": "KLVV74 (Scania - R480)"
+ },
+ {
+  "id": "1311",
+  "nombre": "JFTH77 (Scania - R480)"
+ },
+ {
+  "id": "1312",
+  "nombre": "AH119MU (Iveco - 440)"
+ },
+ {
+  "id": "1314",
+  "nombre": "AC002WA (Scania - R440)"
+ },
+ {
+  "id": "1315",
+  "nombre": "AH155FT (Volkswagen - METEOR 28.460)"
+ },
+ {
+  "id": "1316",
+  "nombre": "LZS035 (Volvo - 440)"
+ },
+ {
+  "id": "1318",
+  "nombre": "KLVV75 (Scania - R480)"
+ },
+ {
+  "id": "1319",
+  "nombre": "AH902YM (Iveco - 480)"
+ },
+ {
+  "id": "1320",
+  "nombre": "OCH397 (Ford - 1516)"
+ },
+ {
+  "id": "1323",
+  "nombre": "KJB761 (Volkswagen - 19320)"
+ },
+ {
+  "id": "1324",
+  "nombre": "SVPZ87 (Scania - R500)"
+ },
+ {
+  "id": "1325",
+  "nombre": "LKVC69 (Renault - T460)"
+ },
+ {
+  "id": "1326",
+  "nombre": "LXJD42 (Scania - R500)"
+ },
+ {
+  "id": "1327",
+  "nombre": "VGTS38 (Renault - 520)"
+ },
+ {
+  "id": "1328",
+  "nombre": "AH524KR (Scania - R500 / S)"
+ },
+ {
+  "id": "1329",
+  "nombre": "AE396UU (Iveco - 440)"
+ },
+ {
+  "id": "1330",
+  "nombre": "RRVF43 (Scania - R500)"
+ },
+ {
+  "id": "1331",
+  "nombre": "TCGV51 (Scania - R500)"
+ },
+ {
+  "id": "1333",
+  "nombre": "SGPW90 (Scania - R500)"
+ },
+ {
+  "id": "1334",
+  "nombre": "AG741XK (Scania - R500)"
+ },
+ {
+  "id": "1335",
+  "nombre": "VDPF83 (Renault - 520)"
+ },
+ {
+  "id": "1336",
+  "nombre": "SVRB66 (Scania - R500)"
+ },
+ {
+  "id": "1337",
+  "nombre": "SVRB67 (Scania - R500)"
+ },
+ {
+  "id": "1338",
+  "nombre": "AE416JS (Mercedes Benz - 2544)"
+ },
+ {
+  "id": "1339",
+  "nombre": "VDPF82 (Renault - 520)"
+ },
+ {
+  "id": "1340",
+  "nombre": "THYF71 (Scania - R500)"
+ },
+ {
+  "id": "1342",
+  "nombre": "SGPW91 (Scania - R500)"
+ },
+ {
+  "id": "1343",
+  "nombre": "AKA1005670 (Gener... (Thermo King - SG-3000e)"
+ },
+ {
+  "id": "1344",
+  "nombre": "AKA1005700 (Gener... (Thermo King - SG-3000e)"
+ },
+ {
+  "id": "1345",
+  "nombre": "TEY70098974 (Gene... (Carrier - 69ug15)"
+ },
+ {
+  "id": "1346",
+  "nombre": "AF905CA (Scania - R500)"
+ },
+ {
+  "id": "1347",
+  "nombre": "REW70080480 (Gene... (Carrier - 69ug15)"
+ },
+ {
+  "id": "1348",
+  "nombre": "AE951ZH (Scania - R450)"
+ },
+ {
+  "id": "1349",
+  "nombre": "KKY975 (Scania - G340)"
+ },
+ {
+  "id": "1351",
+  "nombre": "AGLZ100069 (Gener... (Carrier  - 69ug15)"
+ },
+ {
+  "id": "1352",
+  "nombre": "AKA1005669 (Gener... (Thermo King - SG-3000e)"
+ },
+ {
+  "id": "1353",
+  "nombre": "BNX441 (S - 360)"
+ },
+ {
+  "id": "1354",
+  "nombre": "CJXZ77 (Scania - P310)"
+ },
+ {
+  "id": "1355",
+  "nombre": "TEY70098973 (Gene... (Carrier  - 69ug15)"
+ },
+ {
+  "id": "1356",
+  "nombre": "AKA100414 (Genera... (Thermo King - SG-3000e)"
+ },
+ {
+  "id": "1357",
+  "nombre": "AE416IG (Semi Fri..."
+ },
+ {
+  "id": "1358",
+  "nombre": "FSWH50 (Scania - P400)"
+ },
+ {
+  "id": "1359",
+  "nombre": "AH506SF (Iveco - 440)"
+ },
+ {
+  "id": "1360",
+  "nombre": "SKPL18 (Scania - R500)"
+ },
+ {
+  "id": "1361",
+  "nombre": "PHYG69 (Scania - R500)"
+ },
+ {
+  "id": "1362",
+  "nombre": "AH165UV (Iveco - 440)"
+ },
+ {
+  "id": "1363",
+  "nombre": "AH419WG (Iveco - 440)"
+ },
+ {
+  "id": "1364",
+  "nombre": "AKA1003341 (Gener... (Thermo King - SG-3000e)"
+ },
+ {
+  "id": "1365",
+  "nombre": "TEY70098975 (Gene... (Carrier  - 69ug15)"
+ },
+ {
+  "id": "1366",
+  "nombre": "NOW764 (Mercedes Benz - 2040)"
+ },
+ {
+  "id": "1367",
+  "nombre": "AD119PR (Mercedes Benz - 1735)"
+ },
+ {
+  "id": "1369",
+  "nombre": "MQE107 (Iveco - 410)"
+ },
+ {
+  "id": "1370",
+  "nombre": "NVC768 (Iveco - 410)"
+ },
+ {
+  "id": "1371",
+  "nombre": "OSL007 (Iveco - 410)"
+ },
+ {
+  "id": "1384",
+  "nombre": "VFZD48 int 7387 (Volvo - 460)"
+ },
+ {
+  "id": "1385",
+  "nombre": "EMX386 (Scania - P310)"
+ },
+ {
+  "id": "1386",
+  "nombre": "VKFP64 int 7389 (Volvo - 460)"
+ },
+ {
+  "id": "1387",
+  "nombre": "SWZK20 int 91216 (Mack - Anthem)"
+ },
+ {
+  "id": "1388",
+  "nombre": "VKFP65  int 7388 (Volvo - 460)"
+ },
+ {
+  "id": "1389",
+  "nombre": "VFZD49 int 7386 (Volvo - 460)"
+ },
+ {
+  "id": "1392",
+  "nombre": "FHGS49 (Scania - G400)"
+ },
+ {
+  "id": "1393",
+  "nombre": "IAV791 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "1395",
+  "nombre": "RXVY43 (Renault - T380)"
+ },
+ {
+  "id": "1396",
+  "nombre": "VFYF52 (Renault - 520)"
+ },
+ {
+  "id": "1398",
+  "nombre": "TFWY87 (Scania - R500)"
+ },
+ {
+  "id": "1399",
+  "nombre": "TFWY85 (Scania - R500)"
+ },
+ {
+  "id": "1400",
+  "nombre": "TVKL79 (Scania - R500)"
+ },
+ {
+  "id": "1401",
+  "nombre": "JHBT80 (Scania - R440)"
+ },
+ {
+  "id": "1402",
+  "nombre": "TCJW48 (Renault - T520)"
+ },
+ {
+  "id": "1403",
+  "nombre": "AF534SP (Iveco - 440)"
+ },
+ {
+  "id": "1404",
+  "nombre": "AF743RU (Iveco - 440)"
+ },
+ {
+  "id": "1409",
+  "nombre": "AC511PP (Iveco - 440)"
+ },
+ {
+  "id": "1410",
+  "nombre": "JZHC30 (Scania - R480)"
+ },
+ {
+  "id": "1413",
+  "nombre": "AF773JC (Mercedes Benz - 2544)"
+ },
+ {
+  "id": "1414",
+  "nombre": "KLA741 (Semi Frio..."
+ },
+ {
+  "id": "1415",
+  "nombre": "RXWP86 (Renault - 380)"
+ },
+ {
+  "id": "1420",
+  "nombre": "HCKZ32 (Renault - 460)"
+ },
+ {
+  "id": "1421",
+  "nombre": "AG529NY (Scania - R500)"
+ },
+ {
+  "id": "1422",
+  "nombre": "FXYF50 (Volvo - 460)"
+ },
+ {
+  "id": "1423",
+  "nombre": "TFWY90 (Scania - R500)"
+ },
+ {
+  "id": "1424",
+  "nombre": "JFBK70 (Scania - G460)"
+ },
+ {
+  "id": "1425",
+  "nombre": "AE836HW (Scania - R500)"
+ },
+ {
+  "id": "1427",
+  "nombre": "KUE009 (Scania - G340)"
+ },
+ {
+  "id": "1431",
+  "nombre": "Tanque Fijo Jujuy"
+ },
+ {
+  "id": "1434",
+  "nombre": "TVKL80 (Scania - R500 / S)"
+ },
+ {
+  "id": "1438",
+  "nombre": "VTCW27 (Scania - 560 / S)"
+ },
+ {
+  "id": "1439",
+  "nombre": "AF907FQ (Scania - R500)"
+ },
+ {
+  "id": "1440",
+  "nombre": "MXZ605 (Scania - G410)"
+ },
+ {
+  "id": "1441",
+  "nombre": "TCJW49 (Renault - T520)"
+ },
+ {
+  "id": "1442",
+  "nombre": "AI377DF (Volvo - 460)"
+ },
+ {
+  "id": "0379",
+  "nombre": "LWZ842(int26) (Scania - G380)"
+ },
+ {
+  "id": "0427",
+  "nombre": "KJP913(int23) (Scania - G380)"
+ },
+ {
+  "id": "0433",
+  "nombre": "HSGD49CH03 (Scania - R440)"
+ },
+ {
+  "id": "0467",
+  "nombre": "HSGD53CH06 (Scania - G480)"
+ },
+ {
+  "id": "0472",
+  "nombre": "GIC455 (Jaleb Edu..."
+ },
+ {
+  "id": "0477",
+  "nombre": "KGQ409 (BAIGORRIA... (- 8934076200003032049)"
+ },
+ {
+  "id": "0484",
+  "nombre": "HSGD50CH04 (Scania - R440)"
+ },
+ {
+  "id": "0487",
+  "nombre": "LDL279(int14) (Scania - R380)"
+ },
+ {
+  "id": "0488",
+  "nombre": "IXF785 activar 01... (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0489",
+  "nombre": "OSL821 (Romero Se... (Scania - R480)"
+ },
+ {
+  "id": "0553",
+  "nombre": "MKA217 (Mercedez Benz - 1720)"
+ },
+ {
+  "id": "0594",
+  "nombre": "MPJ591 (Scania - 410)"
+ },
+ {
+  "id": "0611",
+  "nombre": "Camion19 - AE339X... (Mercedes Benz - 1635)"
+ },
+ {
+  "id": "0632",
+  "nombre": "SJPB50CH01 (Scania - R500)"
+ },
+ {
+  "id": "0633",
+  "nombre": "SJPB55 (CH11) (Scania - R500)"
+ },
+ {
+  "id": "0684",
+  "nombre": "Camion21 - AE644U... (Volvo - 370)"
+ },
+ {
+  "id": "0685",
+  "nombre": "Camion07 - AC569L... (Mercedes Benz - 1726)"
+ },
+ {
+  "id": "0686",
+  "nombre": "Camion08 - PGD507 (Mercedes Benz - 1725)"
+ },
+ {
+  "id": "0688",
+  "nombre": "Camion15 - NEZ580 (Scania - P310)"
+ },
+ {
+  "id": "0689",
+  "nombre": "Camion11 - PHM347 (Mercedes Benz - 1725)"
+ },
+ {
+  "id": "0690",
+  "nombre": "Camion13 - AE339X... (Mercedes Benz - 1635)"
+ },
+ {
+  "id": "0697",
+  "nombre": "AF754IU (Iveco - 410)"
+ },
+ {
+  "id": "0701",
+  "nombre": "AA137HB (Volkswagen - 19330)"
+ },
+ {
+  "id": "0702",
+  "nombre": "AB160JR (Mercedez Benz - 2036)"
+ },
+ {
+  "id": "0703",
+  "nombre": "AF282HI (Scania - P410)"
+ },
+ {
+  "id": "0704",
+  "nombre": "AA926ZX (Mercedez Benz - 2036)"
+ },
+ {
+  "id": "0705",
+  "nombre": "AF337DD (Mercedez Benz - 2036)"
+ },
+ {
+  "id": "0706",
+  "nombre": "AC803XP (Scania - G360)"
+ },
+ {
+  "id": "0707",
+  "nombre": "AA018SF (Scania - G310)"
+ },
+ {
+  "id": "0708",
+  "nombre": "AD748TT (Volkswagen - 19.420)"
+ },
+ {
+  "id": "0709",
+  "nombre": "KLY424 (Renault - 380)"
+ },
+ {
+  "id": "0710",
+  "nombre": "AA724VQ (Scania - G310)"
+ },
+ {
+  "id": "0713",
+  "nombre": "PAS935 (Scania - G310)"
+ },
+ {
+  "id": "0714",
+  "nombre": "AE424IS (Mercedez Benz - 2036)"
+ },
+ {
+  "id": "0719",
+  "nombre": "GQX408 (Volvo - 310)"
+ },
+ {
+  "id": "0072",
+  "nombre": "FFL192 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0720",
+  "nombre": "OHW632 (Scania - G360)"
+ },
+ {
+  "id": "0721",
+  "nombre": "AE775DO (Mercedes Benz - 2038)"
+ },
+ {
+  "id": "0723",
+  "nombre": "KLE144 (Renault - 380)"
+ },
+ {
+  "id": "0728",
+  "nombre": "Camion04 - AE251I... (Mercedes Benz - 2544)"
+ },
+ {
+  "id": "0729",
+  "nombre": "Camion03 - AD066N... (Mercedes Benz - 1725)"
+ },
+ {
+  "id": "0730",
+  "nombre": "Camion02 - AH180I... (Volvo - 370)"
+ },
+ {
+  "id": "0731",
+  "nombre": "Camion20 - AE483M... (Scania - P350)"
+ },
+ {
+  "id": "0732",
+  "nombre": "Camion09 - MRY700 (Scania - P250)"
+ },
+ {
+  "id": "0733",
+  "nombre": "Camion14 - MLO686 (Scania - P250)"
+ },
+ {
+  "id": "0734",
+  "nombre": "Camion16 - NXC894 (Mercedes Benz - 1725)"
+ },
+ {
+  "id": "0735",
+  "nombre": "AC568UE (Mercedes Benz - 1933)"
+ },
+ {
+  "id": "0739",
+  "nombre": "AB160IL (Scania - G360)"
+ },
+ {
+  "id": "0740",
+  "nombre": "PIG149 (Iveco - 330)"
+ },
+ {
+  "id": "0743",
+  "nombre": "AE703EE (Scania - P360)"
+ },
+ {
+  "id": "0750",
+  "nombre": "IME438 (Mercedes Benz - 2035)"
+ },
+ {
+  "id": "0759",
+  "nombre": "AB892AH (Volvo - 540)"
+ },
+ {
+  "id": "0764",
+  "nombre": "FOZ596 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0824",
+  "nombre": "KEK446 (Renault - 440)"
+ },
+ {
+  "id": "0835",
+  "nombre": "FOZ594 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0836",
+  "nombre": "ETT483 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0838",
+  "nombre": "Camion10 - AD253Q... (Volvo - VM330)"
+ },
+ {
+  "id": "0839",
+  "nombre": "Camion06 - AH119W... (Volvo - VM350)"
+ },
+ {
+  "id": "0841",
+  "nombre": "Camion18 - AA111S... (Mercedez Benz - 1726)"
+ },
+ {
+  "id": "0842",
+  "nombre": "Camion05 - AE267L... (Volvo - VM330)"
+ },
+ {
+  "id": "0843",
+  "nombre": "Camion12 - AE251I... (Mercedez Benz - 1016)"
+ },
+ {
+  "id": "0868",
+  "nombre": "ETT486 (Mercedez Benz - 1634)"
+ },
+ {
+  "id": "0869",
+  "nombre": "ETT482 (Mercedez Benz - 1634)"
+ },
+ {
+  "id": "0872",
+  "nombre": "AG262PX (Mercedez Benz - 1729)"
+ },
+ {
+  "id": "0873",
+  "nombre": "AF163WI (Mercedez Benz - 1729)"
+ },
+ {
+  "id": "0874",
+  "nombre": "OZE187 (Iveco - Attack)"
+ },
+ {
+  "id": "0875",
+  "nombre": "AF094UM (Iveco - 280)"
+ },
+ {
+  "id": "0876",
+  "nombre": "ESN792 (Volvo - 380)"
+ },
+ {
+  "id": "0890",
+  "nombre": "KJK733 (Freightliner - Columbia)"
+ },
+ {
+  "id": "0904",
+  "nombre": "AC893KC INT 23 (Iveco - 170E22)"
+ },
+ {
+  "id": "0914",
+  "nombre": "MSM936 INT 20 (Volkswagen - 17220)"
+ },
+ {
+  "id": "0915",
+  "nombre": "AD789OV (Iveco - 170E28)"
+ },
+ {
+  "id": "0916",
+  "nombre": "AA927AO INT 21 (Iveco - 450)"
+ },
+ {
+  "id": "0955",
+  "nombre": "AE612XS (VOLKSWAGEN - 25.360)"
+ },
+ {
+  "id": "0957",
+  "nombre": "INT 214 - LKW473 (Mercedez Benz - O500M)"
+ },
+ {
+  "id": "0958",
+  "nombre": "INT 216 - LKW474 (Mercedez Benz - O500M)"
+ },
+ {
+  "id": "0959",
+  "nombre": "INT 218 - LKW475 (Mercedez Benz - O500M)"
+ },
+ {
+  "id": "0961",
+  "nombre": "INT 224 - NEW922 (Mercedez Benz - O550M)"
+ },
+ {
+  "id": "0964",
+  "nombre": "INT 232 - OSB132 (Mercedez Benz - 1722 59CM)"
+ },
+ {
+  "id": "0965",
+  "nombre": "INT 234 - PJF020 (Mercedez Benz - 1722 59CM)"
+ },
+ {
+  "id": "0966",
+  "nombre": "INT 236 - PJF021 (Mercedez Benz - 1722 59CM)"
+ },
+ {
+  "id": "0967",
+  "nombre": "INT 238 - AA705XK (Mercedez Benz - 1724 A54)"
+ },
+ {
+  "id": "0968",
+  "nombre": "INT 240 - AA705XJ (Mercedez Benz - 1724 A54)"
+ },
+ {
+  "id": "0969",
+  "nombre": "INT 242 - AB522OT (Mercedez Benz - OF1724L)"
+ },
+ {
+  "id": "0970",
+  "nombre": "INT 244 - AC576YC (Mercedez Benz - OF1724L)"
+ },
+ {
+  "id": "0971",
+  "nombre": "INT 246 - AC576YD (Mercedez Benz - OF1724L)"
+ },
+ {
+  "id": "0972",
+  "nombre": "INT 300 - LQB729 (Mercedez Benz - O500RSD)"
+ },
+ {
+  "id": "0973",
+  "nombre": "INT 500 - MWM226 (Mercedez Benz - O500RSD)"
+ },
+ {
+  "id": "0974",
+  "nombre": "INT 600 - NQA576 (Mercedez Benz - O500RSD)"
+ },
+ {
+  "id": "0975",
+  "nombre": "INT 700 - PNT241 (Mercedez Benz - O500RSD)"
+ },
+ {
+  "id": "0976",
+  "nombre": "INT 800 - PQU944 (Mercedez Benz - O500RSD)"
+ },
+ {
+  "id": "0977",
+  "nombre": "INT 900 - AA347JV (Mercedez Benz - O500RSD)"
+ },
+ {
+  "id": "0978",
+  "nombre": "INT 1000 - AB624V... (volvo - B450R)"
+ },
+ {
+  "id": "0979",
+  "nombre": "INT 1100 - AB624V... (Volvo - B450R)"
+ },
+ {
+  "id": "0980",
+  "nombre": "INT 1200 - AC115J... (Mercedez Benz - O500RSD)"
+ },
+ {
+  "id": "0981",
+  "nombre": "INT 210 - KYP917 (Mercedez Benz - O500M)"
+ },
+ {
+  "id": "0982",
+  "nombre": "INT 212 - KYP919 (Mercedez Benz - O500M)"
+ },
+ {
+  "id": "0983",
+  "nombre": "INT 220CS - MLV69... (Mercedez Benz - O500M)"
+ },
+ {
+  "id": "0984",
+  "nombre": "INT 226CS - LGY52... (Mercedez Benz - O500M)"
+ },
+ {
+  "id": "0985",
+  "nombre": "AD848SI (Volkswagen - 19420 HR)"
+ },
+ {
+  "id": "0562",
+  "nombre": "Tractor8"
+ },
+ {
+  "id": "0563",
+  "nombre": "Tractor3"
+ },
+ {
+  "id": "0564",
+  "nombre": "Cosechadora2"
+ },
+ {
+  "id": "0565",
+  "nombre": "NewHollandTD5.110"
+ },
+ {
+  "id": "0566",
+  "nombre": "Tractor2"
+ },
+ {
+  "id": "0567",
+  "nombre": "Zanello"
+ },
+ {
+  "id": "0568",
+  "nombre": "Cosechadora1"
+ },
+ {
+  "id": "0569",
+  "nombre": "Valtra"
+ },
+ {
+  "id": "0572",
+  "nombre": "TanqueFijoFinca"
+ },
+ {
+  "id": "0575",
+  "nombre": "Colossus"
+ },
+ {
+  "id": "0602",
+  "nombre": "Tractor1"
+ },
+ {
+  "id": "1031",
+  "nombre": "AG788US (Agropecu... (Iveco - 410)"
+ },
+ {
+  "id": "1032",
+  "nombre": "AG788UR (Agropecu... (Iveco - 410)"
+ },
+ {
+  "id": "1037",
+  "nombre": "AG843FP (Agropecu... (Mercedez Benz -)"
+ },
+ {
+  "id": "1038",
+  "nombre": "OLW859 (Agropecua... (Scania - P350)"
+ },
+ {
+  "id": "1061",
+  "nombre": "AG914LT (Agropecu... (Mercedez Benz - 1729)"
+ },
+ {
+  "id": "1076",
+  "nombre": "ULA656 (Fleet of ... (Scania - 111)"
+ },
+ {
+  "id": "1177",
+  "nombre": "AG914LU (Mercedez Benz - 2536)"
+ },
+ {
+  "id": "1193",
+  "nombre": "HZRX70 (Scania - R440)"
+ },
+ {
+  "id": "1194",
+  "nombre": "HZRX69 (Scania - R440)"
+ },
+ {
+  "id": "1257",
+  "nombre": "NEE324 (Renault - 380)"
+ },
+ {
+  "id": "1267",
+  "nombre": "NEE320 (Renault - 380)"
+ },
+ {
+  "id": "0318",
+  "nombre": "LCE465 (Volvo - 440)"
+ },
+ {
+  "id": "0637",
+  "nombre": "HLZX21"
+ },
+ {
+  "id": "0641",
+  "nombre": "AB196QT"
+ },
+ {
+  "id": "0642",
+  "nombre": "GEE761"
+ },
+ {
+  "id": "0643",
+  "nombre": "HLZX22"
+ },
+ {
+  "id": "0644",
+  "nombre": "EYO208"
+ },
+ {
+  "id": "0646",
+  "nombre": "SLHT44 (Scania - R500)"
+ },
+ {
+  "id": "0647",
+  "nombre": "SLHT43 (Scania - R500)"
+ },
+ {
+  "id": "0650",
+  "nombre": "AB366FS (Ford  - 2842)"
+ },
+ {
+  "id": "0652",
+  "nombre": "RVFL40 (Scania - R500)"
+ },
+ {
+  "id": "0654",
+  "nombre": "MVK425 (Scania - P360)"
+ },
+ {
+  "id": "0655",
+  "nombre": "SLHT45 (Scania - R500)"
+ },
+ {
+  "id": "0664",
+  "nombre": "AE165ZO (Iveco - 440)"
+ },
+ {
+  "id": "0671",
+  "nombre": "SLHT46 (Scania - R500)"
+ },
+ {
+  "id": "0712",
+  "nombre": "RKLD65 (Scania - R500)"
+ },
+ {
+  "id": "0715",
+  "nombre": "SVZS83 (Scania - R500)"
+ },
+ {
+  "id": "0716",
+  "nombre": "SVZS82 (Scania - R500)"
+ },
+ {
+  "id": "0760",
+  "nombre": "AG123YI  (Verdene... (Mercedez Benz - 2036)"
+ },
+ {
+  "id": "0762",
+  "nombre": "AG161ML (Verdenel... (Mercedes Benz - 1729)"
+ },
+ {
+  "id": "0763",
+  "nombre": "LHM348 (Grupo Ter... (Scania - G420)"
+ },
+ {
+  "id": "0768",
+  "nombre": "PKU425  (Agropecu... (Iveco - 410)"
+ },
+ {
+  "id": "0780",
+  "nombre": "KGO081  (Agropecu... (Scania - G420)"
+ },
+ {
+  "id": "0781",
+  "nombre": "MJP629 ( Grupo Te... (Scania - R410)"
+ },
+ {
+  "id": "0782",
+  "nombre": "MWV512 ( Verdenel... (Scania - G410)"
+ },
+ {
+  "id": "0784",
+  "nombre": "KWP566 (Agropecua... (Scania - G420)"
+ },
+ {
+  "id": "0795",
+  "nombre": "JD5090 INT 9 (Ver..."
+ },
+ {
+  "id": "0796",
+  "nombre": "JD6150 INT 12 (Te..."
+ },
+ {
+  "id": "0797",
+  "nombre": "MF8737 INT 20 ( T..."
+ },
+ {
+  "id": "0802",
+  "nombre": "JD6615 INT 2 (Gru..."
+ },
+ {
+  "id": "0803",
+  "nombre": "JD6145 INT 3 ( Gr..."
+ },
+ {
+  "id": "0804",
+  "nombre": "JD7230 INT 10 (Te..."
+ },
+ {
+  "id": "0805",
+  "nombre": "JD7230 INT 5 (Ver..."
+ },
+ {
+  "id": "0806",
+  "nombre": "JD6150 INT 18 (Te..."
+ },
+ {
+  "id": "0807",
+  "nombre": "JD5090 INT 17  (T..."
+ },
+ {
+  "id": "0808",
+  "nombre": "JD7230 INT 6  (Ag..."
+ },
+ {
+  "id": "0809",
+  "nombre": "JD6150 INT 11 (Te..."
+ },
+ {
+  "id": "0810",
+  "nombre": "JD6150 INT 16 (Te..."
+ },
+ {
+  "id": "0813",
+  "nombre": "NFL101  (Agropecu... (Scania - G410)"
+ },
+ {
+  "id": "0814",
+  "nombre": "LPV371 (Grupo Ter... (Scania - R500)"
+ },
+ {
+  "id": "0815",
+  "nombre": "TXX547 (Nover) (Fort - 700)"
+ },
+ {
+  "id": "0816",
+  "nombre": "LNL403 (Verdenell... (Scania - G420)"
+ },
+ {
+  "id": "0817",
+  "nombre": "MF1485 INT 9 (Nov... (Massey Ferguson - 1485)"
+ },
+ {
+  "id": "0818",
+  "nombre": "MF292 INT 12 (Nov... (Massey Ferguson - 292)"
+ },
+ {
+  "id": "0819",
+  "nombre": "XKZ292 (Verdenell... (Mercedez Benz - F700)"
+ },
+ {
+  "id": "0823",
+  "nombre": "MF4283 INT 4 ( Te..."
+ },
+ {
+  "id": "0825",
+  "nombre": "J250 INT 14 (Grup... (Pauny  - 250)"
+ },
+ {
+  "id": "0826",
+  "nombre": "MF7390 INT 8 (Ter... (Massey Ferguson - 7390)"
+ },
+ {
+  "id": "0832",
+  "nombre": "JD5090 INT 7  (Ag... (John Deere - 5090)"
+ },
+ {
+  "id": "0834",
+  "nombre": "P210 INT 15 ( Gru... (Pauny  - 210)"
+ },
+ {
+  "id": "0863",
+  "nombre": "Tanque Fijo Base ..."
+ },
+ {
+  "id": "0864",
+  "nombre": "MF1485 INT 8 (Nov... (Massey Ferguson - 1485)"
+ },
+ {
+  "id": "0871",
+  "nombre": "MF275 INT 15 (Nov... (Massey Ferguson - 275)"
+ },
+ {
+  "id": "0887",
+  "nombre": "JD5090E (Terra Ag... (John Deere - 5090e)"
+ },
+ {
+  "id": "0888",
+  "nombre": "JD7200 (Terra Agr... (John Deere - 7200)"
+ },
+ {
+  "id": "0892",
+  "nombre": "Pala Cargadora Sh..."
+ },
+ {
+  "id": "0893",
+  "nombre": "MF275 INT14 (Nove..."
+ },
+ {
+  "id": "0894",
+  "nombre": "MF 1465 INT 7 (No..."
+ },
+ {
+  "id": "0895",
+  "nombre": "UVV508 (Agropecua... (Mercedez Benz - 1114)"
+ },
+ {
+  "id": "0899",
+  "nombre": "MF275 INT 16 (Nov... (Massey Ferguson - 275)"
+ },
+ {
+  "id": "0900",
+  "nombre": "KLZ758 (Verdenell... (Scania - G420)"
+ },
+ {
+  "id": "0986",
+  "nombre": "AG687WD  (Agropec... (Mercedez Benz - 1729)"
+ },
+ {
+  "id": "0987",
+  "nombre": "AG687WF  (Agropec... (Mercedez Benz - 1729)"
+ },
+ {
+  "id": "0988",
+  "nombre": "AG788UV  (Agropec... (Iveco - 360)"
+ },
+ {
+  "id": "0990",
+  "nombre": "AG788UU (Agropecu... (Iveco - 360)"
+ },
+ {
+  "id": "0991",
+  "nombre": "AG788UQ (Agropecu... (Mercedez Benz - 1729)"
+ },
+ {
+  "id": "0996",
+  "nombre": "N7 ( Terra Agro)"
+ },
+ {
+  "id": "0574",
+  "nombre": "INT63 - AD578XV (Volvo - 460)"
+ },
+ {
+  "id": "0578",
+  "nombre": "INT39 - AD156YI (Iveco - 440)"
+ },
+ {
+  "id": "0587",
+  "nombre": "INT121 - AD307UZ (Volvo - 420)"
+ },
+ {
+  "id": "0588",
+  "nombre": "INT55 - MTF045 (Iveco - 410)"
+ },
+ {
+  "id": "0591",
+  "nombre": "INT145 - AD307VF (Volvo - 460)"
+ },
+ {
+  "id": "0593",
+  "nombre": "INT19 - MTF034 (Iveco - 410)"
+ },
+ {
+  "id": "0598",
+  "nombre": "INT41 - AD307TY (Volvo - 460)"
+ },
+ {
+  "id": "0609",
+  "nombre": "INT175 - MYV861 (Iveco - 410)"
+ },
+ {
+  "id": "0639",
+  "nombre": "INT101 - AD307TZ (Volvo - 540)"
+ },
+ {
+  "id": "0659",
+  "nombre": "INT83 - AD156YY (Iveco - 440)"
+ },
+ {
+  "id": "0661",
+  "nombre": "INT75 - AD626VZ (Volvo - 460)"
+ },
+ {
+  "id": "0663",
+  "nombre": "INT129 - AD307VA (Volvo - 420)"
+ },
+ {
+  "id": "0665",
+  "nombre": "INT65 - MTZ997 (Iveco - 410)"
+ },
+ {
+  "id": "0667",
+  "nombre": "INT603 - MVK443 (Iveco - 410)"
+ },
+ {
+  "id": "0668",
+  "nombre": "INT127 - AD427NO (Volvo - 460)"
+ },
+ {
+  "id": "0674",
+  "nombre": "INT87 - MVK403 (Iveco - 410)"
+ },
+ {
+  "id": "0675",
+  "nombre": "INT89 - AD910LM (Volvo - 460)"
+ },
+ {
+  "id": "1013",
+  "nombre": "AG807KV (Scania - G450)"
+ },
+ {
+  "id": "1018",
+  "nombre": "AG807KW (Scania - G450)"
+ },
+ {
+  "id": "1045",
+  "nombre": "AG900QO (Mercedez Benz - 1721)"
+ },
+ {
+  "id": "1059",
+  "nombre": "HHWJ99 (International - ProStard)"
+ },
+ {
+  "id": "0106",
+  "nombre": "HLZB60 (Renault - 460)"
+ },
+ {
+  "id": "0110",
+  "nombre": "BZXW93 (Scania - 380)"
+ },
+ {
+  "id": "0112",
+  "nombre": "TanqueFijoABC"
+ },
+ {
+  "id": "1136",
+  "nombre": "FYP876 (Mercedez Benz - 1634)"
+ },
+ {
+  "id": "1139",
+  "nombre": "AH616FM (Scania - G460 / S)"
+ },
+ {
+  "id": "0114",
+  "nombre": "JSHF95 (Renault - 460)"
+ },
+ {
+  "id": "1141",
+  "nombre": "HZT296 (Renault -)"
+ },
+ {
+  "id": "1142",
+  "nombre": "GCC 951 (IVECO - Stralis 380)"
+ },
+ {
+  "id": "1144",
+  "nombre": "AC477UZ (Ford - 1933)"
+ },
+ {
+  "id": "1145",
+  "nombre": "Tanque Fijo Mena ..."
+ },
+ {
+  "id": "1147",
+  "nombre": "AA079FS (Ford - 1933)"
+ },
+ {
+  "id": "1148",
+  "nombre": "HDVK38 (Scania - P440)"
+ },
+ {
+  "id": "1164",
+  "nombre": "TYRF61 (Renault - 480)"
+ },
+ {
+  "id": "1165",
+  "nombre": "TYRF54 (Renault - 480)"
+ },
+ {
+  "id": "1166",
+  "nombre": "TRSW42 (Renault - 520)"
+ },
+ {
+  "id": "1168",
+  "nombre": "TRSW44 (Renault - 520)"
+ },
+ {
+  "id": "1170",
+  "nombre": "TYRF60 (Renault - 480)"
+ },
+ {
+  "id": "1171",
+  "nombre": "TYRF59 (Renault - 480)"
+ },
+ {
+  "id": "1172",
+  "nombre": "TRSW40 (Renault - 520)"
+ },
+ {
+  "id": "1176",
+  "nombre": "HCCW69 (Scania - R440)"
+ },
+ {
+  "id": "1178",
+  "nombre": "EWL111 (Iveco -)"
+ },
+ {
+  "id": "1179",
+  "nombre": "AH191WQ (Mercedez Benz - 1721)"
+ },
+ {
+  "id": "1186",
+  "nombre": "AE858IO (Scania - R540)"
+ },
+ {
+  "id": "1188",
+  "nombre": "TYRF19 (Scania - R500 / S)"
+ },
+ {
+  "id": "1189",
+  "nombre": "TYRF20 (Scania - R500 / S)"
+ },
+ {
+  "id": "1195",
+  "nombre": "SGPX38 (Scania - R500)"
+ },
+ {
+  "id": "1197",
+  "nombre": "BGDG97 (Scania - G420)"
+ },
+ {
+  "id": "1201",
+  "nombre": "HWVG20 (Mack - CXU613)"
+ },
+ {
+  "id": "1207",
+  "nombre": "NFH632 (Volvo - 440)"
+ },
+ {
+  "id": "1209",
+  "nombre": "LMM334 (Mercedez Benz - 2035)"
+ },
+ {
+  "id": "1215",
+  "nombre": "VFHY56 (MAN - 28.480)"
+ },
+ {
+  "id": "0122",
+  "nombre": "JKFB65 (Scania - R480)"
+ },
+ {
+  "id": "1225",
+  "nombre": "Komatsu (komatsu - PC2000)"
+ },
+ {
+  "id": "1235",
+  "nombre": "VFHY68 (MAN - 28.480)"
+ },
+ {
+  "id": "1237",
+  "nombre": "VFHY63 (MAN - 28.480)"
+ },
+ {
+  "id": "1239",
+  "nombre": "AH510XA (Scania - G460 / S)"
+ },
+ {
+  "id": "1240",
+  "nombre": "AH374KX (Scania - G460 / S)"
+ },
+ {
+  "id": "1243",
+  "nombre": "AH616FQ (Scania - G460 / S)"
+ },
+ {
+  "id": "1244",
+  "nombre": "AH616FN (Scania - G460 / S)"
+ },
+ {
+  "id": "1245",
+  "nombre": "AH510XB (Scania - G460 / S)"
+ },
+ {
+  "id": "1246",
+  "nombre": "AH374KW (Scania - G460)"
+ },
+ {
+  "id": "1247",
+  "nombre": "AH374KZ (Scania - G460 / S)"
+ },
+ {
+  "id": "1248",
+  "nombre": "AH616FP (Scania - G460 / S)"
+ },
+ {
+  "id": "1249",
+  "nombre": "AH616FO (Scania - G460 / S)"
+ },
+ {
+  "id": "1261",
+  "nombre": "TRSW43 (Renault - 520)"
+ },
+ {
+  "id": "1266",
+  "nombre": "Pozo 2 Los Rancho..."
+ },
+ {
+  "id": "1268",
+  "nombre": "Pozo 5 Los Rancho..."
+ },
+ {
+  "id": "1269",
+  "nombre": "Pozo 7 Los Rancho..."
+ },
+ {
+  "id": "1270",
+  "nombre": "Pozo 4 Los Rancho..."
+ },
+ {
+  "id": "1271",
+  "nombre": "Pozo 8 Los Rancho..."
+ },
+ {
+  "id": "1272",
+  "nombre": "JSGP67 (Scania - R480)"
+ },
+ {
+  "id": "1273",
+  "nombre": "Pozo 1 Latinzel"
+ },
+ {
+  "id": "1274",
+  "nombre": "Pozo 1 Los Rancho..."
+ },
+ {
+  "id": "1275",
+  "nombre": "Pozo 3 Los Rancho..."
+ },
+ {
+  "id": "1276",
+  "nombre": "Pozo 9 Los Rancho..."
+ },
+ {
+  "id": "1277",
+  "nombre": "HVSD28 (Scania - R440)"
+ },
+ {
+  "id": "1279",
+  "nombre": "Pozo 3 Constructo..."
+ },
+ {
+  "id": "1280",
+  "nombre": "Pozo 10 Los Ranch..."
+ },
+ {
+  "id": "1281",
+  "nombre": "Pozo 6 Los Rancho..."
+ },
+ {
+  "id": "1282",
+  "nombre": "AD416CR (Scania - G360)"
+ },
+ {
+  "id": "1283",
+  "nombre": "Pozo 1 Constructo..."
+ },
+ {
+  "id": "1285",
+  "nombre": "Pozo 2 Constructo..."
+ },
+ {
+  "id": "1286",
+  "nombre": "VLFK22 (Scania - R500)"
+ },
+ {
+  "id": "1305",
+  "nombre": "AG931WH (Volkswagen - 33.460)"
+ },
+ {
+  "id": "1308",
+  "nombre": "JWPT10 (Semi Frio... (Carrier  -)"
+ },
+ {
+  "id": "1317",
+  "nombre": "DGP 94 (Caterpilar  - D8)"
+ },
+ {
+  "id": "1321",
+  "nombre": "John Deere 624 (John Deere - 624)"
+ },
+ {
+  "id": "0133",
+  "nombre": "JSHF93 (Renault - 460)"
+ },
+ {
+  "id": "1368",
+  "nombre": "VLFJ70 (Scania - R500)"
+ },
+ {
+  "id": "1372",
+  "nombre": "PWYX99 GS-23 (Thermo King -)"
+ },
+ {
+  "id": "1373",
+  "nombre": "PXJX72 GS-17 (Carrier  -)"
+ },
+ {
+  "id": "1374",
+  "nombre": "JP3129 (Semi Frio..."
+ },
+ {
+  "id": "1375",
+  "nombre": "JP2758 (Semi Frio..."
+ },
+ {
+  "id": "1376",
+  "nombre": "PWZH96 (Semi Frio..."
+ },
+ {
+  "id": "1377",
+  "nombre": "PXJX74 GS-15"
+ },
+ {
+  "id": "1378",
+  "nombre": "PXGR42 GS-27"
+ },
+ {
+  "id": "1379",
+  "nombre": "PWXY13 GS-28"
+ },
+ {
+  "id": "1380",
+  "nombre": "PWZY89  GS-21"
+ },
+ {
+  "id": "1381",
+  "nombre": "PWTJ90 GS-16"
+ },
+ {
+  "id": "1383",
+  "nombre": "KYPK53 GS-05"
+ },
+ {
+  "id": "1390",
+  "nombre": "PTYV59 (Semi Fri..."
+ },
+ {
+  "id": "1391",
+  "nombre": "PWTR21 GS-08"
+ },
+ {
+  "id": "1394",
+  "nombre": "PWZH97 (Semi Frio..."
+ },
+ {
+  "id": "1397",
+  "nombre": "HDTX48 (Scania - G360)"
+ },
+ {
+  "id": "1408",
+  "nombre": "JWPH92 GS-19"
+ },
+ {
+  "id": "1411",
+  "nombre": "PXJX73 GS-10"
+ },
+ {
+  "id": "1412",
+  "nombre": "PWXY14 GS-12"
+ },
+ {
+  "id": "1416",
+  "nombre": "KDKD67 GS-26"
+ },
+ {
+  "id": "1417",
+  "nombre": "PXGR44 GS-02"
+ },
+ {
+  "id": "1418",
+  "nombre": "PWWK85 GS-18"
+ },
+ {
+  "id": "1419",
+  "nombre": "PWZY90 GS-03"
+ },
+ {
+  "id": "1426",
+  "nombre": "OFM288 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "1433",
+  "nombre": "JP1878 GR-18"
+ },
+ {
+  "id": "1435",
+  "nombre": "PXGR51 GS-25 (Thermo King - GS3000)"
+ },
+ {
+  "id": "1437",
+  "nombre": "OUI931 (Ford  - 1932)"
+ },
+ {
+  "id": "0158",
+  "nombre": "HLZB55(JCImprigli... (Renault - 460)"
+ },
+ {
+  "id": "0159",
+  "nombre": "JFTH81 (Scania - R480)"
+ },
+ {
+  "id": "0162",
+  "nombre": "LXJG40 (Scania - G450)"
+ },
+ {
+  "id": "0166",
+  "nombre": "GDPD41 (Renault - 430)"
+ },
+ {
+  "id": "0167",
+  "nombre": "LGP387 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0169",
+  "nombre": "JF9279 (SemiFrio)"
+ },
+ {
+  "id": "0170",
+  "nombre": "JD5405(SemiFrio)"
+ },
+ {
+  "id": "0171",
+  "nombre": "JN8459 (SemiFrio)"
+ },
+ {
+  "id": "0172",
+  "nombre": "EPE368 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0173",
+  "nombre": "MVK378 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0177",
+  "nombre": "LTGJ18 (Volvo - 540)"
+ },
+ {
+  "id": "0181",
+  "nombre": "HRWC53 (Volvo - 500)"
+ },
+ {
+  "id": "0184",
+  "nombre": "JN7041 (SemiFrio)"
+ },
+ {
+  "id": "0186",
+  "nombre": "KHZB71 (Volvo - 540)"
+ },
+ {
+  "id": "0187",
+  "nombre": "XG1634 (Volvo - 380)"
+ },
+ {
+  "id": "0189",
+  "nombre": "HXW035 (Renault - 380)"
+ },
+ {
+  "id": "0192",
+  "nombre": "LGP388 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0194",
+  "nombre": "JA9908 (SemiFrio)"
+ },
+ {
+  "id": "0195",
+  "nombre": "JJ9952 (SemiFrio)"
+ },
+ {
+  "id": "0199",
+  "nombre": "JSHF94 (Renault - 460)"
+ },
+ {
+  "id": "0200",
+  "nombre": "JKFB64 (Scania - 480)"
+ },
+ {
+  "id": "0204",
+  "nombre": "JP3145 (SemiFrio)"
+ },
+ {
+  "id": "0220",
+  "nombre": "GPH308 (Scania - R440)"
+ },
+ {
+  "id": "0222",
+  "nombre": "ERT943 (Volvo - 420)"
+ },
+ {
+  "id": "0236",
+  "nombre": "IAO643 (Iveco - 440)"
+ },
+ {
+  "id": "0239",
+  "nombre": "PLFL11 (Scania - R500)"
+ },
+ {
+  "id": "0240",
+  "nombre": "PBFC72"
+ },
+ {
+  "id": "0250",
+  "nombre": "PDSG63 (Scania - R500)"
+ },
+ {
+  "id": "0254",
+  "nombre": "LXGR38 (Renault - 380)"
+ },
+ {
+  "id": "0258",
+  "nombre": "PLFL10(JCImprigli... (Scania - R500)"
+ },
+ {
+  "id": "0262",
+  "nombre": "DRT214 (Scania  - G310)"
+ },
+ {
+  "id": "0266",
+  "nombre": "EIJ240 (Mercedes Benz -)"
+ },
+ {
+  "id": "0270",
+  "nombre": "KRX328 (Iveco - 330)"
+ },
+ {
+  "id": "0276",
+  "nombre": "HGY993 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0282",
+  "nombre": "IVN934"
+ },
+ {
+  "id": "0285",
+  "nombre": "IZQ504 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0286",
+  "nombre": "FSI343 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0287",
+  "nombre": "ERV189 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0288",
+  "nombre": "HJD733 (Scania - G380)"
+ },
+ {
+  "id": "0289",
+  "nombre": "JEG960 (Scania - 360)"
+ },
+ {
+  "id": "0290",
+  "nombre": "NDP800 (Scania - R380)"
+ },
+ {
+  "id": "0291",
+  "nombre": "ITE448 (Scania - G420)"
+ },
+ {
+  "id": "0292",
+  "nombre": "NDD804 (Scania - 420)"
+ },
+ {
+  "id": "0293",
+  "nombre": "KAR910 (Scania - 380)"
+ },
+ {
+  "id": "0296",
+  "nombre": "AD196GE (Scania - R480)"
+ },
+ {
+  "id": "0297",
+  "nombre": "AC190QC (Scania - R480)"
+ },
+ {
+  "id": "0300",
+  "nombre": "JPI481 (Scania - 420)"
+ },
+ {
+  "id": "0301",
+  "nombre": "IVQ433 (Scania - 420)"
+ },
+ {
+  "id": "0302",
+  "nombre": "HJD734 (Scania - G420)"
+ },
+ {
+  "id": "0303",
+  "nombre": "NRM364 (Scania - G420)"
+ },
+ {
+  "id": "0304",
+  "nombre": "AE175DT (Scania - R450)"
+ },
+ {
+  "id": "0305",
+  "nombre": "AE175DX (Scania - R450)"
+ },
+ {
+  "id": "0307",
+  "nombre": "AE175DV (Scania - 480)"
+ },
+ {
+  "id": "0309",
+  "nombre": "MCH429 (Scania - G400)"
+ },
+ {
+  "id": "0310",
+  "nombre": "KNI152 (Scania - G310)"
+ },
+ {
+  "id": "0312",
+  "nombre": "AE849LQ (Scania - R410)"
+ },
+ {
+  "id": "0313",
+  "nombre": "ELE628 (Mercedez Benz - 1634)"
+ },
+ {
+  "id": "0314",
+  "nombre": "AD196GB (Scania - R480)"
+ },
+ {
+  "id": "0315",
+  "nombre": "IVQ439 (Scania - G380)"
+ },
+ {
+  "id": "0317",
+  "nombre": "AE175DU (Scania - R450)"
+ },
+ {
+  "id": "0320",
+  "nombre": "AA060XP (Scania - R410)"
+ },
+ {
+  "id": "0321",
+  "nombre": "OPH279 (Scania - R410)"
+ },
+ {
+  "id": "0323",
+  "nombre": "JHZ547 (Scania - 360)"
+ },
+ {
+  "id": "0324",
+  "nombre": "IXD010 (Scania - R380)"
+ },
+ {
+  "id": "0325",
+  "nombre": "PLFJ76 (Scania - R500)"
+ },
+ {
+  "id": "0327",
+  "nombre": "OPH276 (Scania - G410)"
+ },
+ {
+  "id": "0328",
+  "nombre": "ICH902 (Scania - R340)"
+ },
+ {
+  "id": "0329",
+  "nombre": "PLFJ79 (Scania - R500)"
+ },
+ {
+  "id": "0330",
+  "nombre": "IZQ503 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0331",
+  "nombre": "PLFJ77 (Scania - R500)"
+ },
+ {
+  "id": "0334",
+  "nombre": "AE757RR (Scania - R410)"
+ },
+ {
+  "id": "0335",
+  "nombre": "AC190QB (Scania - 480)"
+ },
+ {
+  "id": "0336",
+  "nombre": "HRH828 (Scania - 380)"
+ },
+ {
+  "id": "0337",
+  "nombre": "AE175DW (Scania - R450)"
+ },
+ {
+  "id": "0338",
+  "nombre": "NKY505 (Mercedes Benz - 1721)"
+ },
+ {
+  "id": "0339",
+  "nombre": "PLFJ78 (Scania - R500)"
+ },
+ {
+  "id": "0340",
+  "nombre": "AA060XQ (Scania - R410)"
+ },
+ {
+  "id": "0343",
+  "nombre": "RHDX80"
+ },
+ {
+  "id": "0345",
+  "nombre": "RHDX79"
+ },
+ {
+  "id": "0348",
+  "nombre": "AD196GD (Scania - R480)"
+ },
+ {
+  "id": "0349",
+  "nombre": "AD237MX (Scania - R480)"
+ },
+ {
+  "id": "0352",
+  "nombre": "CHB81 (Komatsu -)"
+ },
+ {
+  "id": "0355",
+  "nombre": "HAY900"
+ },
+ {
+  "id": "0359",
+  "nombre": "OIU561 (Scania - 410)"
+ },
+ {
+  "id": "0360",
+  "nombre": "AD133KX(int01) (Volvo - FM 380)"
+ },
+ {
+  "id": "0362",
+  "nombre": "AB974AG (Iveco - 330)"
+ },
+ {
+  "id": "0364",
+  "nombre": "AD133KY(int05) (Volvo - FM 380)"
+ },
+ {
+  "id": "0365",
+  "nombre": "PYCK12 (Scania - R500)"
+ },
+ {
+  "id": "0366",
+  "nombre": "PTYV74 (SemiFrio)"
+ },
+ {
+  "id": "0367",
+  "nombre": "CBTV73 (Scania - G360)"
+ },
+ {
+  "id": "0370",
+  "nombre": "AB698CP"
+ },
+ {
+  "id": "0374",
+  "nombre": "AD413PO(int06) (Volvo - 380)"
+ },
+ {
+  "id": "0377",
+  "nombre": "KHT329(int21) (Scania - G380)"
+ },
+ {
+  "id": "0038",
+  "nombre": "GGJ702 (Scania - 320)"
+ },
+ {
+  "id": "0380",
+  "nombre": "JXZV74 (MAN - 28.480)"
+ },
+ {
+  "id": "0382",
+  "nombre": "HWGD58 (MAN - 28.480)"
+ },
+ {
+  "id": "0384",
+  "nombre": "AD413PP(int09) (Volvo - 420)"
+ },
+ {
+  "id": "0385",
+  "nombre": "KKO248(int24) (Scania - G380)"
+ },
+ {
+  "id": "0386",
+  "nombre": "AE954XE (Mercedes Benz - 2544)"
+ },
+ {
+  "id": "0387",
+  "nombre": "GKGH77"
+ },
+ {
+  "id": "0388",
+  "nombre": "FXRX62"
+ },
+ {
+  "id": "0389",
+  "nombre": "DRZV36"
+ },
+ {
+  "id": "0390",
+  "nombre": "CHWL23 (Freightliner - Argosy)"
+ },
+ {
+  "id": "0395",
+  "nombre": "DRXX97"
+ },
+ {
+  "id": "0396",
+  "nombre": "FXRX64"
+ },
+ {
+  "id": "0402",
+  "nombre": "HJYC77 (International - 9200)"
+ },
+ {
+  "id": "0403",
+  "nombre": "DRXT51 (Freightliner - Argosy)"
+ },
+ {
+  "id": "0405",
+  "nombre": "JLN909 (Scania - P380)"
+ },
+ {
+  "id": "0408",
+  "nombre": "KHI305(int22) (Renault  - 440)"
+ },
+ {
+  "id": "0409",
+  "nombre": "AD026JH(int10) (Volvo - 380)"
+ },
+ {
+  "id": "0410",
+  "nombre": "HKPH96 (International - ProStar)"
+ },
+ {
+  "id": "0412",
+  "nombre": "DPRL96"
+ },
+ {
+  "id": "0413",
+  "nombre": "GZKH94 (Kenworth -)"
+ },
+ {
+  "id": "0416",
+  "nombre": "MMV754 (Scania - 380)"
+ },
+ {
+  "id": "0417",
+  "nombre": "JXZV75 (MAN - 28.480)"
+ },
+ {
+  "id": "0421",
+  "nombre": "GRG339 (Scania - 360)"
+ },
+ {
+  "id": "0424",
+  "nombre": "AF357UM (Mercedes Benz - 1726)"
+ },
+ {
+  "id": "0425",
+  "nombre": "NMN475 (Iveco - 410)"
+ },
+ {
+  "id": "0426",
+  "nombre": "JOW746(int15) (Scania - G380)"
+ },
+ {
+  "id": "0430",
+  "nombre": "HSGD48CH02 (Scania - R440)"
+ },
+ {
+  "id": "0431",
+  "nombre": "HSGD51CH05 (Scania - R440)"
+ },
+ {
+  "id": "0436",
+  "nombre": "KYB292(int17) (Scania - G380)"
+ },
+ {
+  "id": "0437",
+  "nombre": "JN4290 (SemiFrio)"
+ },
+ {
+  "id": "0438",
+  "nombre": "JG6245 (SemiFrio)"
+ },
+ {
+  "id": "0444",
+  "nombre": "HXFT64 (SemiFrio)"
+ },
+ {
+  "id": "0445",
+  "nombre": "JJ4930 (SemiFrio)"
+ },
+ {
+  "id": "0447",
+  "nombre": "ISQ077(int02) (Scania - G340)"
+ },
+ {
+  "id": "0451",
+  "nombre": "AF556AA(int37) (Volvo - 420)"
+ },
+ {
+  "id": "0452",
+  "nombre": "RXHV35 (Scania - R500)"
+ },
+ {
+  "id": "0454",
+  "nombre": "HFTP94 (MAN - 28.440)"
+ },
+ {
+  "id": "0455",
+  "nombre": "JG6246 (SemiFrio)"
+ },
+ {
+  "id": "0457",
+  "nombre": "JP4811 (SemiFrio)"
+ },
+ {
+  "id": "0458",
+  "nombre": "JL8481 (SemiFrio)"
+ },
+ {
+  "id": "0459",
+  "nombre": "IVO154(int19) (Scania - G380)"
+ },
+ {
+  "id": "0466",
+  "nombre": "LWZ840(int25) (Scania - R380)"
+ },
+ {
+  "id": "0047",
+  "nombre": "GVI944 (Scania - 320)"
+ },
+ {
+  "id": "0473",
+  "nombre": "IRH679"
+ },
+ {
+  "id": "0478",
+  "nombre": "AF223EK(int12) (Scania - G410)"
+ },
+ {
+  "id": "0481",
+  "nombre": "AE553QB"
+ },
+ {
+  "id": "0482",
+  "nombre": "Tanque Fijo Mena"
+ },
+ {
+  "id": "0490",
+  "nombre": "AF223EJ(int11) (Scania - R410)"
+ },
+ {
+  "id": "0516",
+  "nombre": "IYQ863(int20) (Scania - G340)"
+ },
+ {
+  "id": "0517",
+  "nombre": "AC624ZS (Volvo - 540)"
+ },
+ {
+  "id": "0052",
+  "nombre": "TanqueFijo"
+ },
+ {
+  "id": "0528",
+  "nombre": "AF223EG(int04) (Scania - G410)"
+ },
+ {
+  "id": "0529",
+  "nombre": "AF489VN(int36) (Volvo - 420)"
+ },
+ {
+  "id": "0550",
+  "nombre": "HUX281(int34) (Scania - G340)"
+ },
+ {
+  "id": "0552",
+  "nombre": "JC8131(semifrio)"
+ },
+ {
+  "id": "0555",
+  "nombre": "RRVF92 (Scania - R500)"
+ },
+ {
+  "id": "0556",
+  "nombre": "AF323XO"
+ },
+ {
+  "id": "0558",
+  "nombre": "HRH829 (Scania - G380)"
+ },
+ {
+  "id": "0560",
+  "nombre": "AF218OE"
+ },
+ {
+  "id": "0561",
+  "nombre": "JKZ998(int13) (Scania - G380)"
+ },
+ {
+  "id": "0597",
+  "nombre": "KFB379 (Scania - P340)"
+ },
+ {
+  "id": "0599",
+  "nombre": "PWSR67(SemiFrio)"
+ },
+ {
+  "id": "0600",
+  "nombre": "SGXT33 (Scania - R500)"
+ },
+ {
+  "id": "0604",
+  "nombre": "GXM656 (VOLKSWAGEN - 17220)"
+ },
+ {
+  "id": "0606",
+  "nombre": "PWSR66 (SemiFrio)"
+ },
+ {
+  "id": "0608",
+  "nombre": "AB698CO"
+ },
+ {
+  "id": "0610",
+  "nombre": "AF805RV (Mercedes Benz - 1721)"
+ },
+ {
+  "id": "0612",
+  "nombre": "NQF672 (Iveco - 410)"
+ },
+ {
+  "id": "0614",
+  "nombre": "PWSR65 (SemiFrio)"
+ },
+ {
+  "id": "0615",
+  "nombre": "SGXT31 (Scania - R500)"
+ },
+ {
+  "id": "0616",
+  "nombre": "AA426BQ (Iveco - 360)"
+ },
+ {
+  "id": "0617",
+  "nombre": "AE553QC"
+ },
+ {
+  "id": "0618",
+  "nombre": "AD994JB (Iveco - 440)"
+ },
+ {
+  "id": "0619",
+  "nombre": "PBFH69 (Scania - R500)"
+ },
+ {
+  "id": "0620",
+  "nombre": "HMU099 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0621",
+  "nombre": "AE064LL"
+ },
+ {
+  "id": "0622",
+  "nombre": "AF179GL (Renault - 360)"
+ },
+ {
+  "id": "0623",
+  "nombre": "GEK366 (Mercedez Benz - 1634)"
+ },
+ {
+  "id": "0624",
+  "nombre": "AE303GB (Iveco - 440)"
+ },
+ {
+  "id": "0625",
+  "nombre": "SGXT32 (Scania - R500)"
+ },
+ {
+  "id": "0626",
+  "nombre": "AF633RW (Scania - R500)"
+ },
+ {
+  "id": "0627",
+  "nombre": "NOJ133 (Scania - G360)"
+ },
+ {
+  "id": "0628",
+  "nombre": "AE303HA (Iveco - 360)"
+ },
+ {
+  "id": "0629",
+  "nombre": "SPTJ21 (Scania - R500)"
+ },
+ {
+  "id": "0630",
+  "nombre": "OSS961 (Volkswagen - 17.250)"
+ },
+ {
+  "id": "0631",
+  "nombre": "AC363MG (Iveco - 440)"
+ },
+ {
+  "id": "0634",
+  "nombre": "SJPB52CH08 (Scania - R500)"
+ },
+ {
+  "id": "0635",
+  "nombre": "NDF364 (Iveco - 460)"
+ },
+ {
+  "id": "0636",
+  "nombre": "SJPB54CH10 (Scania - R500)"
+ },
+ {
+  "id": "0640",
+  "nombre": "SJPB53CH09 (Scania - R500)"
+ },
+ {
+  "id": "0645",
+  "nombre": "IPZ504 (Iveco - 420)"
+ },
+ {
+  "id": "0648",
+  "nombre": "SJPB51CH07 (Scania - R500)"
+ },
+ {
+  "id": "0658",
+  "nombre": "AF633RX (Scania - R500)"
+ },
+ {
+  "id": "0660",
+  "nombre": "LUN141 (Scania - G340)"
+ },
+ {
+  "id": "0662",
+  "nombre": "AF949WY (Mercedes Benz - 1721)"
+ },
+ {
+  "id": "0666",
+  "nombre": "HJB772 (Iveco - 410)"
+ },
+ {
+  "id": "0677",
+  "nombre": "HGP021 (Volkswagen - 19.320)"
+ },
+ {
+  "id": "0678",
+  "nombre": "AF489UG(int35) (Volvo - FH420)"
+ },
+ {
+  "id": "0682",
+  "nombre": "AE539HZ (Volkswagen - 25.360)"
+ },
+ {
+  "id": "0683",
+  "nombre": "JIX772 (Iveco - 410)"
+ },
+ {
+  "id": "0695",
+  "nombre": "GXYZ61 (Scania - G360)"
+ },
+ {
+  "id": "0696",
+  "nombre": "JHBT67 (Iveco - G400)"
+ },
+ {
+  "id": "0699",
+  "nombre": "AC140AE (Scania - 480)"
+ },
+ {
+  "id": "0007",
+  "nombre": "AA148OB (Mercedes Benz - 1721)"
+ },
+ {
+  "id": "0700",
+  "nombre": "AF137UG (GNC) (Scania - G410)"
+ },
+ {
+  "id": "0717",
+  "nombre": "TanquefijoDipsa"
+ },
+ {
+  "id": "0722",
+  "nombre": "YV5970 (Mercedes Benz - 1938)"
+ },
+ {
+  "id": "0724",
+  "nombre": "AF500ME(GNC) (Scania - R500)"
+ },
+ {
+  "id": "0727",
+  "nombre": "AC363MH (Iveco - 330)"
+ },
+ {
+  "id": "0741",
+  "nombre": "SFPG87 (Scania - R500)"
+ },
+ {
+  "id": "0742",
+  "nombre": "SFPG92 (Scania - R500)"
+ },
+ {
+  "id": "0744",
+  "nombre": "SFPG93 (Scania - R500)"
+ },
+ {
+  "id": "0745",
+  "nombre": "SFPG88 (Scania - R500)"
+ },
+ {
+  "id": "0746",
+  "nombre": "SFPG85 (Scania - R450)"
+ },
+ {
+  "id": "0749",
+  "nombre": "PJJ093 (Iveco - 410)"
+ },
+ {
+  "id": "0751",
+  "nombre": "AA604IC (Volvo - 540)"
+ },
+ {
+  "id": "0752",
+  "nombre": "SFPG89 (Scania - R500)"
+ },
+ {
+  "id": "0753",
+  "nombre": "SFPG90 (Scania - R500)"
+ },
+ {
+  "id": "0755",
+  "nombre": "PIF938 (Volvo - 400)"
+ },
+ {
+  "id": "0766",
+  "nombre": "OWI338 (Scania - R580)"
+ },
+ {
+  "id": "0771",
+  "nombre": "AD585WM (Iveco - 440)"
+ },
+ {
+  "id": "0772",
+  "nombre": "TBGK92 (Renault - T480)"
+ },
+ {
+  "id": "0777",
+  "nombre": "OHF905 (Mercedes Benz - 1614)"
+ },
+ {
+  "id": "0778",
+  "nombre": "IFM601 (Mercedez Benz - Axor 2040)"
+ },
+ {
+  "id": "0783",
+  "nombre": "IFM600"
+ },
+ {
+  "id": "0793",
+  "nombre": "AXH151 (Mercedes Benz - 1218)"
+ },
+ {
+  "id": "0821",
+  "nombre": "AC345DE (Desinsta... (Volkswagen - 17 280)"
+ },
+ {
+  "id": "0822",
+  "nombre": "AD563UE (Desinsta..."
+ },
+ {
+  "id": "0828",
+  "nombre": "AE001XR (Iveco - 440)"
+ },
+ {
+  "id": "0829",
+  "nombre": "AE709XB (Iveco - 440)"
+ },
+ {
+  "id": "0830",
+  "nombre": "AE990FO (Iveco - 440)"
+ },
+ {
+  "id": "0831",
+  "nombre": "DPRL74 (International -)"
+ },
+ {
+  "id": "0844",
+  "nombre": "GGH114 (Volkswagen - 17220)"
+ },
+ {
+  "id": "0845",
+  "nombre": "AF227BK (Iveco - 440)"
+ },
+ {
+  "id": "0846",
+  "nombre": "PWSZ89 (SemiFrio)"
+ },
+ {
+  "id": "0085",
+  "nombre": "PLFL81 (Scania - R500)"
+ },
+ {
+  "id": "0861",
+  "nombre": "AF819RB (Iveco - Tector 170 280)"
+ },
+ {
+  "id": "0862",
+  "nombre": "HKG725 (Ford - Cargo)"
+ },
+ {
+  "id": "0866",
+  "nombre": "JCB4X4 (JCB -  4DX)"
+ },
+ {
+  "id": "0870",
+  "nombre": "SFPG86 (Scania - R450)"
+ },
+ {
+  "id": "0879",
+  "nombre": "HRRT38 (Mack - CVX613)"
+ },
+ {
+  "id": "0886",
+  "nombre": "HKXW14 (International  - ProStar)"
+ },
+ {
+  "id": "0889",
+  "nombre": "OST039 (Iveco - Stralis 410)"
+ },
+ {
+  "id": "0896",
+  "nombre": "SXXV17 (Mercedez Benz - 2548)"
+ },
+ {
+  "id": "0898",
+  "nombre": "AF387CW (Freightliner -)"
+ },
+ {
+  "id": "0901",
+  "nombre": "SXXV29 (Mercedez Benz - 2548)"
+ },
+ {
+  "id": "0902",
+  "nombre": "SRYR55 (Renault - 520)"
+ },
+ {
+  "id": "0903",
+  "nombre": "SDKZ64 (Renault - 520)"
+ },
+ {
+  "id": "0906",
+  "nombre": "OVL166 (Iveco - 410)"
+ },
+ {
+  "id": "0907",
+  "nombre": "GCSC96 (Renault - 520)"
+ },
+ {
+  "id": "0908",
+  "nombre": "SRYR56 (Renault - 520)"
+ },
+ {
+  "id": "0909",
+  "nombre": "RLWB45 (Renault - 520)"
+ },
+ {
+  "id": "0913",
+  "nombre": "RFZV13 (Renault - 520)"
+ },
+ {
+  "id": "0917",
+  "nombre": "SPKP91 (Renault - 480)"
+ },
+ {
+  "id": "0918",
+  "nombre": "SXXV11 (Mercedez Benz - 2548)"
+ },
+ {
+  "id": "0921",
+  "nombre": "AG411MZ (Mercedez Benz - 1721)"
+ },
+ {
+  "id": "0924",
+  "nombre": "RFZV12 (Renault - 520)"
+ },
+ {
+  "id": "0925",
+  "nombre": "SWTB72 (Renault - 480)"
+ },
+ {
+  "id": "0926",
+  "nombre": "SWTB38 (Renault - 480)"
+ },
+ {
+  "id": "0927",
+  "nombre": "SPKP65 (Renault - 480)"
+ },
+ {
+  "id": "0928",
+  "nombre": "SDKZ68 (Renault - 520)"
+ },
+ {
+  "id": "0947",
+  "nombre": "CRDC80 (Scania - P310)"
+ },
+ {
+  "id": "0954",
+  "nombre": "GCSC92 (Renault - 520)"
+ },
+ {
+  "id": "LX75",
+  "nombre": "RVD277 (Mercedes Benz - 1932)"
+ },
+ {
+  "id": "MC41",
+  "nombre": "AF488GU (Iveco - Tector)"
+ },
+ {
+  "id": "MC63",
+  "nombre": "DOF530 (Ford - 1722)"
+ },
+ {
+  "id": "ML22",
+  "nombre": "AE861HF (Mercedez Benz - Atego)"
+ },
+ {
+  "id": "MM93",
+  "nombre": "AE132VY (Mercedez Benz - 1726)"
+ },
+ {
+  "id": "MP85",
+  "nombre": "AF133TV (Iveco - 170E28)"
+ },
+ {
+  "id": "MP86",
+  "nombre": "AF016FQ (Iveco - Tector)"
+ },
+ {
+  "id": "MS14",
+  "nombre": "AZG751 (Ford - 1722)"
+ },
+ {
+  "id": "MS15",
+  "nombre": "OUU961 (Ford - 1722)"
+ },
+ {
+  "id": "MS17",
+  "nombre": "PLF920 (Ford - 1722)"
+ },
+ {
+  "id": "MS18",
+  "nombre": "JXT696 (Ford - 1722)"
+ },
+ {
+  "id": "MS19",
+  "nombre": "FDR022 (Ford - 1722)"
+ },
+ {
+  "id": "MW29",
+  "nombre": "AE132VX (Mercedez Benz - Atego)"
+ },
+ {
+  "id": "MX70",
+  "nombre": "YW4871 (Iveco - 380)"
+ },
+ {
+  "id": "NA45",
+  "nombre": "DVZ726 (Mercedes Benz - 1632)"
+ },
+ {
+  "id": "NB59",
+  "nombre": "AH616WW (Iveco - 360)"
+ },
+ {
+  "id": "NE15",
+  "nombre": "AF571GT (Iveco - 170E30)"
+ },
+ {
+  "id": "NE30",
+  "nombre": "LAM086 (Scania - P340)"
+ },
+ {
+  "id": "NF68",
+  "nombre": "HBP565 (Scania - P340)"
+ },
+ {
+  "id": "1143",
+  "nombre": "AG069UR (semi fri..."
+ },
+ {
+  "id": "0118",
+  "nombre": "AD985AX(SemiFrio)"
+ },
+ {
+  "id": "0128",
+  "nombre": "AD985AY(SemiFrio)"
+ },
+ {
+  "id": "0212",
+  "nombre": "AE368ZA(SemiFrio)"
+ },
+ {
+  "id": "0216",
+  "nombre": "ENE999(SemiFrio)"
+ },
+ {
+  "id": "0241",
+  "nombre": "AE698LC(SemiFrio)"
+ },
+ {
+  "id": "0245",
+  "nombre": "AE698NG(SemiFrio)"
+ },
+ {
+  "id": "0279",
+  "nombre": "JG6247(SemiFrio)"
+ },
+ {
+  "id": "0284",
+  "nombre": "AE737XF(SemiFrio)"
+ },
+ {
+  "id": "0332",
+  "nombre": "AE792YH(SemiFrio)"
+ },
+ {
+  "id": "0342",
+  "nombre": "FDZ720"
+ },
+ {
+  "id": "0037",
+  "nombre": "PJR115(SemiFrio)"
+ },
+ {
+  "id": "0041",
+  "nombre": "PJR116(SemiFrio)"
+ },
+ {
+  "id": "0422",
+  "nombre": "AF158MS(SemiFrio)"
+ },
+ {
+  "id": "0423",
+  "nombre": "AF158MV(SemiFrio)"
+ },
+ {
+  "id": "0439",
+  "nombre": "AF158MT(SemiFrio)"
+ },
+ {
+  "id": "0058",
+  "nombre": "PJR117(SemiFrio)"
+ },
+ {
+  "id": "0073",
+  "nombre": "PJR118(SemiFrio)"
+ },
+ {
+  "id": "0087",
+  "nombre": "PJR119(SemiFrio)"
+ },
+ {
+  "id": "0877",
+  "nombre": "Tanque Fijo Finca"
+ },
+ {
+  "id": "0880",
+  "nombre": "Tractor Fiat 500"
+ },
+ {
+  "id": "0881",
+  "nombre": "Tractor Ford 5630 (Ford - 5630)"
+ },
+ {
+  "id": "0882",
+  "nombre": "Retroexcavadora C..."
+ },
+ {
+  "id": "0883",
+  "nombre": "Cargadra XCMG-LW1..."
+ },
+ {
+  "id": "0884",
+  "nombre": "Minicargadora"
+ },
+ {
+  "id": "0885",
+  "nombre": "Ford 7630"
+ },
+ {
+  "id": "0891",
+  "nombre": "IKW647 (Volvo - 420)"
+ },
+ {
+  "id": "0905",
+  "nombre": "HVY242 (Volvo - FH 400)"
+ },
+ {
+  "id": "0919",
+  "nombre": "New Holland 8030 ..."
+ },
+ {
+  "id": "0920",
+  "nombre": "New Holland 8030 ..."
+ },
+ {
+  "id": "1436",
+  "nombre": "AH995JE (Iveco - 480)"
+ },
+ {
+  "id": "0259",
+  "nombre": "FYR300 (Scania - P360)"
+ },
+ {
+  "id": "0267",
+  "nombre": "DPS113 (Scania - 114)"
+ },
+ {
+  "id": "0269",
+  "nombre": "ITE447 (Scania - 420)"
+ },
+ {
+  "id": "0271",
+  "nombre": "AE734PW (Scania - R500)"
+ },
+ {
+  "id": "0274",
+  "nombre": "NTM609 (Volvo - 540)"
+ },
+ {
+  "id": "0275",
+  "nombre": "CWY459 (Scania - 320)"
+ },
+ {
+  "id": "0280",
+  "nombre": "CJX319 (Scania - 360)"
+ },
+ {
+  "id": "0281",
+  "nombre": "FHI775 (Scania - 330)"
+ },
+ {
+  "id": "0298",
+  "nombre": "DTZ665 (Scania - 330)"
+ },
+ {
+  "id": "0428",
+  "nombre": "AF296FP (Scania - R500)"
+ },
+ {
+  "id": "0698",
+  "nombre": "BTR642 (Scania - 113H)"
+ },
+ {
+  "id": "0856",
+  "nombre": "AD616HA (Iveco - 440)"
+ },
+ {
+  "id": "0859",
+  "nombre": "NJE013 (Scania - P360)"
+ },
+ {
+  "id": "0860",
+  "nombre": "AB963IW (Scania - R480)"
+ },
+ {
+  "id": "0963",
+  "nombre": "INT 230 - OSB133 (Mercedez Benz - 1722 59CM)"
+ },
+ {
+  "id": "0219",
+  "nombre": "AB581GA (Iveco - 440)"
+ },
+ {
+  "id": "0277",
+  "nombre": "FMV681"
+ },
+ {
+  "id": "0391",
+  "nombre": "HFSX87 (International - 9200)"
+ },
+ {
+  "id": "0393",
+  "nombre": "HFSX88 (International - 9200)"
+ },
+ {
+  "id": "0400",
+  "nombre": "FXRX57"
+ },
+ {
+  "id": "0406",
+  "nombre": "DRKS19"
+ },
+ {
+  "id": "0411",
+  "nombre": "DPRL41"
+ },
+ {
+  "id": "0601",
+  "nombre": "HHVX60 (Scania - R440)"
+ },
+ {
+  "id": "0441",
+  "nombre": "GRJC37 (SemiFrio)"
+ },
+ {
+  "id": "0456",
+  "nombre": "JP2843 (SemiFrio)"
+ },
+ {
+  "id": "0464",
+  "nombre": "PTXP44 (SemiFrio)"
+ },
+ {
+  "id": "0001",
+  "nombre": "VIGILIA001 (test - test)"
+ },
+ {
+  "id": "1000",
+  "nombre": "INT35 - TSC612 (Mercedez Benz - 1725)"
+ },
+ {
+  "id": "1001",
+  "nombre": "INT60 - IEB124 (Mercedez Benz - 1318)"
+ },
+ {
+  "id": "1003",
+  "nombre": "INT43 - CHQ08 (Case - 865B)"
+ },
+ {
+  "id": "1004",
+  "nombre": "INT25 - TSC610 (Ford  - 7000)"
+ },
+ {
+  "id": "1005",
+  "nombre": "INT63 - IER352 (Mercedes Benz - LL624)"
+ },
+ {
+  "id": "1006",
+  "nombre": "CR44 - IJF065 (Mercedez Benz - 2138)"
+ },
+ {
+  "id": "1007",
+  "nombre": "INT125 - AF986BG (Iveco - Regador)"
+ },
+ {
+  "id": "1008",
+  "nombre": "INT126 - AF986BH (Iveco - Regador)"
+ },
+ {
+  "id": "1009",
+  "nombre": "INT13 - FFA666 (Ford -)"
+ },
+ {
+  "id": "1010",
+  "nombre": "Generador 2 (Prue..."
+ },
+ {
+  "id": "1012",
+  "nombre": "Tanque Fijo Pulso..."
+ },
+ {
+  "id": "1014",
+  "nombre": "AG601SQ (Iveco - Tector 170-280)"
+ },
+ {
+  "id": "1015",
+  "nombre": "INT117 - AG561QZ (VOLKSWAGEN - 17230)"
+ },
+ {
+  "id": "1016",
+  "nombre": "INT94 - AB376GK (Volkswagen -)"
+ },
+ {
+  "id": "1017",
+  "nombre": "INT64 - IGE847 (Ford -)"
+ },
+ {
+  "id": "1019",
+  "nombre": "INT19 - TSG806 (Mercedez Benz -)"
+ },
+ {
+  "id": "1020",
+  "nombre": "INT95 - AB639ZP (Kia - K2500)"
+ },
+ {
+  "id": "1021",
+  "nombre": "INT109 - DSL15 (New Holland  - B95B)"
+ },
+ {
+  "id": "1022",
+  "nombre": "INT5 - EBW817 (Mercedez Benz -)"
+ },
+ {
+  "id": "1023",
+  "nombre": "INT70 - ITM590 (Mercedes Benz - Atego 1725)"
+ },
+ {
+  "id": "1024",
+  "nombre": "INT89 - AA646OK (VOLKSWAGEN -  17230)"
+ },
+ {
+  "id": "1025",
+  "nombre": "INT88 - PHE672 (Iveco - Tector 170E 22)"
+ },
+ {
+  "id": "1026",
+  "nombre": "IGP598 (Agropecua... (Scania -)"
+ },
+ {
+  "id": "1027",
+  "nombre": "INT32 - TSC619 (Mercedes Benz - 1615)"
+ },
+ {
+  "id": "1028",
+  "nombre": "INT81 - MVW426 (Iveco - 170E22)"
+ },
+ {
+  "id": "1029",
+  "nombre": "INT34 - TSC617 (D... (Mercedes Benz - 1215)"
+ },
+ {
+  "id": "1030",
+  "nombre": "AG576VI (Iveco - 280)"
+ },
+ {
+  "id": "1033",
+  "nombre": "INT18 - TSG807 (Mercedes Benz - 1114)"
+ },
+ {
+  "id": "1034",
+  "nombre": "INT82 - NFY656 (Iveco - Tector 170E 22)"
+ },
+ {
+  "id": "1035",
+  "nombre": "INT11 - EOK753 (Ford - F14000)"
+ },
+ {
+  "id": "1036",
+  "nombre": "INT20 - TRG904 (D... (Mercedez Benz - 1114)"
+ },
+ {
+  "id": "1039",
+  "nombre": "INT111 - AD670WI (VOLKSWAGEN - A230)"
+ },
+ {
+  "id": "1040",
+  "nombre": "INT72 - JVK807 (Mercedes Benz - Atego)"
+ },
+ {
+  "id": "1041",
+  "nombre": "INT84 - NFY654"
+ },
+ {
+  "id": "1042",
+  "nombre": "INT66 - IJL473 (Mercedes Benz - Atego 1725)"
+ },
+ {
+  "id": "1043",
+  "nombre": "INT15 - ELD633 (Ford  - 14000)"
+ },
+ {
+  "id": "1046",
+  "nombre": "INT14 - DMW314 (Ford - 14000)"
+ },
+ {
+  "id": "1047",
+  "nombre": "INT83 - NFY658 (Iveco - 170E22)"
+ },
+ {
+  "id": "1048",
+  "nombre": "INT92 - EFP584 (Mercedes Benz - 710)"
+ },
+ {
+  "id": "0105",
+  "nombre": "HHPL70"
+ },
+ {
+  "id": "1050",
+  "nombre": "INT101 - AC269QB (VOLKSWAGEN - 17230)"
+ },
+ {
+  "id": "1051",
+  "nombre": "INT118 - AE898MM (VOLKSWAGEN - 17231)"
+ },
+ {
+  "id": "1052",
+  "nombre": "INT122 - AF421YT (Iveco - Daily)"
+ },
+ {
+  "id": "1053",
+  "nombre": "INT123 - AF421YV (Iveco - Tector)"
+ },
+ {
+  "id": "1054",
+  "nombre": "INT105 - DLS05 (New Holland  - B95B)"
+ },
+ {
+  "id": "1055",
+  "nombre": "INT44 - WB146 (Komatsu - WB146)"
+ },
+ {
+  "id": "1056",
+  "nombre": "INT87 - LW300FN"
+ },
+ {
+  "id": "1057",
+  "nombre": "INT30 - FBE609 (Ford - 14000)"
+ },
+ {
+  "id": "1058",
+  "nombre": "INT141 - EYF13 (Case - 580N)"
+ },
+ {
+  "id": "1062",
+  "nombre": "AC612SW (Iveco - 170E28T)"
+ },
+ {
+  "id": "1064",
+  "nombre": "NHK620 (Iveco - 450E33T)"
+ },
+ {
+  "id": "1065",
+  "nombre": "AA342QS (Mercedez Benz - 1933)"
+ },
+ {
+  "id": "1066",
+  "nombre": "AUE213 (Mercedez Benz - 1620)"
+ },
+ {
+  "id": "1067",
+  "nombre": "AG816ZJ (Volkswagen - 17.280LR)"
+ },
+ {
+  "id": "0107",
+  "nombre": "IOA529(SemiFrio)(..."
+ },
+ {
+  "id": "1071",
+  "nombre": "AE034SY (Desinsta... (Mercedez Benz - 3344)"
+ },
+ {
+  "id": "1093",
+  "nombre": "NSE028 (Desinstal... (Iveco - 450E33T)"
+ },
+ {
+  "id": "1133",
+  "nombre": "JYH922 (Desinstal... (Mercedez Benz - 1634)"
+ },
+ {
+  "id": "1135",
+  "nombre": "FUA539 (Desinstal... (Scania  - 360)"
+ },
+ {
+  "id": "1137",
+  "nombre": "OEA396 (Desinstal... (Volkswagen - 26.260 EC)"
+ },
+ {
+  "id": "1149",
+  "nombre": "IRON ZL30FN (Iron -)"
+ },
+ {
+  "id": "1150",
+  "nombre": "AD180UP (Cambio d... (Ford - Cargo)"
+ },
+ {
+  "id": "1153",
+  "nombre": "AD538NK (Iveco - Tector)"
+ },
+ {
+  "id": "1161",
+  "nombre": "AD180UP (Ford - Cargo)"
+ },
+ {
+  "id": "1182",
+  "nombre": "OJG711 (Desinstal... (Iveco - 55C16)"
+ },
+ {
+  "id": "1183",
+  "nombre": "ERH62 (Motonivela..."
+ },
+ {
+  "id": "1184",
+  "nombre": "DCM89 (Terminador..."
+ },
+ {
+  "id": "1185",
+  "nombre": "AF118FU (Desinsta... (Mercedez Benz -)"
+ },
+ {
+  "id": "1191",
+  "nombre": "RXHT67 (Desinstal... (Scania - R500)"
+ },
+ {
+  "id": "1192",
+  "nombre": "PFYS65 (Scania - R500)"
+ },
+ {
+  "id": "1198",
+  "nombre": "CV25 - IFA617 (Mercedez Benz - 1620)"
+ },
+ {
+  "id": "1199",
+  "nombre": "CV28 - AA500GN (Iveco - Tector)"
+ },
+ {
+  "id": "0120",
+  "nombre": "JN9640(SemiFrio) ..."
+ },
+ {
+  "id": "1200",
+  "nombre": "CC58 - AA500GA (Iveco - Tector)"
+ },
+ {
+  "id": "1202",
+  "nombre": "CR32 - BYX304 (Ford - 14000HD)"
+ },
+ {
+  "id": "1203",
+  "nombre": "CR45 - (Iveco - Eurotech)"
+ },
+ {
+  "id": "1204",
+  "nombre": "CV34 - AF914OY (Iveco - Tector)"
+ },
+ {
+  "id": "1205",
+  "nombre": "CV26 - AA500GC (Iveco - Tector)"
+ },
+ {
+  "id": "1206",
+  "nombre": "INT90 - AB519LK (Iveco - 450E33T)"
+ },
+ {
+  "id": "1210",
+  "nombre": "Generador 67 (Carrier  -)"
+ },
+ {
+  "id": "1212",
+  "nombre": "INT2155 - AA982OY (Mercedez Benz - 2036)"
+ },
+ {
+  "id": "1213",
+  "nombre": "INT876 - AG708YH (Iveco - 480)"
+ },
+ {
+  "id": "1214",
+  "nombre": "INT874 - AG708YG (Iveco - 480)"
+ },
+ {
+  "id": "1219",
+  "nombre": "OVI305 (Volkswagen - 19320)"
+ },
+ {
+  "id": "1220",
+  "nombre": "FXLC72 (Volvo - 420)"
+ },
+ {
+  "id": "0124",
+  "nombre": "JJLH30(JCImprigli..."
+ },
+ {
+  "id": "0125",
+  "nombre": "GHYT22 (desintala..."
+ },
+ {
+  "id": "1251",
+  "nombre": "CV36 - AH169TG (Iveco - 170.210)"
+ },
+ {
+  "id": "1252",
+  "nombre": "CV38 AH169TH (Iveco - 170.280)"
+ },
+ {
+  "id": "1253",
+  "nombre": "CR55 (Foton - 2027)"
+ },
+ {
+  "id": "1254",
+  "nombre": "Retro Sany FBY60 (Sany - BHL75)"
+ },
+ {
+  "id": "1256",
+  "nombre": "CC67 (Foton - 2027)"
+ },
+ {
+  "id": "1258",
+  "nombre": "CC68 (Foton - 2027)"
+ },
+ {
+  "id": "1262",
+  "nombre": "CV37 (Iveco - 170.210)"
+ },
+ {
+  "id": "1263",
+  "nombre": "Camion Cloacal (Foton - 270)"
+ },
+ {
+  "id": "1264",
+  "nombre": "MV86 (Iron - ZL12)"
+ },
+ {
+  "id": "1265",
+  "nombre": "CV29 - AF292BH (Iveco - 170.280)"
+ },
+ {
+  "id": "0127",
+  "nombre": "JH8983(SemiGenera..."
+ },
+ {
+  "id": "1284",
+  "nombre": "CV09 - CAC979 (Ford - 14000HD)"
+ },
+ {
+  "id": "0129",
+  "nombre": "JK1933(SemiGenera..."
+ },
+ {
+  "id": "1296",
+  "nombre": "NXN246 (Desinstal... (Iveco - 410)"
+ },
+ {
+  "id": "1299",
+  "nombre": "AD374YN (Desinsta... (Iveco - 440)"
+ },
+ {
+  "id": "0013",
+  "nombre": "FTA573 (Desinstal..."
+ },
+ {
+  "id": "0130",
+  "nombre": "JN7089(SemiFrio) ..."
+ },
+ {
+  "id": "1303",
+  "nombre": "JWPT12 (Semi Frio... (Carrier  -)"
+ },
+ {
+  "id": "1304",
+  "nombre": "INT285 - AE949VV (Iveco - Hi Way)"
+ },
+ {
+  "id": "0131",
+  "nombre": "HLZB58 (Desinstal..."
+ },
+ {
+  "id": "1313",
+  "nombre": "AE957NE (Desinsta... (Freightliner - Argosy)"
+ },
+ {
+  "id": "1322",
+  "nombre": "NSB855 (Desinstal... (Iveco - 410)"
+ },
+ {
+  "id": "1332",
+  "nombre": "LLWT80 (Desinstal... (Scania - R500)"
+ },
+ {
+  "id": "1341",
+  "nombre": "AH165UF (Desinsta... (Iveco - 440)"
+ },
+ {
+  "id": "1350",
+  "nombre": "KJTG51 (Desinstal... (Scania - R480)"
+ },
+ {
+  "id": "1382",
+  "nombre": "VLFK32 (Scania - R500 Super)"
+ },
+ {
+  "id": "1405",
+  "nombre": "AE425IY - INT09 (Volkswagen - 19.360)"
+ },
+ {
+  "id": "1406",
+  "nombre": "KGBR61 (Scania - R480)"
+ },
+ {
+  "id": "1407",
+  "nombre": "AF613AY (Mercedes Benz - 1729)"
+ },
+ {
+  "id": "1428",
+  "nombre": "TWPX31 C-11 (Scania - R500 / S)"
+ },
+ {
+  "id": "1429",
+  "nombre": "TWPX30 C-10 (Scania - R500 / S)"
+ },
+ {
+  "id": "1430",
+  "nombre": "Tanque TTM"
+ },
+ {
+  "id": "1432",
+  "nombre": "INT392 - AH200PG (Volvo - 540)"
+ },
+ {
+  "id": "1443",
+  "nombre": "AF494TM (Scania - R500)"
+ },
+ {
+  "id": "0015",
+  "nombre": "HDR525 (Desinstal..."
+ },
+ {
+  "id": "0016",
+  "nombre": "ESO887 (Desinstal..."
+ },
+ {
+  "id": "0160",
+  "nombre": "Interno13"
+ },
+ {
+  "id": "0163",
+  "nombre": "JE3635(SemiFrio) ..."
+ },
+ {
+  "id": "0164",
+  "nombre": "JF6045(SemiFrio)(..."
+ },
+ {
+  "id": "0165",
+  "nombre": "JN7088(SemiFrio) ..."
+ },
+ {
+  "id": "0017",
+  "nombre": "NYF399 (Desinstal..."
+ },
+ {
+  "id": "0174",
+  "nombre": "BGTC10 (Desintala..."
+ },
+ {
+  "id": "0175",
+  "nombre": "FXYF50 (Desinstal..."
+ },
+ {
+  "id": "0176",
+  "nombre": "FPLZ88(Vendido)"
+ },
+ {
+  "id": "0178",
+  "nombre": "GJR151 (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0179",
+  "nombre": "HDWS65 (Desinstal..."
+ },
+ {
+  "id": "0018",
+  "nombre": "HLV503(clienteven..."
+ },
+ {
+  "id": "0180",
+  "nombre": "GRFT14(SemiGenera..."
+ },
+ {
+  "id": "0182",
+  "nombre": "HLZB66 (Baja Quem... (Volvo - 460)"
+ },
+ {
+  "id": "0183",
+  "nombre": "LTGJ19 (Desintala..."
+ },
+ {
+  "id": "0188",
+  "nombre": "FXLC72 (Baja)"
+ },
+ {
+  "id": "0190",
+  "nombre": "JWLC29(semis/frio..."
+ },
+ {
+  "id": "0191",
+  "nombre": "FXLC71 (Desinstal..."
+ },
+ {
+  "id": "0196",
+  "nombre": "TEC51"
+ },
+ {
+  "id": "0197",
+  "nombre": "JL6529(SemiFrio) ..."
+ },
+ {
+  "id": "0198",
+  "nombre": "XR5338(bajaporvue..."
+ },
+ {
+  "id": "0002",
+  "nombre": "Test Desarrollo"
+ },
+ {
+  "id": "2000",
+  "nombre": "TWY473"
+ },
+ {
+  "id": "2001",
+  "nombre": "HEV317"
+ },
+ {
+  "id": "2002",
+  "nombre": "TSZS23"
+ },
+ {
+  "id": "2003",
+  "nombre": "TVHZ12"
+ },
+ {
+  "id": "0201",
+  "nombre": "FXLC78(Vendido)"
+ },
+ {
+  "id": "0202",
+  "nombre": "GKYR52 (Desinstal..."
+ },
+ {
+  "id": "0203",
+  "nombre": "FIQ218 (Mercedes Benz -)"
+ },
+ {
+  "id": "0205",
+  "nombre": "HCKZ32(Vendido)"
+ },
+ {
+  "id": "0206",
+  "nombre": "FBW936 (Desinstal... (Mercedes Benz - 1634)"
+ },
+ {
+  "id": "0207",
+  "nombre": "JFTH80"
+ },
+ {
+  "id": "0209",
+  "nombre": "JN8461(SemiFrio)"
+ },
+ {
+  "id": "0213",
+  "nombre": "EIJ249 (Desinstal..."
+ },
+ {
+  "id": "0214",
+  "nombre": "GHYT22(JCImprigli..."
+ },
+ {
+  "id": "0215",
+  "nombre": "BAJA(equipotauque..."
+ },
+ {
+  "id": "0217",
+  "nombre": "EOR321(SemiFrio)(..."
+ },
+ {
+  "id": "0218",
+  "nombre": "FLN439(SemiFrio) ..."
+ },
+ {
+  "id": "0022",
+  "nombre": "HKC793 (Desinstal..."
+ },
+ {
+  "id": "0023",
+  "nombre": "NZB429 (Desinstal..."
+ },
+ {
+  "id": "0231",
+  "nombre": "FYLZ55  (Desinsta..."
+ },
+ {
+  "id": "0233",
+  "nombre": "TEC48"
+ },
+ {
+  "id": "0234",
+  "nombre": "JL8335(SemiFrio)(..."
+ },
+ {
+  "id": "0235",
+  "nombre": "JG9776(SemiFrio)(..."
+ },
+ {
+  "id": "0024",
+  "nombre": "IIK797 (Desinstal..."
+ },
+ {
+  "id": "0247",
+  "nombre": "FNQ716"
+ },
+ {
+  "id": "0251",
+  "nombre": "DQU827 (Vendido) (Mercedez Benz - 1724)"
+ },
+ {
+  "id": "0252",
+  "nombre": "YW8566 (Baja Chip..."
+ },
+ {
+  "id": "0256",
+  "nombre": "LWK176"
+ },
+ {
+  "id": "0257",
+  "nombre": "GV350CEU"
+ },
+ {
+  "id": "0026",
+  "nombre": "HRI850"
+ },
+ {
+  "id": "0263",
+  "nombre": "GEN01"
+ },
+ {
+  "id": "0264",
+  "nombre": "WD7170 (Baja Chip..."
+ },
+ {
+  "id": "0272",
+  "nombre": "AVA029 (Desinstal... (Scania - 113H)"
+ },
+ {
+  "id": "0029",
+  "nombre": "EQH989 (Desinstal..."
+ },
+ {
+  "id": "0294",
+  "nombre": "BPVB76 (Baja Chip..."
+ },
+ {
+  "id": "0299",
+  "nombre": "NYG850 (Desinstal..."
+ },
+ {
+  "id": "0003",
+  "nombre": "TEST-GV310 (fito - 600)"
+ },
+ {
+  "id": "3000",
+  "nombre": "Globaltrans GV310"
+ },
+ {
+  "id": "3001",
+  "nombre": "RINHO"
+ },
+ {
+  "id": "0306",
+  "nombre": "NXG879 (Desinstal..."
+ },
+ {
+  "id": "0308",
+  "nombre": "NXG878 (Desinstal..."
+ },
+ {
+  "id": "0311",
+  "nombre": "HAK878"
+ },
+ {
+  "id": "0032",
+  "nombre": "CRB854"
+ },
+ {
+  "id": "0350",
+  "nombre": "CVSK25 (Baja)"
+ },
+ {
+  "id": "0353",
+  "nombre": "AAJ860(quemado)"
+ },
+ {
+  "id": "0354",
+  "nombre": "LES008"
+ },
+ {
+  "id": "0356",
+  "nombre": "KJE276"
+ },
+ {
+  "id": "0036",
+  "nombre": "CWK061(Interno59) (Scania -)"
+ },
+ {
+  "id": "0369",
+  "nombre": "AD964UA"
+ },
+ {
+  "id": "0371",
+  "nombre": "PHK053"
+ },
+ {
+  "id": "0372",
+  "nombre": "BJC719"
+ },
+ {
+  "id": "0375",
+  "nombre": "TanqueFijo(EBW532..."
+ },
+ {
+  "id": "0383",
+  "nombre": "DPRR44 (Desinstal..."
+ },
+ {
+  "id": "0392",
+  "nombre": "BJCJ68  (Desinsta..."
+ },
+ {
+  "id": "0394",
+  "nombre": "DLSK35 (Desinstal..."
+ },
+ {
+  "id": "0398",
+  "nombre": "FYPB45 (Desinstal..."
+ },
+ {
+  "id": "4000",
+  "nombre": "KCT610 (Iveco - 330)"
+ },
+ {
+  "id": "4001",
+  "nombre": "JZN311 (Iveco - 330)"
+ },
+ {
+  "id": "0415",
+  "nombre": "IPR955(SemiFrio) ..."
+ },
+ {
+  "id": "0418",
+  "nombre": "HWGD57 (Chocado)"
+ },
+ {
+  "id": "0419",
+  "nombre": "BZXB28 (Desisntal..."
+ },
+ {
+  "id": "0042",
+  "nombre": "TGG547"
+ },
+ {
+  "id": "0043",
+  "nombre": "EOW702"
+ },
+ {
+  "id": "0435",
+  "nombre": "FYPB44 (Desinstal..."
+ },
+ {
+  "id": "0044",
+  "nombre": "TEC49 (Desinstala..."
+ },
+ {
+  "id": "0440",
+  "nombre": "JN8241 (SemiFrio)..."
+ },
+ {
+  "id": "0443",
+  "nombre": "PruebaNucleo"
+ },
+ {
+  "id": "0449",
+  "nombre": "DLFS99"
+ },
+ {
+  "id": "0450",
+  "nombre": "JF3253(SemiFrio)"
+ },
+ {
+  "id": "0460",
+  "nombre": "GRCG22(SemiFrio)"
+ },
+ {
+  "id": "0461",
+  "nombre": "GVRG35 (Desinstal... (MAN - 28.360)"
+ },
+ {
+  "id": "0462",
+  "nombre": "HXFT63(SemiFrio) ..."
+ },
+ {
+  "id": "0469",
+  "nombre": "LLN460"
+ },
+ {
+  "id": "0470",
+  "nombre": "PCK145  (Desinsta..."
+ },
+ {
+  "id": "0474",
+  "nombre": "AD875SX (Desinsta..."
+ },
+ {
+  "id": "0475",
+  "nombre": "AC556CD (Desinsta..."
+ },
+ {
+  "id": "0476",
+  "nombre": "AA627ST (Desinsta..."
+ },
+ {
+  "id": "0479",
+  "nombre": "HLD200 (Desinstal..."
+ },
+ {
+  "id": "0483",
+  "nombre": "JK9226 (SemiFrio)..."
+ },
+ {
+  "id": "0485",
+  "nombre": "OZZ598"
+ },
+ {
+  "id": "0491",
+  "nombre": "OUS051"
+ },
+ {
+  "id": "0492",
+  "nombre": "FMO441 (Desinstal..."
+ },
+ {
+  "id": "0495",
+  "nombre": "NVX521 (Desinstal..."
+ },
+ {
+  "id": "0498",
+  "nombre": "PNH467 (Desinstal..."
+ },
+ {
+  "id": "0499",
+  "nombre": "AB398KL (Desinsta..."
+ },
+ {
+  "id": "0500",
+  "nombre": "AC553WJ"
+ },
+ {
+  "id": "0501",
+  "nombre": "OFU770"
+ },
+ {
+  "id": "0503",
+  "nombre": "AA129CZ"
+ },
+ {
+  "id": "0504",
+  "nombre": "PNH473 (Desinstal..."
+ },
+ {
+  "id": "0506",
+  "nombre": "AB475SV (Desinsta..."
+ },
+ {
+  "id": "0507",
+  "nombre": "OWZ393"
+ },
+ {
+  "id": "0508",
+  "nombre": "AC576YO"
+ },
+ {
+  "id": "0051",
+  "nombre": "TEC36 (Desinstala..."
+ },
+ {
+  "id": "0510",
+  "nombre": "AF304WT"
+ },
+ {
+  "id": "0513",
+  "nombre": "AB475TH (Desinsta..."
+ },
+ {
+  "id": "0514",
+  "nombre": "IZN108 (Desinstal... (Scania - G420)"
+ },
+ {
+  "id": "0515",
+  "nombre": "ITE450 (Desinstal..."
+ },
+ {
+  "id": "0518",
+  "nombre": "LCM238 (Desinstal..."
+ },
+ {
+  "id": "0519",
+  "nombre": "LLA869"
+ },
+ {
+  "id": "0520",
+  "nombre": "PCK169 (Desinstal..."
+ },
+ {
+  "id": "0521",
+  "nombre": "LLN461 (Desinstal..."
+ },
+ {
+  "id": "0523",
+  "nombre": "AC067WK"
+ },
+ {
+  "id": "0524",
+  "nombre": "AC576YM (Desinsta..."
+ },
+ {
+  "id": "0525",
+  "nombre": "AB398KK (Desinsta..."
+ },
+ {
+  "id": "0526",
+  "nombre": "LTL641 (Desinstal..."
+ },
+ {
+  "id": "0527",
+  "nombre": "MaquinaSanz(nofac..."
+ },
+ {
+  "id": "0530",
+  "nombre": "OYE471 (Desinstal..."
+ },
+ {
+  "id": "0531",
+  "nombre": "OYD523 (Desinstal..."
+ },
+ {
+  "id": "0532",
+  "nombre": "AB475TI (Desinsta..."
+ },
+ {
+  "id": "0533",
+  "nombre": "OTR981 (Desinstal..."
+ },
+ {
+  "id": "0534",
+  "nombre": "AC576YN"
+ },
+ {
+  "id": "0535",
+  "nombre": "OIX583 (Desinstal... (- 8934071200003518752)"
+ },
+ {
+  "id": "0536",
+  "nombre": "OWG332 (Desinstal..."
+ },
+ {
+  "id": "0537",
+  "nombre": "AB822NS"
+ },
+ {
+  "id": "0538",
+  "nombre": "AB475TG (Desinsta..."
+ },
+ {
+  "id": "0054",
+  "nombre": "LDT110"
+ },
+ {
+  "id": "0540",
+  "nombre": "NZB193 (Desinstal..."
+ },
+ {
+  "id": "0542",
+  "nombre": "LLN463 (Desinstal..."
+ },
+ {
+  "id": "0543",
+  "nombre": "JSG078"
+ },
+ {
+  "id": "0544",
+  "nombre": "AB474SX"
+ },
+ {
+  "id": "0545",
+  "nombre": "PNH470 (Desinstal..."
+ },
+ {
+  "id": "0546",
+  "nombre": "AB475TJ"
+ },
+ {
+  "id": "0547",
+  "nombre": "NZB192 (Desinstal..."
+ },
+ {
+  "id": "0548",
+  "nombre": "OYD518 (Desinstal..."
+ },
+ {
+  "id": "0549",
+  "nombre": "AD213ZJ (Desinsta..."
+ },
+ {
+  "id": "0055",
+  "nombre": "KAV676"
+ },
+ {
+  "id": "0554",
+  "nombre": "PWWL85 (semi) (De..."
+ },
+ {
+  "id": "0056",
+  "nombre": "LDE059"
+ },
+ {
+  "id": "0057",
+  "nombre": "EPA498"
+ },
+ {
+  "id": "0579",
+  "nombre": "PCK155"
+ },
+ {
+  "id": "0580",
+  "nombre": "LVK487(suspendido..."
+ },
+ {
+  "id": "0581",
+  "nombre": "AC576YL"
+ },
+ {
+  "id": "0583",
+  "nombre": "MRI892"
+ },
+ {
+  "id": "0584",
+  "nombre": "LLA868"
+ },
+ {
+  "id": "0592",
+  "nombre": "INT77 - MTZ998 (D... (Iveco - 410)"
+ },
+ {
+  "id": "0595",
+  "nombre": "INT167 - MYV851 (... (Iveco - 410)"
+ },
+ {
+  "id": "0596",
+  "nombre": "EVY156 (Desinstal..."
+ },
+ {
+  "id": "0603",
+  "nombre": "ITE451 (Desinstal..."
+ },
+ {
+  "id": "0061",
+  "nombre": "TEC44"
+ },
+ {
+  "id": "0062",
+  "nombre": "DLR429(vendido)"
+ },
+ {
+  "id": "0063",
+  "nombre": "EKR540"
+ },
+ {
+  "id": "0638",
+  "nombre": "GOF480(UNIDAD VEN..."
+ },
+ {
+  "id": "0064",
+  "nombre": "AGG150"
+ },
+ {
+  "id": "0653",
+  "nombre": "INT123 - MVK402 (... (Iveco - 410)"
+ },
+ {
+  "id": "0656",
+  "nombre": "AE822WM(SemiGener..."
+ },
+ {
+  "id": "0669",
+  "nombre": "HXHC86(semigenera..."
+ },
+ {
+  "id": "0670",
+  "nombre": "HXFS63(semigenera..."
+ },
+ {
+  "id": "0672",
+  "nombre": "TAU_LABORATORIO"
+ },
+ {
+  "id": "0676",
+  "nombre": "PWWL88(SemiGenera..."
+ },
+ {
+  "id": "0681",
+  "nombre": "KWP567 (Agropecua... (Scania - G340)"
+ },
+ {
+  "id": "0687",
+  "nombre": "Camion17 - OXE268... (Mercedes Benz - 1725)"
+ },
+ {
+  "id": "0069",
+  "nombre": "JHY277"
+ },
+ {
+  "id": "0691",
+  "nombre": "LNL402 (Verdenell... (Scania -)"
+ },
+ {
+  "id": "0692",
+  "nombre": "FTG350 (Desinstal... (Scania - R420)"
+ },
+ {
+  "id": "0693",
+  "nombre": "SKPH15"
+ },
+ {
+  "id": "0694",
+  "nombre": "HHSL85"
+ },
+ {
+  "id": "0070",
+  "nombre": "GLJ217"
+ },
+ {
+  "id": "0071",
+  "nombre": "CMS168"
+ },
+ {
+  "id": "0711",
+  "nombre": "CWJH80 (Dsinstala..."
+ },
+ {
+  "id": "0725",
+  "nombre": "DYU278 (Desinstal..."
+ },
+ {
+  "id": "0738",
+  "nombre": "AC511SA (Desintal..."
+ },
+ {
+  "id": "0747",
+  "nombre": "JF6045(SemiFrio) ..."
+ },
+ {
+  "id": "0754",
+  "nombre": "TEC52 (Desinstala..."
+ },
+ {
+  "id": "0757",
+  "nombre": "MWQ484 (Desinstal..."
+ },
+ {
+  "id": "0758",
+  "nombre": "HQI781"
+ },
+ {
+  "id": "0761",
+  "nombre": "INT354 - AF825SQ (Scania - R540)"
+ },
+ {
+  "id": "0765",
+  "nombre": "HCW922  (Desinsta... (Scania - G420)"
+ },
+ {
+  "id": "0767",
+  "nombre": "CUY393 (Desinstal... (SCANIA - 113G)"
+ },
+ {
+  "id": "0769",
+  "nombre": "LGP300 (Grupo Ter... (VOLKSWAGEN - 17-220)"
+ },
+ {
+  "id": "0770",
+  "nombre": "TMF008 (Verdenell... (Scania - 113H)"
+ },
+ {
+  "id": "0773",
+  "nombre": "AF276JQ (desisnta... (Mercedes Benz - 2036)"
+ },
+ {
+  "id": "0776",
+  "nombre": "AB550HQ (Scania - G310)"
+ },
+ {
+  "id": "0779",
+  "nombre": "OJR148 (Desinstal... (SCANIA - G420)"
+ },
+ {
+  "id": "0800",
+  "nombre": "RGO009 (Desinstal... (Iveco - Tector)"
+ },
+ {
+  "id": "0801",
+  "nombre": "KWP568  (Desinsta... (Scania - G400)"
+ },
+ {
+  "id": "0820",
+  "nombre": "HGW676 (Grupo Ter... (Ford - Cargo)"
+ },
+ {
+  "id": "0827",
+  "nombre": "OYK249 (Desinstal... (Iveco -)"
+ },
+ {
+  "id": "0833",
+  "nombre": "JD7810 INT 19 (Te... (John Deere - 7810)"
+ },
+ {
+  "id": "0837",
+  "nombre": "Camion01 - MUM151... (Mercedez Benz - 1725)"
+ },
+ {
+  "id": "0084",
+  "nombre": "WU4234  (Desinsta..."
+ },
+ {
+  "id": "0849",
+  "nombre": "CR46 - AB992VG (Ford - Cargo)"
+ },
+ {
+  "id": "0850",
+  "nombre": "CT02 - AC086ZW (Iveco - C333)"
+ },
+ {
+  "id": "0851",
+  "nombre": "CV32 - AF438DB (Iveco - Tector 170 280)"
+ },
+ {
+  "id": "0852",
+  "nombre": "MV63 - Retro Case (Case - 580N)"
+ },
+ {
+  "id": "0854",
+  "nombre": "AG364UG INT 542 (Scania - G450)"
+ },
+ {
+  "id": "0855",
+  "nombre": "OAE031 INT 115 (D... (Scania - P310)"
+ },
+ {
+  "id": "0857",
+  "nombre": "AF754KE(viejo) (Volvo - FH500)"
+ },
+ {
+  "id": "0858",
+  "nombre": "AF754KE (Volvo - FH500)"
+ },
+ {
+  "id": "0865",
+  "nombre": "Test Tau24"
+ },
+ {
+  "id": "0867",
+  "nombre": "AF754KB (Volvo - FH500)"
+ },
+ {
+  "id": "0878",
+  "nombre": "GDPD40 (Renault - 430)"
+ },
+ {
+  "id": "0897",
+  "nombre": "Generador 1"
+ },
+ {
+  "id": "0910",
+  "nombre": "CV21 - ICH748 (Mercedez Benz - 1636)"
+ },
+ {
+  "id": "0911",
+  "nombre": "CR52 - AF457YP (Iveco - Tector)"
+ },
+ {
+  "id": "0912",
+  "nombre": "CV30 - AF292BL (Iveco - Tector)"
+ },
+ {
+  "id": "0922",
+  "nombre": "CR54 - AF914OJ (Iveco - Tector)"
+ },
+ {
+  "id": "0923",
+  "nombre": "CC65 - AF942YB (Iveco - Tector)"
+ },
+ {
+  "id": "0929",
+  "nombre": "MV80 - Terminador... (Sany -)"
+ },
+ {
+  "id": "0930",
+  "nombre": "MV70 - LW500"
+ },
+ {
+  "id": "0931",
+  "nombre": "MV77 - Aplanadora"
+ },
+ {
+  "id": "0932",
+  "nombre": "MV100 - Retro San... (Sany -)"
+ },
+ {
+  "id": "0933",
+  "nombre": "CC54 - IFA572 (Mercedez Benz - 1725)"
+ },
+ {
+  "id": "0935",
+  "nombre": "CC64 - AF942YE (Iveco - Tector)"
+ },
+ {
+  "id": "0936",
+  "nombre": "CV15 - EQV938 (Ford - F14000)"
+ },
+ {
+  "id": "0937",
+  "nombre": "MV69 - LW300 (XLMG  - LW300KN)"
+ },
+ {
+  "id": "0938",
+  "nombre": "CV33 - AF529MR (Iveco - Tector)"
+ },
+ {
+  "id": "0939",
+  "nombre": "CR51 - AF560RA (Iveco - Tector)"
+ },
+ {
+  "id": "0940",
+  "nombre": "CR53 - AF914OK (Iveco - Tector)"
+ },
+ {
+  "id": "0941",
+  "nombre": "TEC25"
+ },
+ {
+  "id": "0942",
+  "nombre": "CT05 - AF529MQ (Iveco - Tector)"
+ },
+ {
+  "id": "0943",
+  "nombre": "CC52 - ICH747 (Mercedez Benz - Atego 1725)"
+ },
+ {
+  "id": "0944",
+  "nombre": "CT01 - GCA495 (Iveco -)"
+ },
+ {
+  "id": "0945",
+  "nombre": "CV24 - ICH811 (Mercedez Benz - 1317)"
+ },
+ {
+  "id": "0946",
+  "nombre": "CC66 - AF914OT (Iveco - Tector)"
+ },
+ {
+  "id": "0948",
+  "nombre": "CV08 - TBC624 (Mercedez Benz - 1215)"
+ },
+ {
+  "id": "0949",
+  "nombre": "MV65 - Retro Case (Case -)"
+ },
+ {
+  "id": "0950",
+  "nombre": "CR41 - IFA571 (Mercedez Benz - 1318)"
+ },
+ {
+  "id": "0951",
+  "nombre": "CH04 - AG657VC (Iveco - Daily)"
+ },
+ {
+  "id": "0952",
+  "nombre": "Cargadora Sem"
+ },
+ {
+  "id": "0953",
+  "nombre": "Volvo L110f  (Des..."
+ },
+ {
+  "id": "0956",
+  "nombre": "AE941CY (Desinsta... (Scania - R450)"
+ },
+ {
+  "id": "0960",
+  "nombre": "INT 222 - MLE200 ... (Mercedez Benz - O500M)"
+ },
+ {
+  "id": "0962",
+  "nombre": "INT 228 - OHR001 ... (Mercedez Benz - 1722 59CM)"
+ },
+ {
+  "id": "0989",
+  "nombre": "NOQ162 (Desinstal... (Iveco - 410)"
+ },
+ {
+  "id": "0992",
+  "nombre": "AD310AZ (Volkswagen - 17280)"
+ },
+ {
+  "id": "0995",
+  "nombre": "AF656FT (Iveco - 170E28T)"
+ },
+ {
+  "id": "0997",
+  "nombre": "INT78 - 580W (Case - 580)"
+ },
+ {
+  "id": "0998",
+  "nombre": "AG849QJ (Volkswagen - 17230)"
+ },
+ {
+  "id": "0999",
+  "nombre": "AG849QK (VOLKSWAGEN - 17230)"
+ },
+ {
+  "id": "KC87",
+  "nombre": "CUSAT-TEST"
+ },
+ {
+  "id": "MC60",
+  "nombre": "EKB086"
+ },
+ {
+  "id": "MC77",
+  "nombre": "CUSAT-TEST COTO"
+ },
+ {
+  "id": "MD24",
+  "nombre": "AA068UV"
+ },
+ {
+  "id": "MM48",
+  "nombre": "FRWY74 (Renault - 460)"
+ },
+ {
+  "id": "MM53",
+  "nombre": "HSGG86 (Robado) (Renault - 460)"
+ },
+ {
+  "id": "MQ64",
+  "nombre": "HHLZ70 (Renault - 460)"
+ },
+ {
+  "id": "MQ65",
+  "nombre": "LXWL82 (Renault - T460)"
+ },
+ {
+  "id": "MQ70",
+  "nombre": "TKXF87 (REANAULT - PREMIUNS 320)"
+ },
+ {
+  "id": "NA42",
+  "nombre": "HJPJ99 (Baja) (Renault - 460)"
+ },
+ {
+  "id": "ND74",
+  "nombre": "MDQ504 (Scania - G360)"
+ },
+ {
+  "id": "NF37",
+  "nombre": "AA355TS (Thermo King -)"
+ }
+]

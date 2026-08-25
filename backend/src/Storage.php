@@ -1,0 +1,561 @@
+<?php
+
+/**
+ * Capa de datos. Soporta dos motores:
+ *
+ *  - SQLite: default en tu máquina local (nada que instalar).
+ *  - Postgres: se usa solo cuando config['db']['driver'] === 'pgsql', que
+ *    pasa automáticamente cuando hay DATABASE_URL (Railway, al linkear un
+ *    servicio de Postgres — ver config/config.php). Necesario en producción
+ *    porque el disco de un contenedor es efímero: sin una base "de verdad"
+ *    afuera del contenedor, se pierde todo el historial en cada redeploy.
+ *
+ * El resto del sistema (AnomalyDetector, ReportBuilder, los endpoints) no
+ * se entera de cuál de los dos está usando — todos los métodos públicos
+ * son iguales para los dos motores.
+ */
+class Storage
+{
+    private PDO $pdo;
+    private string $driver; // 'sqlite' | 'pgsql'
+
+    public function __construct(array $dbConfig)
+    {
+        $this->driver = $dbConfig['driver'] ?? 'sqlite';
+
+        if ($this->driver === 'pgsql') {
+            $this->conectarPostgres($dbConfig['url']);
+        } else {
+            $this->conectarSqlite($dbConfig['path']);
+        }
+
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        if ($this->needsSchema()) {
+            $archivoEsquema = $this->driver === 'pgsql' ? 'schema_postgres.sql' : 'schema.sql';
+            $schema = file_get_contents(__DIR__ . '/../database/' . $archivoEsquema);
+            $this->pdo->exec($schema);
+        }
+
+        $this->migrarColumnasNuevas();
+        $this->migrarTablaEquipos();
+        $this->migrarTablaEstado();
+    }
+
+    private function conectarSqlite(string $dbPath): void
+    {
+        $dir = dirname($dbPath);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+        $this->pdo = new PDO('sqlite:' . $dbPath);
+        $this->pdo->exec('PRAGMA journal_mode = WAL;');
+    }
+
+    private function conectarPostgres(string $databaseUrl): void
+    {
+        // Railway (y la mayoría de los hostings) dan la conexión como URL
+        // tipo postgres://usuario:pass@host:puerto/basededatos — PDO no
+        // acepta esa URL directo, hay que parsearla a un DSN pgsql:.
+        $partes = parse_url($databaseUrl);
+        if ($partes === false || !isset($partes['host'])) {
+            throw new RuntimeException('DATABASE_URL no es una URL de Postgres válida.');
+        }
+
+        $host = $partes['host'];
+        $puerto = $partes['port'] ?? 5432;
+        $baseDeDatos = ltrim($partes['path'] ?? '', '/');
+        $usuario = $partes['user'] ?? '';
+        $clave = $partes['pass'] ?? '';
+
+        $dsn = "pgsql:host={$host};port={$puerto};dbname={$baseDeDatos}";
+        $this->pdo = new PDO($dsn, $usuario, $clave);
+    }
+
+    private function needsSchema(): bool
+    {
+        if ($this->driver === 'pgsql') {
+            $res = $this->pdo->query("SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'lecturas'");
+        } else {
+            $res = $this->pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='lecturas'");
+        }
+        return $res->fetch() === false;
+    }
+
+    private function columnasDe(string $tabla): array
+    {
+        if ($this->driver === 'pgsql') {
+            $stmt = $this->pdo->prepare("SELECT column_name AS name FROM information_schema.columns WHERE table_name = :tabla");
+            $stmt->execute([':tabla' => $tabla]);
+        } else {
+            $stmt = $this->pdo->query("PRAGMA table_info({$tabla})");
+        }
+        return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'name');
+    }
+
+    private function tablaExiste(string $tabla): bool
+    {
+        if ($this->driver === 'pgsql') {
+            $stmt = $this->pdo->prepare("SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = :tabla");
+        } else {
+            $stmt = $this->pdo->prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = :tabla");
+        }
+        $stmt->execute([':tabla' => $tabla]);
+        return $stmt->fetch() !== false;
+    }
+
+    /**
+     * Migración liviana: si venís de una base creada antes de sumar
+     * tanque1-4/variacion (o de sacar combustible_pct), agrega las columnas
+     * que falten en vez de exigir borrar la base a mano.
+     */
+    private function migrarColumnasNuevas(): void
+    {
+        $tipoReal = $this->driver === 'pgsql' ? 'DOUBLE PRECISION' : 'REAL';
+
+        $columnasLecturas = $this->columnasDe('lecturas');
+        $nuevasLecturas = [
+            'evento'          => 'TEXT',
+            'tanque1_litros'  => $tipoReal,
+            'tanque2_litros'  => $tipoReal,
+            'tanque3_litros'  => $tipoReal,
+            'tanque4_litros'  => $tipoReal,
+            'variacion'       => $tipoReal,
+            'wif'             => 'INTEGER',
+        ];
+        foreach ($nuevasLecturas as $columna => $tipo) {
+            if (!in_array($columna, $columnasLecturas, true)) {
+                $this->pdo->exec("ALTER TABLE lecturas ADD COLUMN {$columna} {$tipo}");
+            }
+        }
+
+        $columnasAnomalias = $this->columnasDe('anomalias');
+        $nuevasAnomalias = [
+            'lat'         => $tipoReal,
+            'lng'         => $tipoReal,
+            'resuelta'    => 'INTEGER NOT NULL DEFAULT 0',
+            'resuelta_en' => 'TEXT',
+        ];
+        foreach ($nuevasAnomalias as $columna => $tipo) {
+            if (!in_array($columna, $columnasAnomalias, true)) {
+                $this->pdo->exec("ALTER TABLE anomalias ADD COLUMN {$columna} {$tipo}");
+            }
+        }
+    }
+
+    /** Si venís de una base creada antes de tener la tabla equipos, la crea. */
+    private function migrarTablaEquipos(): void
+    {
+        if (!$this->tablaExiste('equipos')) {
+            $this->pdo->exec("
+                CREATE TABLE equipos (
+                    id TEXT PRIMARY KEY,
+                    nombre TEXT NOT NULL,
+                    activo INTEGER NOT NULL DEFAULT 1,
+                    creado_en TEXT NOT NULL,
+                    actualizado_en TEXT NOT NULL
+                )
+            ");
+        }
+    }
+
+    /** Si venís de una base creada antes de tener la tabla estado, la crea. */
+    private function migrarTablaEstado(): void
+    {
+        if (!$this->tablaExiste('estado')) {
+            $this->pdo->exec("CREATE TABLE estado (clave TEXT PRIMARY KEY, valor TEXT)");
+        }
+    }
+
+    public function getEstado(string $clave): ?string
+    {
+        $stmt = $this->pdo->prepare('SELECT valor FROM estado WHERE clave = :clave');
+        $stmt->execute([':clave' => $clave]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? $row['valor'] : null;
+    }
+
+    public function setEstado(string $clave, string $valor): void
+    {
+        // ON CONFLICT ... DO UPDATE es sintaxis compartida por SQLite
+        // (3.24+) y Postgres, no hace falta ramificar acá.
+        $stmt = $this->pdo->prepare('
+            INSERT INTO estado (clave, valor) VALUES (:clave, :valor)
+            ON CONFLICT(clave) DO UPDATE SET valor = :valor
+        ');
+        $stmt->execute([':clave' => $clave, ':valor' => $valor]);
+    }
+
+    /**
+     * Trae el próximo lote de equipos a procesar, rotando por toda la
+     * flota entre corridas de cron (no se puede consultar la API de 1000+
+     * equipos en una sola corrida). Guarda el cursor solo, así la próxima
+     * llamada sigue donde dejó la anterior, y vuelve a empezar cuando llega
+     * al final.
+     */
+    public function proximoLoteEquipos(int $tamanoLote): array
+    {
+        $cursor = $this->getEstado('cron_cursor_equipo') ?? '';
+
+        $stmt = $this->pdo->prepare('
+            SELECT id, nombre FROM equipos
+            WHERE activo = 1 AND id > :cursor
+            ORDER BY id ASC
+            LIMIT :limite
+        ');
+        $stmt->bindValue(':cursor', $cursor);
+        $stmt->bindValue(':limite', $tamanoLote, PDO::PARAM_INT);
+        $stmt->execute();
+        $lote = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (count($lote) < $tamanoLote) {
+            $faltan = $tamanoLote - count($lote);
+            $stmt2 = $this->pdo->prepare('
+                SELECT id, nombre FROM equipos
+                WHERE activo = 1
+                ORDER BY id ASC
+                LIMIT :limite
+            ');
+            $stmt2->bindValue(':limite', $faltan, PDO::PARAM_INT);
+            $stmt2->execute();
+            $lote = array_merge($lote, $stmt2->fetchAll(PDO::FETCH_ASSOC));
+        }
+
+        if (!empty($lote)) {
+            $this->setEstado('cron_cursor_equipo', end($lote)['id']);
+        }
+
+        return $lote;
+    }
+
+    /**
+     * Agrega o actualiza un equipo. Es la forma de sumar una instalación
+     * nueva sin tocar código ni redeployar — correr scripts/agregar_equipo.php
+     * (o llamar este método) apenas Emiliano avise de un equipo nuevo.
+     */
+    public function upsertEquipo(string $id, string $nombre): void
+    {
+        $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $stmt = $this->pdo->prepare('
+            INSERT INTO equipos (id, nombre, activo, creado_en, actualizado_en)
+            VALUES (:id, :nombre, 1, :ahora, :ahora)
+            ON CONFLICT(id) DO UPDATE SET nombre = :nombre, actualizado_en = :ahora
+        ');
+        $stmt->execute([':id' => $id, ':nombre' => $nombre, ':ahora' => $ahora]);
+    }
+
+    /** Alta masiva (para importar el excel de la flota de una sola vez). */
+    public function upsertEquiposMasivo(array $equipos): int
+    {
+        $this->pdo->beginTransaction();
+        foreach ($equipos as $eq) {
+            $this->upsertEquipo((string) $eq['id'], (string) $eq['nombre']);
+        }
+        $this->pdo->commit();
+        return count($equipos);
+    }
+
+    public function listarEquipos(bool $soloActivos = true): array
+    {
+        $sql = 'SELECT id, nombre, activo FROM equipos';
+        if ($soloActivos) {
+            $sql .= ' WHERE activo = 1';
+        }
+        $sql .= ' ORDER BY id ASC';
+        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function equipoPorId(string $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, nombre, activo FROM equipos WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    /**
+     * Cantidad de anomalías por equipo en un rango, en UNA sola consulta
+     * agregada — con una flota de más de 1000 equipos, hacer esta cuenta
+     * equipo por equipo en un loop sería carísimo.
+     */
+    public function contarAnomaliasPorEquipo(DateTimeInterface $desde, DateTimeInterface $hasta): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT equipo, COUNT(*) as cantidad
+            FROM anomalias
+            WHERE fecha BETWEEN :desde AND :hasta
+            GROUP BY equipo
+        ');
+        $stmt->execute([
+            ':desde' => $desde->format(DateTimeInterface::ATOM),
+            ':hasta' => $hasta->format(DateTimeInterface::ATOM),
+        ]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[$row['equipo']] = (int) $row['cantidad'];
+        }
+        return $out;
+    }
+
+    /**
+     * Anomalías de TODA la flota (o de un equipo puntual, o de un tipo
+     * puntual) en un rango — una sola consulta, para la pantalla de
+     * "Anomalías" con filtros. Trae también el nombre del equipo (join
+     * simple contra la tabla equipos).
+     */
+    public function anomaliasFlota(DateTimeInterface $desde, DateTimeInterface $hasta, ?string $equipo = null, ?string $tipo = null, int $limite = 500): array
+    {
+        $sql = '
+            SELECT a.*, e.nombre AS equipo_nombre
+            FROM anomalias a
+            LEFT JOIN equipos e ON e.id = a.equipo
+            WHERE a.fecha BETWEEN :desde AND :hasta
+        ';
+        $params = [
+            ':desde' => $desde->format(DateTimeInterface::ATOM),
+            ':hasta' => $hasta->format(DateTimeInterface::ATOM),
+        ];
+        if ($equipo !== null && $equipo !== '') {
+            $sql .= ' AND a.equipo = :equipo';
+            $params[':equipo'] = $equipo;
+        }
+        if ($tipo !== null && $tipo !== '') {
+            $sql .= ' AND a.tipo = :tipo';
+            $params[':tipo'] = $tipo;
+        }
+        $sql .= ' ORDER BY a.fecha DESC LIMIT :limite';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Guarda lecturas normalizadas, ignorando duplicados (equipo+fecha ya existentes). */
+    public function guardarLecturas(array $lecturas): int
+    {
+        // INSERT OR IGNORE es sintaxis de SQLite; el equivalente en
+        // Postgres es ON CONFLICT ... DO NOTHING (usando la misma
+        // restricción UNIQUE(equipo, fecha) que ya está en el esquema).
+        if ($this->driver === 'pgsql') {
+            $sql = '
+                INSERT INTO lecturas
+                    (equipo, fecha, evento, lat, lng, velocidad, combustible_litros,
+                     tanque1_litros, tanque2_litros, tanque3_litros, tanque4_litros,
+                     variacion, odometro_km, motor_encendido, wif)
+                VALUES
+                    (:equipo, :fecha, :evento, :lat, :lng, :velocidad, :combustible_litros,
+                     :tanque1_litros, :tanque2_litros, :tanque3_litros, :tanque4_litros,
+                     :variacion, :odometro_km, :motor_encendido, :wif)
+                ON CONFLICT (equipo, fecha) DO NOTHING
+            ';
+        } else {
+            $sql = '
+                INSERT OR IGNORE INTO lecturas
+                    (equipo, fecha, evento, lat, lng, velocidad, combustible_litros,
+                     tanque1_litros, tanque2_litros, tanque3_litros, tanque4_litros,
+                     variacion, odometro_km, motor_encendido, wif)
+                VALUES
+                    (:equipo, :fecha, :evento, :lat, :lng, :velocidad, :combustible_litros,
+                     :tanque1_litros, :tanque2_litros, :tanque3_litros, :tanque4_litros,
+                     :variacion, :odometro_km, :motor_encendido, :wif)
+            ';
+        }
+        $stmt = $this->pdo->prepare($sql);
+
+        $count = 0;
+        $this->pdo->beginTransaction();
+        foreach ($lecturas as $l) {
+            $tanques = $l['tanques'] ?? [];
+            $stmt->execute([
+                ':equipo'             => $l['equipo'],
+                ':fecha'              => $l['fecha']->format(DateTimeInterface::ATOM),
+                ':evento'             => $l['evento'] ?? null,
+                ':lat'                => $l['lat'],
+                ':lng'                => $l['lng'],
+                ':velocidad'          => $l['velocidad'],
+                ':combustible_litros' => $l['combustible_litros'],
+                ':tanque1_litros'     => $tanques[1] ?? null,
+                ':tanque2_litros'     => $tanques[2] ?? null,
+                ':tanque3_litros'     => $tanques[3] ?? null,
+                ':tanque4_litros'     => $tanques[4] ?? null,
+                ':variacion'          => $l['variacion'] ?? null,
+                ':odometro_km'        => $l['odometro_km'],
+                ':motor_encendido'    => $l['motor_encendido'] ? 1 : 0,
+                ':wif'                => isset($l['wif']) && $l['wif'] !== null ? ($l['wif'] ? 1 : 0) : null,
+            ]);
+            $count += $stmt->rowCount();
+        }
+        $this->pdo->commit();
+
+        return $count;
+    }
+
+    /**
+     * Lecturas de un equipo en un rango, con tipos ya convertidos (fecha como
+     * DateTimeImmutable, numéricos como float/bool). Es lo que usa
+     * AnomalyDetector para poder mirar hacia adelante y hacia atrás de cada
+     * caída de combustible.
+     */
+    public function lecturasTypedEnRango(string $equipo, DateTimeInterface $desde, DateTimeInterface $hasta): array
+    {
+        $rows = $this->lecturasEnRango($equipo, $desde, $hasta);
+
+        return array_map(function (array $r) {
+            return [
+                'equipo'             => $r['equipo'],
+                'fecha'              => new DateTimeImmutable($r['fecha']),
+                'evento'             => $r['evento'] ?? null,
+                'lat'                => $r['lat'] !== null ? (float) $r['lat'] : null,
+                'lng'                => $r['lng'] !== null ? (float) $r['lng'] : null,
+                'velocidad'          => (float) $r['velocidad'],
+                'combustible_litros' => $r['combustible_litros'] !== null ? (float) $r['combustible_litros'] : null,
+                'tanques' => [
+                    1 => isset($r['tanque1_litros']) && $r['tanque1_litros'] !== null ? (float) $r['tanque1_litros'] : null,
+                    2 => isset($r['tanque2_litros']) && $r['tanque2_litros'] !== null ? (float) $r['tanque2_litros'] : null,
+                    3 => isset($r['tanque3_litros']) && $r['tanque3_litros'] !== null ? (float) $r['tanque3_litros'] : null,
+                    4 => isset($r['tanque4_litros']) && $r['tanque4_litros'] !== null ? (float) $r['tanque4_litros'] : null,
+                ],
+                'variacion'          => isset($r['variacion']) && $r['variacion'] !== null ? (float) $r['variacion'] : null,
+                'odometro_km'        => $r['odometro_km'] !== null ? (float) $r['odometro_km'] : null,
+                'motor_encendido'    => (bool) $r['motor_encendido'],
+                'wif'                => isset($r['wif']) && $r['wif'] !== null ? (bool) $r['wif'] : null,
+            ];
+        }, $rows);
+    }
+
+    public function guardarAnomalia(array $a): int
+    {
+        $stmt = $this->pdo->prepare('
+            INSERT INTO anomalias (equipo, fecha, tipo, detalle, litros_perdidos, z_score, lat, lng, alertado, creado_en)
+            VALUES (:equipo, :fecha, :tipo, :detalle, :litros_perdidos, :z_score, :lat, :lng, 0, :creado_en)
+        ');
+        $stmt->execute([
+            ':equipo'          => $a['equipo'],
+            ':fecha'           => $a['fecha']->format(DateTimeInterface::ATOM),
+            ':tipo'            => $a['tipo'],
+            ':detalle'         => $a['detalle'],
+            ':litros_perdidos' => $a['litros_perdidos'],
+            ':z_score'         => $a['z_score'],
+            ':lat'             => $a['lat'] ?? null,
+            ':lng'             => $a['lng'] ?? null,
+            ':creado_en'       => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+        ]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /** Evita alertar dos veces la misma anomalía (mismo equipo+fecha+tipo). */
+    public function anomaliaYaRegistrada(string $equipo, DateTimeInterface $fecha, string $tipo): bool
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT id FROM anomalias WHERE equipo = :equipo AND fecha = :fecha AND tipo = :tipo LIMIT 1
+        ');
+        $stmt->execute([
+            ':equipo' => $equipo,
+            ':fecha'  => $fecha->format(DateTimeInterface::ATOM),
+            ':tipo'   => $tipo,
+        ]);
+        return $stmt->fetch() !== false;
+    }
+
+    public function marcarAlertada(int $anomaliaId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE anomalias SET alertado = 1 WHERE id = :id');
+        $stmt->execute([':id' => $anomaliaId]);
+    }
+
+    /**
+     * Marca anomalías como resueltas — se llama cuando alguien descarga o
+     * manda el PDF de un informe que las incluye. Es lo que hace bajar el
+     * contador/alarma del panel: mientras no se "resuelvan" (con un PDF
+     * generado), cuentan como pendientes.
+     */
+    public function marcarAnomaliasResueltas(array $ids): int
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+        $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("
+            UPDATE anomalias SET resuelta = 1, resuelta_en = ?
+            WHERE id IN ({$placeholders}) AND resuelta = 0
+        ");
+        $stmt->execute(array_merge([$ahora], array_map('intval', $ids)));
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Marca como resueltas TODAS las anomalías de un equipo dentro de un
+     * rango — se usa cuando se descarga el PDF de un informe (el PDF
+     * incluye "las anomalías del período", no IDs puntuales elegidos a
+     * mano, así que resolvemos por rango).
+     */
+    public function marcarResueltasPorEquipoYRango(string $equipo, DateTimeInterface $desde, DateTimeInterface $hasta): int
+    {
+        $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $stmt = $this->pdo->prepare('
+            UPDATE anomalias SET resuelta = 1, resuelta_en = :ahora
+            WHERE equipo = :equipo AND fecha BETWEEN :desde AND :hasta AND resuelta = 0
+        ');
+        $stmt->execute([
+            ':ahora'  => $ahora,
+            ':equipo' => $equipo,
+            ':desde'  => $desde->format(DateTimeInterface::ATOM),
+            ':hasta'  => $hasta->format(DateTimeInterface::ATOM),
+        ]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Cantidad total de anomalías PENDIENTES (no resueltas) en toda la
+     * flota — lo que muestra la alarma/badge fija en la barra superior del
+     * panel. No se filtra por período: una anomalía sigue "pendiente"
+     * hasta que alguien la resuelve, sin importar cuándo pasó.
+     */
+    public function contarAnomaliasPendientesGlobal(): int
+    {
+        $stmt = $this->pdo->query('SELECT COUNT(*) as cantidad FROM anomalias WHERE resuelta = 0');
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int) ($row['cantidad'] ?? 0);
+    }
+
+    public function anomaliasPendientesDeAlerta(): array
+    {
+        $stmt = $this->pdo->query('SELECT * FROM anomalias WHERE alertado = 0 ORDER BY fecha ASC');
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function anomaliasEnRango(string $equipo, DateTimeInterface $desde, DateTimeInterface $hasta): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT * FROM anomalias
+            WHERE equipo = :equipo AND fecha BETWEEN :desde AND :hasta
+            ORDER BY fecha ASC
+        ');
+        $stmt->execute([
+            ':equipo' => $equipo,
+            ':desde'  => $desde->format(DateTimeInterface::ATOM),
+            ':hasta'  => $hasta->format(DateTimeInterface::ATOM),
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function lecturasEnRango(string $equipo, DateTimeInterface $desde, DateTimeInterface $hasta): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT * FROM lecturas
+            WHERE equipo = :equipo AND fecha BETWEEN :desde AND :hasta
+            ORDER BY fecha ASC
+        ');
+        $stmt->execute([
+            ':equipo' => $equipo,
+            ':desde'  => $desde->format(DateTimeInterface::ATOM),
+            ':hasta'  => $hasta->format(DateTimeInterface::ATOM),
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}

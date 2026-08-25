@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preciso · Anomalías</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">PRECISO <span>· Informes</span></div>
+  <nav>
+    <a href="index.html">Panel</a>
+    <a href="anomalias.html" class="active">
+      Anomalías 
+      <span id="badgeAnomalias" class="badge-alarma"></span>
+    </a>
+  </nav>
+</div>
+
+<div class="container">
+  <h1 class="page-title">Anomalías de la flota</h1>
+  <p class="page-subtitle">Filtrá por equipo, tipo, y ventana de tiempo</p>
+
+  <div id="bannerSimulado" class="simulado-banner hidden">
+    ⚠️ Mostrando datos SIMULADOS — la API real de TTM está temporalmente fuera de servicio.
+  </div>
+
+  <div class="card filtros-card">
+    <div class="filtros-grid">
+      <div class="filtro-campo">
+        <label for="buscarEquipo">Equipo</label>
+        <input type="text" id="buscarEquipo" class="input-buscar" placeholder="Todos los equipos — buscar por patente o ID…" autocomplete="off">
+        <div id="sugerenciasEquipo" class="sugerencias hidden"></div>
+        <input type="hidden" id="equipoIdSeleccionado" value="">
+      </div>
+      <div class="filtro-campo">
+        <label for="filtroTipo">Tipo</label>
+        <select id="filtroTipo">
+          <option value="">Todos los tipos</option>
+          <option value="descarga_detenido">Descarga detenido</option>
+          <option value="caida_instantanea">Caída instantánea</option>
+          <option value="consumo_anomalo">Consumo anómalo</option>
+          <option value="agua_combustible">Agua en combustible</option>
+          <option value="ralenti">Ralentí</option>
+        </select>
+      </div>
+      <div class="filtro-campo">
+        <label for="filtroDias">Período</label>
+        <select id="filtroDias">
+          <option value="1">Último día</option>
+          <option value="7" selected>Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+        </select>
+      </div>
+      <div class="filtro-campo filtro-boton">
+        <button id="btnFiltrar" class="btn" type="button">Filtrar</button>
+        <button id="btnLimpiar" class="btn secondary" type="button">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading-state">Cargando anomalías…</div>
+  <div id="error" class="error-state hidden"></div>
+
+  <div id="contenido" class="hidden">
+    <p class="page-subtitle" id="resumenResultados"></p>
+    
+    <!-- Bloques tipo KPI -->
+    <div class="grid grid-3" id="kpiStats" style="margin-bottom: 20px;"></div>
+
+    <div class="card">
+      <div id="tablaAnomalias"></div>
+    </div>
+  </div>
+
+  <p class="footer-note">Preciso · Módulo de informes y detección de anomalías — desarrollado por Puma Code</p>
+</div>
+
+<script src="assets/js/config.php"></script>
+<script src="assets/js/badge.js"></script>
+<script src="assets/js/anomalias.js"></script>
+</body>
+</html>

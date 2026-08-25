@@ -1,0 +1,4 @@
+.git
+.env
+storage/*.sqlite
+storage/*.sqlite-journal
