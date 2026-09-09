@@ -45,6 +45,17 @@ CREATE TABLE IF NOT EXISTS equipos (
     id TEXT PRIMARY KEY,           -- id del equipo tal como lo espera la API de TTM
     nombre TEXT NOT NULL,          -- patente / nombre para mostrar
     activo INTEGER NOT NULL DEFAULT 1,
+    -- Campos que trae la API real de equipos de Emiliano (get_devices.php,
+    -- confirmada 26/08/2026). 'estado_raw' guarda el texto tal cual
+    -- (ACTIVO/INACTIVO/SUSPENDIDO) — 'activo' arriba es la versión
+    -- simplificada que usa el resto del sistema para decidir si lo
+    -- monitorea o no (SUSPENDIDO cuenta como inactivo para nosotros).
+    cliente TEXT,
+    estado_raw TEXT,
+    tipo TEXT,
+    marca TEXT,
+    modelo TEXT,
+    capacidad_litros REAL,         -- capacidad del tanque, si la API la tiene cargada (0 = sin dato)
     creado_en TEXT NOT NULL,
     actualizado_en TEXT NOT NULL
 );

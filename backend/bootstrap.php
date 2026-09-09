@@ -15,6 +15,8 @@ require_once BASE_PATH . '/src/Env.php';
 require_once BASE_PATH . '/src/ApiClient.php';
 require_once BASE_PATH . '/src/SimulatedApiClient.php';
 require_once BASE_PATH . '/src/DataNormalizer.php';
+require_once BASE_PATH . '/src/DevicesApiClient.php';
+require_once BASE_PATH . '/src/DevicesNormalizer.php';
 require_once BASE_PATH . '/src/Storage.php';
 require_once BASE_PATH . '/src/AnomalyDetector.php';
 require_once BASE_PATH . '/src/ReportBuilder.php';

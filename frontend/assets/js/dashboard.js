@@ -42,7 +42,9 @@ function onBuscar(e) {
     return;
   }
   const filtrados = TODOS_LOS_EQUIPOS.filter(eq =>
-    eq.nombre.toLowerCase().includes(q) || eq.id.toLowerCase().includes(q)
+    eq.nombre.toLowerCase().includes(q) ||
+    eq.id.toLowerCase().includes(q) ||
+    (eq.cliente && eq.cliente.toLowerCase().includes(q))
   );
   renderLista(filtrados, q);
 }
@@ -87,6 +89,7 @@ function renderLista(equipos, busqueda) {
         <div class="equipo-nombre">${escapeHtml(eq.nombre)}</div>
         <div class="equipo-id">
           Equipo ${escapeHtml(eq.id)}
+          ${eq.cliente ? `· ${escapeHtml(eq.cliente)}` : ''}
           ${eq.anomalias_30d > 0 ? `· <span style="color:var(--color-danger); font-weight:700;">${eq.anomalias_30d} anomalía(s)</span>` : ''}
         </div>
       </div>

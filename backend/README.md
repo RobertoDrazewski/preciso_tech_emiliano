@@ -165,10 +165,12 @@ Pensado como solución puntual mientras no estén los mails automáticos armados
 (sección 3, "Generación automática de informes y alertas") — el día que eso ande,
 el PDF puede seguir sirviendo para mandar algo manual cuando haga falta.
 
-Nota técnica: el mapa usa tiles de CARTO en vez de OpenStreetMap directo — mismo
-ajuste que ya hiciste en Mendozapp, necesario para que `html2canvas` pueda
-capturar el mapa sin problemas de CORS (con OSM directo, la captura del mapa
-queda en blanco).
+Nota técnica: el mapa usa tiles satelitales de Esri (World Imagery + capas de
+referencia de calles y nombres de lugares, para vista híbrida) en vez de
+OpenStreetMap directo — necesario para que `html2canvas` pueda capturar el mapa
+sin problemas de CORS (con OSM directo, la captura del mapa queda en blanco).
+Antes se usaba CARTO, pero empezó a pedir API key en septiembre/2026 y se
+reemplazó — Esri no pide key nunca para este uso.
 
 ---
 

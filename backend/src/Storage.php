@@ -37,9 +37,9 @@ class Storage
             $this->pdo->exec($schema);
         }
 
-        $this->migrarColumnasNuevas();
         $this->migrarTablaEquipos();
         $this->migrarTablaEstado();
+        $this->migrarColumnasNuevas();
     }
 
     private function conectarSqlite(string $dbPath): void
@@ -141,6 +141,22 @@ class Storage
                 $this->pdo->exec("ALTER TABLE anomalias ADD COLUMN {$columna} {$tipo}");
             }
         }
+
+        // Campos que trae la API real de equipos de Emiliano (get_devices.php).
+        $columnasEquipos = $this->columnasDe('equipos');
+        $nuevasEquipos = [
+            'cliente'           => 'TEXT',
+            'estado_raw'        => 'TEXT',
+            'tipo'              => 'TEXT',
+            'marca'             => 'TEXT',
+            'modelo'            => 'TEXT',
+            'capacidad_litros'  => $tipoReal,
+        ];
+        foreach ($nuevasEquipos as $columna => $tipo) {
+            if (!in_array($columna, $columnasEquipos, true)) {
+                $this->pdo->exec("ALTER TABLE equipos ADD COLUMN {$columna} {$tipo}");
+            }
+        }
     }
 
     /** Si venís de una base creada antes de tener la tabla equipos, la crea. */
@@ -232,24 +248,50 @@ class Storage
      * Agrega o actualiza un equipo. Es la forma de sumar una instalación
      * nueva sin tocar código ni redeployar — correr scripts/agregar_equipo.php
      * (o llamar este método) apenas Emiliano avise de un equipo nuevo.
+     *
+     * $extra es opcional (compatibilidad con el alta manual de antes, que
+     * solo tenía id+nombre) — cuando viene de la API de equipos de Emiliano
+     * trae: cliente, estado_raw (ACTIVO/INACTIVO/SUSPENDIDO), tipo, marca,
+     * modelo, capacidad_litros.
      */
-    public function upsertEquipo(string $id, string $nombre): void
+    public function upsertEquipo(string $id, string $nombre, array $extra = []): void
     {
         $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+
+        // SUSPENDIDO cuenta como inactivo para nosotros — no tiene sentido
+        // seguir consultando la API por un equipo que TTM tiene suspendido.
+        $estadoRaw = $extra['estado_raw'] ?? null;
+        $activo = $estadoRaw === null ? 1 : ($estadoRaw === 'ACTIVO' ? 1 : 0);
+
         $stmt = $this->pdo->prepare('
-            INSERT INTO equipos (id, nombre, activo, creado_en, actualizado_en)
-            VALUES (:id, :nombre, 1, :ahora, :ahora)
-            ON CONFLICT(id) DO UPDATE SET nombre = :nombre, actualizado_en = :ahora
+            INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, creado_en, actualizado_en)
+            VALUES (:id, :nombre, :activo, :cliente, :estado_raw, :tipo, :marca, :modelo, :capacidad_litros, :ahora, :ahora)
+            ON CONFLICT(id) DO UPDATE SET
+                nombre = :nombre, activo = :activo, cliente = :cliente, estado_raw = :estado_raw,
+                tipo = :tipo, marca = :marca, modelo = :modelo, capacidad_litros = :capacidad_litros,
+                actualizado_en = :ahora
         ');
-        $stmt->execute([':id' => $id, ':nombre' => $nombre, ':ahora' => $ahora]);
+        $stmt->execute([
+            ':id'                => $id,
+            ':nombre'            => $nombre,
+            ':activo'            => $activo,
+            ':cliente'           => $extra['cliente'] ?? null,
+            ':estado_raw'        => $estadoRaw,
+            ':tipo'              => $extra['tipo'] ?? null,
+            ':marca'             => $extra['marca'] ?? null,
+            ':modelo'            => $extra['modelo'] ?? null,
+            ':capacidad_litros'  => $extra['capacidad_litros'] ?? null,
+            ':ahora'             => $ahora,
+        ]);
     }
 
-    /** Alta masiva (para importar el excel de la flota de una sola vez). */
+    /** Alta masiva (para importar el excel de la flota, o sincronizar desde la API de equipos). */
     public function upsertEquiposMasivo(array $equipos): int
     {
         $this->pdo->beginTransaction();
         foreach ($equipos as $eq) {
-            $this->upsertEquipo((string) $eq['id'], (string) $eq['nombre']);
+            $extra = array_intersect_key($eq, array_flip(['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros']));
+            $this->upsertEquipo((string) $eq['id'], (string) $eq['nombre'], $extra);
         }
         $this->pdo->commit();
         return count($equipos);
@@ -257,7 +299,7 @@ class Storage
 
     public function listarEquipos(bool $soloActivos = true): array
     {
-        $sql = 'SELECT id, nombre, activo FROM equipos';
+        $sql = 'SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros FROM equipos';
         if ($soloActivos) {
             $sql .= ' WHERE activo = 1';
         }
@@ -267,7 +309,7 @@ class Storage
 
     public function equipoPorId(string $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, nombre, activo FROM equipos WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros FROM equipos WHERE id = :id LIMIT 1');
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;

@@ -48,6 +48,12 @@ CREATE TABLE IF NOT EXISTS equipos (
     id TEXT PRIMARY KEY,
     nombre TEXT NOT NULL,
     activo INTEGER NOT NULL DEFAULT 1,
+    cliente TEXT,
+    estado_raw TEXT,
+    tipo TEXT,
+    marca TEXT,
+    modelo TEXT,
+    capacidad_litros DOUBLE PRECISION,
     creado_en TEXT NOT NULL,
     actualizado_en TEXT NOT NULL
 );

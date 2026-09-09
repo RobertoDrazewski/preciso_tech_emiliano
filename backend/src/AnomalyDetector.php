@@ -53,7 +53,7 @@ class AnomalyDetector
      * @param DateTimeInterface $ahora instante actual — nada más allá de esto existe todavía
      * @return array<int, array> anomalías CONFIRMADAS (ya descartados los rebotes de pendiente y las caídas aún sin confirmar)
      */
-    public function analizar(string $equipo, DateTimeInterface $ahora): array
+    public function analizar(string $equipo, DateTimeInterface $ahora, ?float $capacidadLitros = null): array
     {
         $ventanaHistorial = $this->cfg['history_window_hours'] ?? 168; // 7 días por defecto
         $desde = $ahora->modify("-{$ventanaHistorial} hours");
@@ -135,6 +135,27 @@ class AnomalyDetector
         // equipos quedan bajo techo y ahí el GPS no sirve).
         foreach ($this->deteccionRalenti($lecturas) as $a) {
             $anomalias[] = $a;
+        }
+
+        // ⚠️ Chequeo de sentido físico: si sabemos la capacidad real del
+        // tanque (viene de la API de equipos de Emiliano), y una caída
+        // reportada la supera, es prácticamente imposible que sea
+        // combustible real perdido — es mucho más probable que sea un
+        // error de sensor o una pérdida/reconexión de alimentación del
+        // dispositivo (justo el caso real que nos marcó Emiliano el
+        // 26/08/2026). Lo marcamos en el detalle en vez de descartarlo
+        // solo, para que quede a la vista y alguien lo confirme.
+        if ($capacidadLitros !== null && $capacidadLitros > 0) {
+            foreach ($anomalias as &$a) {
+                if ($a['litros_perdidos'] > $capacidadLitros) {
+                    $a['detalle'] .= sprintf(
+                        ' ⚠️ Esto supera la capacidad conocida del tanque (%.0f L) — es más probable que sea un error de sensor o una pérdida/reconexión de alimentación del dispositivo que una pérdida real de combustible. Revisar antes de dar por confirmado.',
+                        $capacidadLitros
+                    );
+                    $a['sospecha_error_sensor'] = true;
+                }
+            }
+            unset($a);
         }
 
         return $anomalias;

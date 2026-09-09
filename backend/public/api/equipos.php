@@ -34,6 +34,8 @@ try {
         $out[] = [
             'id'            => $eq['id'],
             'nombre'        => $eq['nombre'],
+            'cliente'       => $eq['cliente'] ?? null,
+            'estado'        => $eq['estado_raw'] ?? null,
             'anomalias_30d' => $conteos[$eq['id']] ?? 0,
         ];
     }

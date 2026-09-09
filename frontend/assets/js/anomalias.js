@@ -52,7 +52,7 @@ function configurarBuscador() {
       encabezado = `<div class="sugerencia-item sugerencia-vacia">Elegí un equipo, o escribí para buscar (${TODOS_LOS_EQUIPOS.length} en la flota)</div>`;
     } else {
       matches = TODOS_LOS_EQUIPOS
-        .filter(eq => eq.nombre.toLowerCase().includes(q) || eq.id.toLowerCase().includes(q))
+        .filter(eq => eq.nombre.toLowerCase().includes(q) || eq.id.toLowerCase().includes(q) || (eq.cliente && eq.cliente.toLowerCase().includes(q)))
         .slice(0, 15);
     }
 

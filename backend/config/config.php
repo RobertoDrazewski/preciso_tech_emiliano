@@ -34,6 +34,11 @@ return [
         // arregla el certificado del lado del servidor. Sacar esta bandera
         // (o dejarla en false) antes de ir a producción.
         'insecure_ssl_testing' => filter_var(Env::get('API_INSECURE_SSL_TESTING', 'false'), FILTER_VALIDATE_BOOLEAN),
+
+        // API de EQUIPOS (flota completa con datos administrativos: cliente,
+        // estado, capacidad de tanque, etc.) — confirmada por Emiliano el
+        // 26/08/2026. Endpoint DISTINTO al de telemetría de arriba.
+        'devices_url' => Env::get('DEVICES_API_URL', 'https://ttm.com.ar/testing/api/get_devices.php'),
     ],
 
     // --- Base local ---

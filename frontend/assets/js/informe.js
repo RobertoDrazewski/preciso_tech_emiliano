@@ -155,11 +155,20 @@ function renderMapa(r) {
     mapaInstance.remove();
   }
   mapaInstance = L.map('mapa');
-  // CARTO en vez de OSM directo: soporta CORS de forma confiable, necesario
-  // para poder capturar el mapa como imagen al exportar el PDF (con OSM
-  // directo, html2canvas suele dejar el mapa en blanco por CORS).
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
+  // Esri World Imagery (satelital) + capas de referencia (calles y nombres
+  // de lugares) encima, para vista híbrida. Gratis, sin API key nunca, y
+  // con buen soporte de CORS — necesario para poder capturar el mapa como
+  // imagen al exportar el PDF (con OSM directo, html2canvas suele dejar
+  // el mapa en blanco por CORS; CARTO empezó a pedir API key en set/2026,
+  // así que se dejó de usar).
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    crossOrigin: true,
+  }).addTo(mapaInstance);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+    crossOrigin: true,
+  }).addTo(mapaInstance);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
     crossOrigin: true,
   }).addTo(mapaInstance);
 
@@ -317,7 +326,7 @@ async function generarPDF() {
     }
     await agregarGrafico(doc, chartVelocidadInstance, 'Velocidad (km/h)', margen, anchoUtil, () => y, (v) => (y = v), saltoDePaginaSiHaceFalta);
 
-    // --- Mapa (screenshot real vía html2canvas, tiles de CARTO por el tema de CORS) ---
+    // --- Mapa (screenshot real vía html2canvas, tiles de Esri por el tema de CORS) ---
     const $cardMapa = document.getElementById('cardMapa');
     if (mapaInstance && !$cardMapa.classList.contains('hidden')) {
       saltoDePaginaSiHaceFalta(14);
