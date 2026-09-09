@@ -14,6 +14,13 @@ class DataNormalizer
 {
     private array $fieldMap;
 
+    // Techo genérico cuando no sabemos la capacidad real del tanque de ese
+    // equipo puntual — bien generoso (ningún camión de esta flota debería
+    // acercarse, ni sumando varios tanques), pensado solo para descartar
+    // valores claramente basura (saltos a decenas o cientos de miles de
+    // litros durante una pérdida/reconexión de alimentación del dispositivo).
+    private const TECHO_GENERICO = 5000.0;
+
     public function __construct(array $fieldMap)
     {
         $this->fieldMap = $fieldMap;
@@ -24,8 +31,28 @@ class DataNormalizer
      *   lat:?float, lng:?float, velocidad:float, combustible_litros:?float,
      *   tanques:array<int,?float>, variacion:?float, odometro_km:?float, motor_encendido:bool}>
      */
-    public function normalize(array $rawResponse, string $equipoIdFallback): array
+    /**
+     * @param float|null $capacidadMaxima Techo de sensatez para el nivel de
+     *   combustible, en litros. Si se conoce la capacidad real del tanque
+     *   (viene de la API de equipos de Emiliano), usar esa. Si no se pasa
+     *   nada, se usa un techo genérico bien generoso (self::TECHO_GENERICO)
+     *   para no perder datos reales de tanques grandes que no tenemos
+     *   registrados.
+     *
+     *   Por qué hace falta esto: confirmado por Emiliano (26/08/2026) — el
+     *   dispositivo a veces manda valores basura durante una pérdida y
+     *   reconexión de alimentación. Sin este techo, un valor así (por
+     *   ejemplo, un salto a 90000L) se toma como lectura real: infla el
+     *   consumo calculado a números absurdos, rompe la escala de los
+     *   gráficos, y genera anomalías falsas de "descarga" tanto al saltar
+     *   para arriba como al volver a un valor normal. Rechazarlo en el
+     *   normalizador protege TODO lo que viene después (gráficos, consumo,
+     *   detección de anomalías) de una sola vez, en vez de tener que
+     *   filtrarlo en cada lugar por separado.
+     */
+    public function normalize(array $rawResponse, string $equipoIdFallback, ?float $capacidadMaxima = null): array
     {
+        $techo = $capacidadMaxima !== null && $capacidadMaxima > 0 ? $capacidadMaxima : self::TECHO_GENERICO;
         $rootKey = $this->fieldMap['root_key'] ?? null;
         $records = $rootKey !== null && isset($rawResponse[$rootKey])
             ? $rawResponse[$rootKey]
@@ -56,6 +83,9 @@ class DataNormalizer
             $evento = $this->extract($rec, 'evento');
 
             $litros = $this->extractFloat($rec, 'combustible_litros');
+            if ($litros !== null && ($litros < 0 || $litros > $techo)) {
+                $litros = null; // valor imposible — se descarta como si no hubiera venido, no se inventa un número corregido
+            }
             $odometro = $this->extractFloat($rec, 'odometro_km');
 
             // Máscara por tipo de evento: en esta API, cada tipo de evento

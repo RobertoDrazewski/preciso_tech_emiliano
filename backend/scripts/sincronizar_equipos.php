@@ -38,6 +38,36 @@ try {
     $inactivos = $n - $activos;
 
     echo "Listo: {$n} equipos sincronizados ({$activos} activos, {$inactivos} inactivos/suspendidos).\n";
+
+    // ⚠️ Señal de agua en combustible que YA trae la API de equipos
+    // (diagnostico="AGUA") — más confiable que el campo WIF de la
+    // telemetría por lectura, que todavía no confirmamos el nombre exacto
+    // del campo real. No duplicamos si ya hay una sin resolver reciente
+    // para ese equipo (esto es un estado ACTUAL, no una lectura puntual con
+    // fecha propia, así que no tiene sentido crear una nueva cada sync).
+    $nuevasAgua = 0;
+    foreach ($equipos as $eq) {
+        if (($eq['diagnostico'] ?? null) !== 'AGUA') {
+            continue;
+        }
+        if ($storage->existeAnomaliaPendienteReciente($eq['id'], 'agua_combustible', 7)) {
+            continue;
+        }
+        $storage->guardarAnomalia([
+            'equipo'          => $eq['id'],
+            'fecha'           => new DateTimeImmutable(),
+            'tipo'            => 'agua_combustible',
+            'detalle'         => 'La API de equipos de TTM marca este vehículo con diagnóstico "AGUA" (agua en el combustible). Confirmar con Emiliano/TTM.',
+            'litros_perdidos' => 0.0,
+            'z_score'         => null,
+            'lat'             => $eq['lat'] ?? null,
+            'lng'             => $eq['lng'] ?? null,
+        ]);
+        $nuevasAgua++;
+    }
+    if ($nuevasAgua > 0) {
+        echo "Detectadas {$nuevasAgua} anomalías de agua en combustible nuevas (según diagnóstico de TTM).\n";
+    }
 } catch (Throwable $e) {
     echo "ERROR: " . $e->getMessage() . "\n";
     exit(1);

@@ -163,6 +163,50 @@ confirmaciones más abajo). Cuando esté disponible:
 
 ---
 
+## 🚨 Fix crítico de hoy: techo de sensatez para el combustible
+
+Se encontró y arregló la causa de los números disparatados que estaban apareciendo
+(367.278 L "consumidos" en un mes, 399 anomalías de "descarga detenido" para un
+solo equipo). No era un bug de cálculo — era que el sistema tomaba como reales
+lecturas de combustible con valores físicamente imposibles (saltos a decenas o
+cientos de miles de litros), que el dispositivo manda durante una pérdida y
+reconexión de alimentación — justo el fenómeno que Emiliano describió el 26/08.
+
+**La solución**: `DataNormalizer` ahora rechaza cualquier lectura de combustible
+fuera de un rango físicamente posible — usa la capacidad REAL del tanque cuando
+la conocemos (viene de la API de equipos), o un techo genérico bien generoso si
+no. El valor basura se descarta en el origen, antes de llegar a cualquier
+gráfico, cálculo de consumo, o detector de anomalías — así todo el sistema queda
+protegido de una sola vez, no hay que parchear cada lugar por separado.
+
+Probado con un escenario que replica el caso real (300L normal → salto a 95.000L
+→ vuelta a 298L): antes generaba una anomalía falsa y un consumo calculado de
+95.000+ litros; ahora, 0 anomalías falsas y ~2L de consumo real detectado.
+
+También se completó la conexión de la capacidad real del tanque al detector de
+anomalías (había quedado a medias) — ahora, si una caída SÍ pasa el filtro de
+arriba pero aun así supera la capacidad conocida del equipo, se marca en el
+detalle como "revisar antes de confirmar" en vez de darla por buena en silencio.
+
+## 💧 Agua en combustible — ahora con la señal real de TTM
+
+Además del campo WIF de telemetría (que todavía no confirmamos el nombre exacto
+en el JSON real), ahora también se usa `diagnostico: "AGUA"` que ya viene en la
+API de equipos de Emiliano — es una señal confirmada y confiable. Se dispara al
+sincronizar la flota (`scripts/sincronizar_equipos.php`), sin duplicar mientras
+el diagnóstico se mantenga (revisa si ya hay una sin resolver reciente antes de
+crear una nueva). Probado de punta a punta.
+
+## 🔔 Se sacó la alarma roja de la barra superior
+
+A pedido: el número rojo de anomalías pendientes, que se veía en la barra de
+arriba en las 3 pantallas, generaba rechazo (sobre todo mientras había números
+inflados por el bug de arriba). Se sacó del todo — los conteos de anomalías
+siguen viéndose, pero solo dentro de la pantalla de Anomalías, cuando entrás a
+mirarla a propósito, no como una alarma ambiente en todo el sitio.
+
+---
+
 ## 🚛 Toda la flota — lo que se sumó hoy (1241 equipos)
 
 Con la lista completa que pasó Emiliano, esto ya no es una prueba con un equipo — es

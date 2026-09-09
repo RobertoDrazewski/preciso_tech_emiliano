@@ -148,10 +148,6 @@ function renderResultados(data) {
   document.getElementById('resumenResultados').textContent =
     `${data.total} anomalía(s) — ${filtroTexto}, últimos ${document.getElementById('filtroDias').value} día(s)`;
 
-  // Nota: el badge de la barra superior (#badgeAnomalias) NO se actualiza acá
-  // — es el contador GLOBAL de pendientes de toda la flota (ver badge.js),
-  // no depende de los filtros que haya puestos en esta pantalla.
-
   // Agrupar anomalías por tipo, para los KPIs por tipo de abajo.
   const porTipo = {};
   data.anomalias.forEach(a => {

@@ -403,8 +403,9 @@ async function generarPDF() {
     doc.save(nombreArchivo);
 
     // Se generó y descargó el PDF -> las anomalías de este período quedan
-    // "atendidas". Esto es lo que hace bajar la alarma/badge del panel.
-    await marcarResueltasYRefrescarBadge();
+    // "atendidas" (marcadas resueltas en la base, se ve reflejado en la
+    // pantalla de Anomalías).
+    await marcarResueltas();
   } catch (e) {
     alert('No se pudo generar el PDF: ' + e.message);
   } finally {
@@ -413,7 +414,7 @@ async function generarPDF() {
   }
 }
 
-async function marcarResueltasYRefrescarBadge() {
+async function marcarResueltas() {
   if (!ULTIMO_INFORME) return;
   try {
     await fetch(`${window.PRECISO_CONFIG.API_BASE}/marcar_resueltas.php`, {
@@ -425,9 +426,6 @@ async function marcarResueltasYRefrescarBadge() {
         hasta: ULTIMO_INFORME.hasta,
       }),
     });
-    if (typeof refrescarBadgePendientes === 'function') {
-      refrescarBadgePendientes(); // definido en badge.js
-    }
   } catch (e) {
     // Si esto falla, no rompe la descarga del PDF (que ya se hizo) — la
     // próxima vez que se genere un informe se vuelve a intentar.

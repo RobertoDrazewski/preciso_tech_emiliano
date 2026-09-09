@@ -151,6 +151,7 @@ class Storage
             'marca'             => 'TEXT',
             'modelo'            => 'TEXT',
             'capacidad_litros'  => $tipoReal,
+            'diagnostico'       => 'TEXT',
         ];
         foreach ($nuevasEquipos as $columna => $tipo) {
             if (!in_array($columna, $columnasEquipos, true)) {
@@ -214,7 +215,7 @@ class Storage
         $cursor = $this->getEstado('cron_cursor_equipo') ?? '';
 
         $stmt = $this->pdo->prepare('
-            SELECT id, nombre FROM equipos
+            SELECT id, nombre, capacidad_litros FROM equipos
             WHERE activo = 1 AND id > :cursor
             ORDER BY id ASC
             LIMIT :limite
@@ -227,7 +228,7 @@ class Storage
         if (count($lote) < $tamanoLote) {
             $faltan = $tamanoLote - count($lote);
             $stmt2 = $this->pdo->prepare('
-                SELECT id, nombre FROM equipos
+                SELECT id, nombre, capacidad_litros FROM equipos
                 WHERE activo = 1
                 ORDER BY id ASC
                 LIMIT :limite
@@ -264,12 +265,12 @@ class Storage
         $activo = $estadoRaw === null ? 1 : ($estadoRaw === 'ACTIVO' ? 1 : 0);
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, creado_en, actualizado_en)
-            VALUES (:id, :nombre, :activo, :cliente, :estado_raw, :tipo, :marca, :modelo, :capacidad_litros, :ahora, :ahora)
+            INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, creado_en, actualizado_en)
+            VALUES (:id, :nombre, :activo, :cliente, :estado_raw, :tipo, :marca, :modelo, :capacidad_litros, :diagnostico, :ahora, :ahora)
             ON CONFLICT(id) DO UPDATE SET
                 nombre = :nombre, activo = :activo, cliente = :cliente, estado_raw = :estado_raw,
                 tipo = :tipo, marca = :marca, modelo = :modelo, capacidad_litros = :capacidad_litros,
-                actualizado_en = :ahora
+                diagnostico = :diagnostico, actualizado_en = :ahora
         ');
         $stmt->execute([
             ':id'                => $id,
@@ -281,6 +282,7 @@ class Storage
             ':marca'             => $extra['marca'] ?? null,
             ':modelo'            => $extra['modelo'] ?? null,
             ':capacidad_litros'  => $extra['capacidad_litros'] ?? null,
+            ':diagnostico'       => $extra['diagnostico'] ?? null,
             ':ahora'             => $ahora,
         ]);
     }
@@ -290,7 +292,7 @@ class Storage
     {
         $this->pdo->beginTransaction();
         foreach ($equipos as $eq) {
-            $extra = array_intersect_key($eq, array_flip(['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros']));
+            $extra = array_intersect_key($eq, array_flip(['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros', 'diagnostico']));
             $this->upsertEquipo((string) $eq['id'], (string) $eq['nombre'], $extra);
         }
         $this->pdo->commit();
@@ -299,7 +301,7 @@ class Storage
 
     public function listarEquipos(bool $soloActivos = true): array
     {
-        $sql = 'SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros FROM equipos';
+        $sql = 'SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico FROM equipos';
         if ($soloActivos) {
             $sql .= ' WHERE activo = 1';
         }
@@ -309,7 +311,7 @@ class Storage
 
     public function equipoPorId(string $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros FROM equipos WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico FROM equipos WHERE id = :id LIMIT 1');
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -500,6 +502,25 @@ class Storage
             ':fecha'  => $fecha->format(DateTimeInterface::ATOM),
             ':tipo'   => $tipo,
         ]);
+        return $stmt->fetch() !== false;
+    }
+
+    /**
+     * Para señales que no tienen un instante puntual (como diagnostico=AGUA
+     * de la API de equipos, que es un estado ACTUAL, no una lectura con
+     * fecha) — evita crear una anomalía nueva en cada sincronización
+     * mientras el diagnóstico se mantenga igual. Solo mira si ya hay una
+     * sin resolver de ese tipo para ese equipo en los últimos N días.
+     */
+    public function existeAnomaliaPendienteReciente(string $equipo, string $tipo, int $dias = 7): bool
+    {
+        $desde = (new DateTimeImmutable())->modify("-{$dias} days")->format(DateTimeInterface::ATOM);
+        $stmt = $this->pdo->prepare('
+            SELECT id FROM anomalias
+            WHERE equipo = :equipo AND tipo = :tipo AND resuelta = 0 AND fecha >= :desde
+            LIMIT 1
+        ');
+        $stmt->execute([':equipo' => $equipo, ':tipo' => $tipo, ':desde' => $desde]);
         return $stmt->fetch() !== false;
     }
 

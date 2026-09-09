@@ -28,6 +28,8 @@ class DevicesNormalizer
             }
 
             $capacidad = isset($d['capacidad']) ? (float) $d['capacidad'] : 0.0;
+            $lat = isset($d['latitud']) && $d['latitud'] !== '' ? (float) $d['latitud'] : null;
+            $lng = isset($d['longitud']) && $d['longitud'] !== '' ? (float) $d['longitud'] : null;
 
             $out[] = [
                 'id'                => (string) $d['ID'],
@@ -38,6 +40,13 @@ class DevicesNormalizer
                 'marca'             => $this->limpiar($d['marca'] ?? null),
                 'modelo'            => $this->limpiar($d['modelo'] ?? null),
                 'capacidad_litros'  => $capacidad > 0 ? $capacidad : null,
+                'diagnostico'       => $this->limpiar($d['diagnostico'] ?? null),
+                // lat/lng no se guardan en la tabla equipos (esa tabla es
+                // datos administrativos, no telemetría) — se devuelven acá
+                // igual para que sincronizar_equipos.php los pueda usar al
+                // armar la anomalía de agua con ubicación.
+                'lat'               => ($lat !== null && $lat !== 0.0) ? $lat : null,
+                'lng'               => ($lng !== null && $lng !== 0.0) ? $lng : null,
             ];
         }
 

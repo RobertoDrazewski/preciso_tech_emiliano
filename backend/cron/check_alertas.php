@@ -46,8 +46,12 @@ $totalNuevas = 0;
 
 foreach ($lote as $equipo) {
     try {
+        $capacidadLitros = isset($equipo['capacidad_litros']) && $equipo['capacidad_litros'] > 0
+            ? (float) $equipo['capacidad_litros']
+            : null;
+
         $raw = $apiClient->getFullData($equipo['id'], $desde, $hasta);
-        $lecturas = $normalizer->normalize($raw, $equipo['id']);
+        $lecturas = $normalizer->normalize($raw, $equipo['id'], $capacidadLitros);
 
         if (empty($lecturas)) {
             continue;
@@ -55,7 +59,7 @@ foreach ($lote as $equipo) {
 
         $storage->guardarLecturas($lecturas);
 
-        $anomalias = $detector->analizar($equipo['id'], $hasta);
+        $anomalias = $detector->analizar($equipo['id'], $hasta, $capacidadLitros);
 
         foreach ($anomalias as $a) {
             if ($storage->anomaliaYaRegistrada($a['equipo'], $a['fecha'], $a['tipo'])) {

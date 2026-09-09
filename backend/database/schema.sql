@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS equipos (
     marca TEXT,
     modelo TEXT,
     capacidad_litros REAL,         -- capacidad del tanque, si la API la tiene cargada (0 = sin dato)
+    diagnostico TEXT,               -- viene de la API de equipos (ej: "OK", "AGUA", "NO REPORTA") — no es histórico, es el estado actual que reporta TTM
     creado_en TEXT NOT NULL,
     actualizado_en TEXT NOT NULL
 );

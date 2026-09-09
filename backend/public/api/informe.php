@@ -41,14 +41,18 @@ try {
     $apiClient = crearApiClient($config);
     $raw = $apiClient->getFullData($equipo['id'], $desde, $hasta);
 
+    $capacidadLitros = isset($equipo['capacidad_litros']) && $equipo['capacidad_litros'] > 0
+        ? (float) $equipo['capacidad_litros']
+        : null;
+
     $normalizer = new DataNormalizer($fieldMap);
-    $lecturas = $normalizer->normalize($raw, $equipo['id']);
+    $lecturas = $normalizer->normalize($raw, $equipo['id'], $capacidadLitros);
 
     $storage->guardarLecturas($lecturas);
 
     $detector = new AnomalyDetector($config['anomaly'], $storage);
     // Corremos la detección (guarda anomalías confirmadas nuevas, si las hay).
-    $anomaliasDetectadas = $detector->analizar($equipo['id'], $hasta);
+    $anomaliasDetectadas = $detector->analizar($equipo['id'], $hasta, $capacidadLitros);
     foreach ($anomaliasDetectadas as $a) {
         if (!$storage->anomaliaYaRegistrada($a['equipo'], $a['fecha'], $a['tipo'])) {
             $storage->guardarAnomalia($a);
@@ -58,7 +62,7 @@ try {
     $anomaliasDelRango = $storage->anomaliasEnRango($equipo['id'], $desde, $hasta);
 
     $builder = new ReportBuilder();
-    $reporte = $builder->construir($lecturas, $anomaliasDelRango);
+    $reporte = $builder->construir($lecturas, $anomaliasDelRango, $config['anomaly']);
 
     jsonOk([
         'equipo' => [
