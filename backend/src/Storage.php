@@ -340,6 +340,31 @@ class Storage
         return count($equipos);
     }
 
+    /**
+     * Desactiva cualquier equipo que esté marcado activo en la base pero
+     * NO haya venido en la última sincronización con la API de equipos de
+     * Emiliano — típicamente, equipos que quedaron cargados del excel
+     * viejo (antes de tener esta API) con otro esquema de IDs, o equipos
+     * que TTM ya no reporta más. La API de equipos pasa a ser la fuente de
+     * verdad: si no está ahí, no debería contar como "monitoreado".
+     * No los borra — solo los marca inactivos, por las dudas.
+     */
+    public function desactivarEquiposNoPresentes(array $idsPresentes): int
+    {
+        if (empty($idsPresentes)) {
+            return 0; // por seguridad: nunca desactivar todo por una sync vacía/fallida
+        }
+
+        $placeholders = implode(',', array_fill(0, count($idsPresentes), '?'));
+        $stmt = $this->pdo->prepare("
+            UPDATE equipos SET activo = 0, actualizado_en = ?
+            WHERE activo = 1 AND id NOT IN ({$placeholders})
+        ");
+        $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $stmt->execute(array_merge([$ahora], $idsPresentes));
+        return $stmt->rowCount();
+    }
+
     public function listarEquipos(bool $soloActivos = true): array
     {
         $sql = 'SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico FROM equipos';

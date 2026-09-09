@@ -39,6 +39,18 @@ try {
 
     echo "Listo: {$n} equipos sincronizados ({$activos} activos, {$inactivos} inactivos/suspendidos).\n";
 
+    // Cualquier equipo que quedó marcado activo en nuestra base pero NO
+    // vino en esta sincronización (típicamente, del excel viejo cargado
+    // antes de tener esta API, con otro esquema de IDs) se desactiva —
+    // la API de equipos pasa a ser la fuente de verdad de qué está
+    // realmente en la flota. No se borra nada, solo deja de contarse como
+    // "monitoreado".
+    $idsPresentes = array_column($equipos, 'id');
+    $desactivados = $storage->desactivarEquiposNoPresentes($idsPresentes);
+    if ($desactivados > 0) {
+        echo "Desactivados {$desactivados} equipos que ya no vienen en la API (probablemente del excel viejo).\n";
+    }
+
     // ⚠️ Señal de agua en combustible que YA trae la API de equipos
     // (diagnostico="AGUA") — más confiable que el campo WIF de la
     // telemetría por lectura, que todavía no confirmamos el nombre exacto
