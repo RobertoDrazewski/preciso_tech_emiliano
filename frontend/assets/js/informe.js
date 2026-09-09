@@ -164,12 +164,20 @@ function renderMapa(r) {
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri',
     crossOrigin: true,
+    // maxNativeZoom: en zonas rurales (fuera de ciudades grandes), Esri no
+    // tiene imagen satelital cargada a partir de cierto nivel de zoom — sin
+    // esto, al hacer zoom manual aparece el cartel "Map data not yet
+    // available" en vez de la imagen. Con este tope, Leaflet reusa y agranda
+    // la última imagen disponible en vez de pedir una que no existe.
+    maxNativeZoom: 17,
   }).addTo(mapaInstance);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
     crossOrigin: true,
+    maxNativeZoom: 17,
   }).addTo(mapaInstance);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
     crossOrigin: true,
+    maxNativeZoom: 17,
   }).addTo(mapaInstance);
 
   const latlngs = puntos.map(p => [p.lat, p.lng]);
