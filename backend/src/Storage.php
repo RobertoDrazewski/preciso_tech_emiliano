@@ -287,15 +287,56 @@ class Storage
         ]);
     }
 
-    /** Alta masiva (para importar el excel de la flota, o sincronizar desde la API de equipos). */
+    /**
+     * Alta masiva (para sincronizar desde la API de equipos, que trae
+     * 1000+ registros de una). En vez de 1000+ consultas sueltas (una por
+     * equipo, carísimo en tiempo cuando la base está en Railway y cada ida
+     * y vuelta por internet suma), arma pocos INSERT con muchas filas cada
+     * uno (de a 200) — mucho más rápido, sobre todo en conexiones con
+     * latencia (como el proxy público de Postgres desde una máquina local).
+     */
     public function upsertEquiposMasivo(array $equipos): int
     {
+        if (empty($equipos)) {
+            return 0;
+        }
+
+        $campos = ['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros', 'diagnostico'];
+        $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+
         $this->pdo->beginTransaction();
-        foreach ($equipos as $eq) {
-            $extra = array_intersect_key($eq, array_flip(['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros', 'diagnostico']));
-            $this->upsertEquipo((string) $eq['id'], (string) $eq['nombre'], $extra);
+        foreach (array_chunk($equipos, 200) as $tanda) {
+            $filas = [];
+            $valores = [];
+            foreach ($tanda as $eq) {
+                $estadoRaw = $eq['estado_raw'] ?? null;
+                $activo = $estadoRaw === null ? 1 : ($estadoRaw === 'ACTIVO' ? 1 : 0);
+
+                $filas[] = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                $valores[] = (string) $eq['id'];
+                $valores[] = (string) $eq['nombre'];
+                $valores[] = $activo;
+                foreach ($campos as $campo) {
+                    $valores[] = $eq[$campo] ?? null;
+                }
+                $valores[] = $ahora; // creado_en
+                $valores[] = $ahora; // actualizado_en
+            }
+
+            $sql = '
+                INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, creado_en, actualizado_en)
+                VALUES ' . implode(', ', $filas) . '
+                ON CONFLICT(id) DO UPDATE SET
+                    nombre = excluded.nombre, activo = excluded.activo, cliente = excluded.cliente,
+                    estado_raw = excluded.estado_raw, tipo = excluded.tipo, marca = excluded.marca,
+                    modelo = excluded.modelo, capacidad_litros = excluded.capacidad_litros,
+                    diagnostico = excluded.diagnostico, actualizado_en = excluded.actualizado_en
+            ';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($valores);
         }
         $this->pdo->commit();
+
         return count($equipos);
     }
 
