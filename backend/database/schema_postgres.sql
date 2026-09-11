@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS equipos (
     modelo TEXT,
     capacidad_litros DOUBLE PRECISION,
     diagnostico TEXT,
+    servicio TEXT,
     creado_en TEXT NOT NULL,
     actualizado_en TEXT NOT NULL
 );

@@ -19,7 +19,9 @@ async function cargarDashboard() {
     renderLista(TODOS_LOS_EQUIPOS);
 
     document.getElementById('bannerSimulado').classList.toggle('hidden', !data.simulado);
-    document.getElementById('buscarEquipo').addEventListener('input', onBuscar);
+    document.getElementById('buscarEquipo').addEventListener('input', aplicarFiltros);
+    document.getElementById('filtroSoloAnomalias').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroServicio').addEventListener('change', aplicarFiltros);
 
     $loading.classList.add('hidden');
     $contenido.classList.remove('hidden');
@@ -35,17 +37,27 @@ async function cargarDashboard() {
   }
 }
 
-function onBuscar(e) {
-  const q = e.target.value.trim().toLowerCase();
-  if (q === '') {
-    renderLista(TODOS_LOS_EQUIPOS);
-    return;
+function aplicarFiltros() {
+  const q = document.getElementById('buscarEquipo').value.trim().toLowerCase();
+  const soloConAnomalias = document.getElementById('filtroSoloAnomalias').checked;
+  const servicio = document.getElementById('filtroServicio').value;
+
+  let filtrados = TODOS_LOS_EQUIPOS;
+
+  if (q !== '') {
+    filtrados = filtrados.filter(eq =>
+      eq.nombre.toLowerCase().includes(q) ||
+      eq.id.toLowerCase().includes(q) ||
+      (eq.cliente && eq.cliente.toLowerCase().includes(q))
+    );
   }
-  const filtrados = TODOS_LOS_EQUIPOS.filter(eq =>
-    eq.nombre.toLowerCase().includes(q) ||
-    eq.id.toLowerCase().includes(q) ||
-    (eq.cliente && eq.cliente.toLowerCase().includes(q))
-  );
+  if (soloConAnomalias) {
+    filtrados = filtrados.filter(eq => eq.anomalias_30d > 0);
+  }
+  if (servicio !== '') {
+    filtrados = filtrados.filter(eq => eq.servicio === servicio);
+  }
+
   renderLista(filtrados, q);
 }
 
@@ -90,6 +102,7 @@ function renderLista(equipos, busqueda) {
         <div class="equipo-id">
           Equipo ${escapeHtml(eq.id)}
           ${eq.cliente ? `· ${escapeHtml(eq.cliente)}` : ''}
+          ${eq.servicio ? `· <span style="text-transform:capitalize;">${escapeHtml(eq.servicio.toLowerCase())}</span>` : ''}
           ${eq.anomalias_30d > 0 ? `· <span style="color:var(--color-danger); font-weight:700;">${eq.anomalias_30d} anomalía(s)</span>` : ''}
         </div>
       </div>

@@ -41,6 +41,7 @@ class DevicesNormalizer
                 'modelo'            => $this->limpiar($d['modelo'] ?? null),
                 'capacidad_litros'  => $capacidad > 0 ? $capacidad : null,
                 'diagnostico'       => $this->limpiar($d['diagnostico'] ?? null),
+                'servicio'          => $this->limpiar($d['servicio'] ?? null),
                 // lat/lng no se guardan en la tabla equipos (esa tabla es
                 // datos administrativos, no telemetría) — se devuelven acá
                 // igual para que sincronizar_equipos.php los pueda usar al

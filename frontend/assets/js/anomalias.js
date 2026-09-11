@@ -222,15 +222,52 @@ function renderResultados(data) {
       <td>${escapeHtml(a.detalle)}</td>
       <td>${Number(a.litros_perdidos).toFixed(1)} L</td>
       <td>${renderUbicacion(a.lat, a.lng)}</td>
+      <td>${renderLinkGraficoTTM(a.equipo_nombre, a.fecha)}</td>
     </tr>
   `).join('');
 
   $tabla.innerHTML = `
     <table class="anomalias">
-      <tr><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th>Ubicación</th></tr>
+      <tr><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th>Ubicación</th><th>Gráfico</th></tr>
       ${filas}
     </table>
   `;
+}
+
+/**
+ * Arma el link al gráfico de sensor de TTM (pedido de Emiliano, 09/09/2026)
+ * — para poder cruzar visualmente la anomalía detectada contra los datos
+ * crudos del sensor en el sistema de origen. Formato de date_range
+ * confirmado con un ejemplo real de Emiliano: "YYYY-MM-DD H:MM / YYYY-MM-DD
+ * H:MM" (hora sin cero adelante, minuto con cero adelante), separado por
+ * " / ". Ventana: 1 día antes y 1 día después de la anomalía, para tener
+ * contexto de sobra sin quedar demasiado ancho.
+ */
+function linkGraficoTTM(equipoNombre, fechaISO) {
+  if (!equipoNombre || !fechaISO) return null;
+
+  const fecha = new Date(fechaISO);
+  const desde = new Date(fecha);
+  desde.setDate(desde.getDate() - 1);
+  desde.setHours(0, 0, 0, 0);
+  const hasta = new Date(fecha);
+  hasta.setDate(hasta.getDate() + 1);
+  hasta.setHours(23, 59, 0, 0);
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${d.getHours()}:${pad(d.getMinutes())}`;
+
+  const params = new URLSearchParams({
+    date_range: `${fmt(desde)} / ${fmt(hasta)}`,
+    equipo: equipoNombre,
+  });
+  return `https://ttm.com.ar/dev/Preciso/reportes.php?${params.toString()}`;
+}
+
+function renderLinkGraficoTTM(equipoNombre, fechaISO) {
+  const url = linkGraficoTTM(equipoNombre, fechaISO);
+  if (!url) return '—';
+  return `<a href="${url}" target="_blank" rel="noopener">Ver gráfico ↗</a>`;
 }
 
 function renderUbicacion(lat, lng) {

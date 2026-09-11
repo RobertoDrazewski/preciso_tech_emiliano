@@ -152,6 +152,7 @@ class Storage
             'modelo'            => 'TEXT',
             'capacidad_litros'  => $tipoReal,
             'diagnostico'       => 'TEXT',
+            'servicio'          => 'TEXT',
         ];
         foreach ($nuevasEquipos as $columna => $tipo) {
             if (!in_array($columna, $columnasEquipos, true)) {
@@ -265,12 +266,12 @@ class Storage
         $activo = $estadoRaw === null ? 1 : ($estadoRaw === 'ACTIVO' ? 1 : 0);
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, creado_en, actualizado_en)
-            VALUES (:id, :nombre, :activo, :cliente, :estado_raw, :tipo, :marca, :modelo, :capacidad_litros, :diagnostico, :ahora, :ahora)
+            INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, creado_en, actualizado_en)
+            VALUES (:id, :nombre, :activo, :cliente, :estado_raw, :tipo, :marca, :modelo, :capacidad_litros, :diagnostico, :servicio, :ahora, :ahora)
             ON CONFLICT(id) DO UPDATE SET
                 nombre = :nombre, activo = :activo, cliente = :cliente, estado_raw = :estado_raw,
                 tipo = :tipo, marca = :marca, modelo = :modelo, capacidad_litros = :capacidad_litros,
-                diagnostico = :diagnostico, actualizado_en = :ahora
+                diagnostico = :diagnostico, servicio = :servicio, actualizado_en = :ahora
         ');
         $stmt->execute([
             ':id'                => $id,
@@ -283,6 +284,7 @@ class Storage
             ':modelo'            => $extra['modelo'] ?? null,
             ':capacidad_litros'  => $extra['capacidad_litros'] ?? null,
             ':diagnostico'       => $extra['diagnostico'] ?? null,
+            ':servicio'          => $extra['servicio'] ?? null,
             ':ahora'             => $ahora,
         ]);
     }
@@ -301,7 +303,7 @@ class Storage
             return 0;
         }
 
-        $campos = ['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros', 'diagnostico'];
+        $campos = ['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros', 'diagnostico', 'servicio'];
         $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 
         $this->pdo->beginTransaction();
@@ -312,7 +314,7 @@ class Storage
                 $estadoRaw = $eq['estado_raw'] ?? null;
                 $activo = $estadoRaw === null ? 1 : ($estadoRaw === 'ACTIVO' ? 1 : 0);
 
-                $filas[] = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                $filas[] = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
                 $valores[] = (string) $eq['id'];
                 $valores[] = (string) $eq['nombre'];
                 $valores[] = $activo;
@@ -324,13 +326,13 @@ class Storage
             }
 
             $sql = '
-                INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, creado_en, actualizado_en)
+                INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, creado_en, actualizado_en)
                 VALUES ' . implode(', ', $filas) . '
                 ON CONFLICT(id) DO UPDATE SET
                     nombre = excluded.nombre, activo = excluded.activo, cliente = excluded.cliente,
                     estado_raw = excluded.estado_raw, tipo = excluded.tipo, marca = excluded.marca,
                     modelo = excluded.modelo, capacidad_litros = excluded.capacidad_litros,
-                    diagnostico = excluded.diagnostico, actualizado_en = excluded.actualizado_en
+                    diagnostico = excluded.diagnostico, servicio = excluded.servicio, actualizado_en = excluded.actualizado_en
             ';
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($valores);
@@ -367,7 +369,7 @@ class Storage
 
     public function listarEquipos(bool $soloActivos = true): array
     {
-        $sql = 'SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico FROM equipos';
+        $sql = 'SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio FROM equipos';
         if ($soloActivos) {
             $sql .= ' WHERE activo = 1';
         }
@@ -377,7 +379,7 @@ class Storage
 
     public function equipoPorId(string $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico FROM equipos WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio FROM equipos WHERE id = :id LIMIT 1');
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;

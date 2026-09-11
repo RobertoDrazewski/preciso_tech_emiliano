@@ -30,9 +30,23 @@
     <div class="grid grid-3" id="stats"></div>
 
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
         <h3 style="margin:0; color:var(--color-navy);">Tu flota</h3>
         <input type="text" id="buscarEquipo" class="input-buscar" placeholder="Buscar por patente, ID o cliente…">
+      </div>
+      <div class="filtros-flota" style="display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:12px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:13.5px; cursor:pointer;">
+          <input type="checkbox" id="filtroSoloAnomalias"> Solo con anomalías
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:13.5px;">
+          Servicio:
+          <select id="filtroServicio">
+            <option value="">Todos</option>
+            <option value="FULL">Full</option>
+            <option value="STANDARD">Standard</option>
+            <option value="DEMO">Demo</option>
+          </select>
+        </label>
       </div>
       <p class="page-subtitle" id="contadorEquipos" style="margin:0 0 10px 0;"></p>
       <ul class="equipo-list" id="listaEquipos"></ul>

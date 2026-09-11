@@ -108,13 +108,17 @@ function renderCharts(r) {
   chartCombustibleInstance = new Chart(document.getElementById('chartCombustible'), {
     type: 'line',
     data: { datasets: [{ label: 'Combustible (L)', data: r.serie_combustible, borderColor: '#f2a71b', backgroundColor: 'rgba(242,167,27,0.15)', fill: true, tension: 0.25, pointRadius: 0 }] },
-    options: { scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    // devicePixelRatio alto a propósito: el gráfico se ve igual en pantalla,
+    // pero el canvas de fondo queda en mayor resolución — necesario para que
+    // no salga borroso al exportarlo al PDF (ahí se estira para ocupar todo
+    // el ancho de la hoja, y una imagen de baja resolución se nota pixelada).
+    options: { devicePixelRatio: 3, scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
   });
 
   chartVelocidadInstance = new Chart(document.getElementById('chartVelocidad'), {
     type: 'line',
     data: { datasets: [{ label: 'Velocidad km/h', data: r.serie_velocidad, borderColor: '#0d1b2e', backgroundColor: 'rgba(13,27,46,0.08)', fill: true, tension: 0.25, pointRadius: 0 }] },
-    options: { scales: { x: { type: 'time' } }, plugins: { legend: { display: false } } }
+    options: { devicePixelRatio: 3, scales: { x: { type: 'time' } }, plugins: { legend: { display: false } } }
   });
 
   const coloresTanque = { 1: '#f2a71b', 2: '#0d1b2e', 3: '#1f9d55', 4: '#c0392b' };
@@ -140,7 +144,7 @@ function renderCharts(r) {
         pointRadius: 0,
       })),
     },
-    options: { scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: true } } }
+    options: { devicePixelRatio: 3, scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: true } } }
   });
 }
 
@@ -216,15 +220,52 @@ function renderAnomalias(r) {
       <td>${escapeHtml(a.detalle)}</td>
       <td>${formatNum(a.litros_perdidos)} L</td>
       <td>${renderUbicacion(a.lat, a.lng)}</td>
+      <td>${renderLinkGraficoTTM(ULTIMO_INFORME.equipo.nombre, a.fecha)}</td>
     </tr>
   `).join('');
 
   $div.innerHTML = `
     <table class="anomalias">
-      <tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th>Ubicación</th></tr>
+      <tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th>Ubicación</th><th>Gráfico</th></tr>
       ${filas}
     </table>
   `;
+}
+
+/**
+ * Arma el link al gráfico de sensor de TTM (pedido de Emiliano, 09/09/2026)
+ * — para cruzar visualmente la anomalía contra los datos crudos del sensor
+ * en el sistema de origen. Formato de date_range confirmado con un ejemplo
+ * real de Emiliano: "YYYY-MM-DD H:MM / YYYY-MM-DD H:MM" (hora sin cero
+ * adelante, minuto con cero adelante). Ventana: 1 día antes y 1 día
+ * después de la anomalía, para tener contexto de sobra sin quedar
+ * demasiado ancho.
+ */
+function linkGraficoTTM(equipoNombre, fechaISO) {
+  if (!equipoNombre || !fechaISO) return null;
+
+  const fecha = new Date(fechaISO);
+  const desde = new Date(fecha);
+  desde.setDate(desde.getDate() - 1);
+  desde.setHours(0, 0, 0, 0);
+  const hasta = new Date(fecha);
+  hasta.setDate(hasta.getDate() + 1);
+  hasta.setHours(23, 59, 0, 0);
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${d.getHours()}:${pad(d.getMinutes())}`;
+
+  const params = new URLSearchParams({
+    date_range: `${fmt(desde)} / ${fmt(hasta)}`,
+    equipo: equipoNombre,
+  });
+  return `https://ttm.com.ar/dev/Preciso/reportes.php?${params.toString()}`;
+}
+
+function renderLinkGraficoTTM(equipoNombre, fechaISO) {
+  const url = linkGraficoTTM(equipoNombre, fechaISO);
+  if (!url) return '—';
+  return `<a href="${url}" target="_blank" rel="noopener">Ver gráfico ↗</a>`;
 }
 
 function renderUbicacion(lat, lng) {
