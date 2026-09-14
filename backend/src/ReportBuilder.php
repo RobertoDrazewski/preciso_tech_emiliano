@@ -35,6 +35,17 @@ class ReportBuilder
 
         $litrosAnomalos = array_sum(array_column($anomalias, 'litros_perdidos'));
 
+        // ⚠️ Para el GRÁFICO (no para el cálculo de consumo, que ya tiene su
+        // propio filtro de rebote más preciso — ver calcularConsumoReal):
+        // detectamos picos aislados de ruido de sensor y los sacamos de lo
+        // que se dibuja. Un pico aislado es una lectura que cae marcadamente
+        // por debajo de sus dos vecinos válidos (el anterior y el
+        // siguiente) — típico de un salto de sensor que se recupera
+        // enseguida. Un tramo de consumo real, en cambio, involucra VARIAS
+        // lecturas moviéndose juntas, no un solo punto rodeado de valores
+        // mucho más altos de los dos lados.
+        $puntosRuido = $this->identificarPicosAislados($lecturas);
+
         $serieCombustible = [];
         $serieVelocidad = [];
         $seriesTanques = [1 => [], 2 => [], 3 => [], 4 => []];
@@ -42,18 +53,20 @@ class ReportBuilder
         $puntosMapa = [];
 
         foreach ($lecturas as $l) {
+            $claveTiempo = $l['fecha']->format(DateTimeInterface::ATOM);
+            $esRuido = isset($puntosRuido[$claveTiempo]);
             $serieCombustible[] = [
-                'x' => $l['fecha']->format(DateTimeInterface::ATOM),
-                'y' => $l['combustible_litros'] !== null ? round($l['combustible_litros'], 1) : null,
+                'x' => $claveTiempo,
+                'y' => ($l['combustible_litros'] !== null && !$esRuido) ? round($l['combustible_litros'], 1) : null,
             ];
             $serieVelocidad[] = [
-                'x' => $l['fecha']->format(DateTimeInterface::ATOM),
+                'x' => $claveTiempo,
                 'y' => round($l['velocidad'], 1),
             ];
 
             foreach ($l['tanques'] ?? [] as $num => $valor) {
                 if ($valor !== null) {
-                    $seriesTanques[$num][] = ['x' => $l['fecha']->format(DateTimeInterface::ATOM), 'y' => round($valor, 1)];
+                    $seriesTanques[$num][] = ['x' => $claveTiempo, 'y' => round($valor, 1)];
                     $tanquesDetectados[$num] = true;
                 }
             }
@@ -116,6 +129,38 @@ class ReportBuilder
             'series_tanques'           => $seriesTanquesFiltradas,
             'puntos_mapa'              => $puntosMapa,
         ];
+    }
+
+    /**
+     * Para el gráfico: identifica lecturas que son un pico aislado de
+     * ruido de sensor — caen marcadamente por debajo de sus dos vecinos
+     * válidos más cercanos (anterior y siguiente), lo que indica un salto
+     * puntual que no es parte de una tendencia real. No confundir con el
+     * filtro de consumo (calcularConsumoReal): este es más simple a
+     * propósito, solo para limpiar lo que se DIBUJA — el número de
+     * consumo ya está protegido por su propia lógica, más estricta.
+     *
+     * @return array<string,true> mapa de timestamp (ISO) -> true para las lecturas a ocultar
+     */
+    private function identificarPicosAislados(array $lecturas): array
+    {
+        $conCombustible = array_values(array_filter($lecturas, fn($l) => $l['combustible_litros'] !== null));
+        $n = count($conCombustible);
+        $ruido = [];
+
+        for ($i = 1; $i < $n - 1; $i++) {
+            $anterior = $conCombustible[$i - 1]['combustible_litros'];
+            $actual = $conCombustible[$i]['combustible_litros'];
+            $siguiente = $conCombustible[$i + 1]['combustible_litros'];
+
+            $vecinoMasBajo = min($anterior, $siguiente);
+            if ($actual < $vecinoMasBajo - self::RUIDO_MINIMO_LITROS) {
+                $clave = $conCombustible[$i]['fecha']->format(DateTimeInterface::ATOM);
+                $ruido[$clave] = true;
+            }
+        }
+
+        return $ruido;
     }
 
     /**
