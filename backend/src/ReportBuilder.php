@@ -20,7 +20,7 @@ class ReportBuilder
      */
     private const RUIDO_MINIMO_LITROS = 1.0;
 
-    public function construir(array $lecturas, array $anomalias): array
+    public function construir(array $lecturas, array $anomalias, array $anomalyConfig = []): array
     {
         $n = count($lecturas);
 
@@ -73,21 +73,22 @@ class ReportBuilder
         // estar razonablemente cerca de los demás.
         $puntosMapa = $this->filtrarOutliersGps($puntosMapa);
 
-        // ⚠️ Litros consumidos: comparamos lecturas de combustible VÁLIDAS
-        // consecutivas (saltando los TIEMPO de en medio, mismo criterio que
-        // AnomalyDetector — si no, un TIEMPO metido en el medio hace perder
-        // el rastro de un tramo entero). Además, cualquier caída menor a
-        // RUIDO_MINIMO_LITROS se ignora: es vibración/chapoteo del sensor,
-        // no consumo real. Sin este piso, miles de lecturas por semana con
-        // ruido de +/-uno o dos litros inflan el total a números sin sentido.
-        $litrosConsumidosTotal = 0.0;
-        $lecturasConCombustible = array_values(array_filter($lecturas, fn($l) => $l['combustible_litros'] !== null));
-        for ($i = 1; $i < count($lecturasConCombustible); $i++) {
-            $delta = $lecturasConCombustible[$i - 1]['combustible_litros'] - $lecturasConCombustible[$i]['combustible_litros'];
-            if ($delta >= self::RUIDO_MINIMO_LITROS) {
-                $litrosConsumidosTotal += $delta;
-            }
-        }
+        // ⚠️ Litros consumidos: el mismo criterio que usa AnomalyDetector
+        // para no confundir combustible real con ruido —
+        //   1. Comparamos lecturas de combustible VÁLIDAS consecutivas
+        //      (saltando los TIEMPO de en medio).
+        //   2. Cualquier caída menor a RUIDO_MINIMO_LITROS se ignora (vibración/chapoteo del sensor).
+        //   3. Y lo más importante: si una caída se RECUPERA SOLA dentro de
+        //      la ventana de confirmación (rebote de pendiente / ruido de
+        //      sensor erático), tampoco cuenta como consumo — si no, un
+        //      equipo con sensor ruidoso que oscila entre 0 y su nivel real
+        //      decenas de veces por semana infla el consumo calculado a
+        //      cientos de miles de litros, aunque nunca haya perdido
+        //      combustible de verdad (caso real detectado el 14/09/2026:
+        //      equipo con oscilaciones frecuentes mostraba "102.672 L
+        //      consumidos" en una semana, contra ~254L reales según el
+        //      sistema de origen para el mismo período).
+        $litrosConsumidosTotal = $this->calcularConsumoReal($lecturas, $anomalyConfig);
 
         $consumoPromedioL100km = null;
         if ($kmRecorridos && $kmRecorridos > 0 && $litrosConsumidosTotal > 0) {
@@ -115,6 +116,68 @@ class ReportBuilder
             'series_tanques'           => $seriesTanquesFiltradas,
             'puntos_mapa'              => $puntosMapa,
         ];
+    }
+
+    /**
+     * Suma el combustible realmente consumido, descontando los rebotes de
+     * pendiente / ruido de sensor (caídas que se recuperan solas) — mismo
+     * criterio que usa AnomalyDetector, para que este número no contradiga
+     * lo que dice la detección de anomalías.
+     */
+    private function calcularConsumoReal(array $lecturas, array $anomalyConfig): float
+    {
+        $ventanaMin = $anomalyConfig['recovery_window_minutes'] ?? 20;
+        $fraccionMinRecuperacion = $anomalyConfig['recovery_min_fraction'] ?? 0.7;
+
+        $lecturasConCombustible = array_values(array_filter($lecturas, fn($l) => $l['combustible_litros'] !== null));
+
+        $total = 0.0;
+        for ($i = 1; $i < count($lecturasConCombustible); $i++) {
+            $prev = $lecturasConCombustible[$i - 1];
+            $cur = $lecturasConCombustible[$i];
+
+            $delta = $prev['combustible_litros'] - $cur['combustible_litros'];
+            if ($delta < self::RUIDO_MINIMO_LITROS) {
+                continue; // no fue caída, o fue ruido de sensor
+            }
+
+            // ¿Se recuperó solo dentro de la ventana? Miramos hacia
+            // adelante en TODAS las lecturas (no solo las que tienen
+            // combustible), igual que AnomalyDetector.
+            $finVentana = $cur['fecha']->modify("+{$ventanaMin} minutes");
+            $mejorNivelPosterior = $cur['combustible_litros'];
+            $hayDatoPosterior = false;
+            foreach ($lecturasConCombustible as $l) {
+                if ($l['fecha'] > $cur['fecha'] && $l['fecha'] <= $finVentana) {
+                    $hayDatoPosterior = true;
+                    $mejorNivelPosterior = max($mejorNivelPosterior, $l['combustible_litros']);
+                }
+            }
+
+            // ⚠️ Si no hay ningún dato posterior dentro de la ventana
+            // (típicamente, la caída pasó muy cerca del final del período
+            // consultado), NO hay forma de confirmar que no se recuperó —
+            // se trata como "todavía sin confirmar" y no se cuenta, en vez
+            // de asumir que es pérdida real por defecto. Este es
+            // exactamente el bug que causó el número absurdo del
+            // 14/09/2026: la última lectura del período caía justo en
+            // medio de una oscilación de ruido, sin dato posterior para
+            // confirmar la recuperación, y se contaba entera como consumo.
+            if (!$hayDatoPosterior) {
+                continue;
+            }
+
+            $recuperado = $mejorNivelPosterior - $cur['combustible_litros'];
+            $fraccionRecuperada = $recuperado / $delta;
+
+            if ($fraccionRecuperada >= $fraccionMinRecuperacion) {
+                continue; // rebote de pendiente / ruido de sensor — no es consumo real
+            }
+
+            $total += $delta;
+        }
+
+        return $total;
     }
 
     /**

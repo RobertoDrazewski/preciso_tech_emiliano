@@ -15,11 +15,18 @@ class DataNormalizer
     private array $fieldMap;
 
     // Techo genérico cuando no sabemos la capacidad real del tanque de ese
-    // equipo puntual — bien generoso (ningún camión de esta flota debería
-    // acercarse, ni sumando varios tanques), pensado solo para descartar
-    // valores claramente basura (saltos a decenas o cientos de miles de
-    // litros durante una pérdida/reconexión de alimentación del dispositivo).
-    private const TECHO_GENERICO = 5000.0;
+    // equipo puntual. Bajado de 5000L a 1500L el 14/09/2026: el techo viejo
+    // era demasiado permisivo para un camión común (que normalmente no
+    // supera los 800-1200L, ni sumando varios tanques) — dejaba pasar
+    // ruido de sensor erático que después inflaba el consumo calculado a
+    // números absurdos (caso real: equipo con tanque de 873L, sin la
+    // capacidad cargada, mostró "102.672 L consumidos" en una semana,
+    // contra los 254L reales que mostraba el sistema de origen para el
+    // mismo período). Los tanques grandes de verdad (tanques fijos
+    // estacionarios) sí suelen traer su capacidad real cargada en la API
+    // de equipos, así que caen en la otra rama (usan su capacidad real,
+    // no este techo genérico) — bajarlo no les afecta.
+    private const TECHO_GENERICO = 1500.0;
 
     public function __construct(array $fieldMap)
     {
