@@ -41,9 +41,13 @@ try {
     $apiClient = crearApiClient($config);
     $raw = $apiClient->getFullData($equipo['id'], $desde, $hasta);
 
-    $capacidadLitros = isset($equipo['capacidad_litros']) && $equipo['capacidad_litros'] > 0
+    // Prioridad: 1) capacidad real de TTM si la tenemos, 2) estimada del
+    // propio historial del equipo (no vamos a depender de que TTM la
+    // cargue — la mayoría no la tiene), 3) el techo genérico dentro de
+    // DataNormalizer, como último recurso.
+    $capacidadLitros = (isset($equipo['capacidad_litros']) && $equipo['capacidad_litros'] > 0)
         ? (float) $equipo['capacidad_litros']
-        : null;
+        : $storage->capacidadEstimadaPorHistorial($equipo['id']);
 
     $normalizer = new DataNormalizer($fieldMap);
     $lecturas = $normalizer->normalize($raw, $equipo['id'], $capacidadLitros);

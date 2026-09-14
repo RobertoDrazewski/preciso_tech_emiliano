@@ -139,8 +139,26 @@ físico: si el dispositivo reporta un valor imposible (por ejemplo, un
 salto a decenas de miles de litros durante una pérdida y reconexión de
 alimentación del equipo — un evento real y conocido en esta flota), esa
 lectura se descarta en el origen, antes de llegar a cualquier gráfico,
-cálculo de consumo o detector. Se usa la capacidad real del tanque cuando
-se conoce (vía la API de flota); si no, un techo genérico conservador.
+cálculo de consumo o detector.
+
+La capacidad del tanque contra la que se valida se resuelve en tres
+niveles, porque no se puede depender de que TTM cargue este dato para
+cada vehículo (en la práctica, la gran mayoría no lo tiene):
+
+1. **Capacidad real**, si la API de flota la tiene cargada para ese equipo.
+2. **Capacidad estimada del propio historial**: percentil 95 de los
+   niveles de combustible observados para ese vehículo en los últimos 90
+   días, con un margen del 20% — se calcula solo, sin depender de que
+   nadie cargue nada. Resistente a que se haya colado algún valor raro en
+   el historial (usa percentil, no el máximo puro).
+3. **Techo genérico conservador**, como último recurso si el equipo
+   todavía no tiene suficiente historial propio.
+
+Cuando una caída SÍ se confirma como anomalía real (pasó el filtro de
+tiempo y recuperación) pero supera la capacidad conocida del tanque, no se
+descarta — se marca explícitamente en el detalle como "revisar antes de
+confirmar", junto con el ritmo de la pérdida en litros por minuto, para
+que quede a la vista qué tan extremo es el evento.
 
 ### Los cinco tipos de anomalía
 

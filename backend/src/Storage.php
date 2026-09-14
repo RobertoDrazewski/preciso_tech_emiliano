@@ -539,6 +539,43 @@ class Storage
         }, $rows);
     }
 
+    /**
+     * Estima la capacidad del tanque a partir del PROPIO historial del
+     * equipo, cuando TTM no tiene el dato cargado (que es la mayoría de
+     * los casos — no vamos a depender de que lo carguen, así que el
+     * sistema tiene que poder arreglárselas solo con lo que ya observó).
+     *
+     * Usa el percentil 95 de los niveles de combustible vistos en los
+     * últimos `$diasHistorial` días, con un margen del 20% arriba — el
+     * percentil (no el máximo puro) lo hace resistente a que se haya
+     * colado algún valor raro en el historial antes de los fixes de hoy.
+     * Devuelve null si no hay suficiente historial todavía para confiar
+     * en la estimación (equipo nuevo, por ejemplo) — en ese caso, quien
+     * llama cae al techo genérico.
+     */
+    public function capacidadEstimadaPorHistorial(string $equipo, int $diasHistorial = 90, int $minimoLecturas = 30): ?float
+    {
+        $desde = (new DateTimeImmutable())->modify("-{$diasHistorial} days")->format(DateTimeInterface::ATOM);
+        $stmt = $this->pdo->prepare('
+            SELECT combustible_litros FROM lecturas
+            WHERE equipo = :equipo AND fecha >= :desde
+              AND combustible_litros IS NOT NULL AND combustible_litros > 0
+            ORDER BY combustible_litros ASC
+        ');
+        $stmt->execute([':equipo' => $equipo, ':desde' => $desde]);
+        $valores = array_map('floatval', array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'combustible_litros'));
+
+        $n = count($valores);
+        if ($n < $minimoLecturas) {
+            return null;
+        }
+
+        $indicePercentil95 = (int) floor(0.95 * ($n - 1));
+        $percentil95 = $valores[$indicePercentil95];
+
+        return round($percentil95 * 1.2, 1);
+    }
+
     public function guardarAnomalia(array $a): int
     {
         $stmt = $this->pdo->prepare('

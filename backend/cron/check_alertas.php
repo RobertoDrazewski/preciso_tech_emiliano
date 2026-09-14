@@ -46,9 +46,11 @@ $totalNuevas = 0;
 
 foreach ($lote as $equipo) {
     try {
-        $capacidadLitros = isset($equipo['capacidad_litros']) && $equipo['capacidad_litros'] > 0
+        // Misma prioridad que informe.php: real de TTM -> estimada del
+        // historial propio -> techo genérico como último recurso.
+        $capacidadLitros = (isset($equipo['capacidad_litros']) && $equipo['capacidad_litros'] > 0)
             ? (float) $equipo['capacidad_litros']
-            : null;
+            : $storage->capacidadEstimadaPorHistorial($equipo['id']);
 
         $raw = $apiClient->getFullData($equipo['id'], $desde, $hasta);
         $lecturas = $normalizer->normalize($raw, $equipo['id'], $capacidadLitros);

@@ -83,8 +83,8 @@ class AnomalyDetector
                 $anomalias[] = $this->construir(
                     $equipo, $c['fecha'], 'descarga_detenido',
                     sprintf(
-                        'Vehículo detenido perdió %.1f L entre %s y %s, sin recuperarse.%s',
-                        $c['litros_perdidos'], $c['fecha_inicio']->format('H:i'), $c['fecha']->format('H:i'), $notaVariacion
+                        'Vehículo detenido perdió %.1f L entre %s y %s (%.1f L/min), sin recuperarse.%s',
+                        $c['litros_perdidos'], $c['fecha_inicio']->format('H:i'), $c['fecha']->format('H:i'), $tasaPorMinuto, $notaVariacion
                     ),
                     $c['litros_perdidos'], null, $c['lat'], $c['lng']
                 );
@@ -97,8 +97,8 @@ class AnomalyDetector
                 $anomalias[] = $this->construir(
                     $equipo, $c['fecha'], 'caida_instantanea',
                     sprintf(
-                        'Caída de %.1f L en %.0f minutos, sin recuperarse después.%s',
-                        $c['litros_perdidos'], $c['minutos'], $notaVariacion
+                        'Caída de %.1f L en %.0f minutos (%.1f L/min), sin recuperarse después.%s',
+                        $c['litros_perdidos'], $c['minutos'], $tasaPorMinuto, $notaVariacion
                     ),
                     $c['litros_perdidos'], null, $c['lat'], $c['lng']
                 );
