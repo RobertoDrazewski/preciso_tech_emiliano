@@ -194,6 +194,7 @@ table.anomalias td {
 .tag.consumo_anomalo { background: #fff4e0; color: var(--color-accent-dark); }
 .tag.agua_combustible { background: #e3f2fd; color: #1565c0; }
 .tag.ralenti { background: #fef3e2; color: #b8730a; }
+.tag.variacion_temperatura { background: #e8f5e9; color: #2e7d32; }
 
 .empty-state {
   text-align: center;
@@ -274,7 +275,7 @@ table.anomalias td {
 .filtros-card { position: relative; }
 .filtros-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr auto;
+  grid-template-columns: 2fr 1.3fr 1fr 1fr auto;
   gap: 14px;
   align-items: end;
 }

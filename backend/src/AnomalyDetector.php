@@ -137,14 +137,16 @@ class AnomalyDetector
             $anomalias[] = $a;
         }
 
-        // ⚠️ Chequeo de sentido físico: si sabemos la capacidad real del
-        // tanque (viene de la API de equipos de Emiliano), y una caída
-        // reportada la supera, es prácticamente imposible que sea
-        // combustible real perdido — es mucho más probable que sea un
+        // ⚠️ Chequeo de sentido físico: si sabemos la capacidad del tanque
+        // (real de TTM si la tienen cargada, o si no, la que calculamos
+        // solos mirando el historial propio del equipo — no vamos a
+        // depender de que TTM la cargue, ver Storage::capacidadEstimadaPorHistorial),
+        // y una caída reportada la supera, es prácticamente imposible que
+        // sea combustible real perdido — es mucho más probable que sea un
         // error de sensor o una pérdida/reconexión de alimentación del
         // dispositivo (justo el caso real que nos marcó Emiliano el
-        // 26/08/2026). Lo marcamos en el detalle en vez de descartarlo
-        // solo, para que quede a la vista y alguien lo confirme.
+        // 26/08/2026, con AG914LT). Lo marcamos en el detalle en vez de
+        // descartarlo solo, para que quede a la vista y alguien lo confirme.
         if ($capacidadLitros !== null && $capacidadLitros > 0) {
             foreach ($anomalias as &$a) {
                 if ($a['litros_perdidos'] > $capacidadLitros) {

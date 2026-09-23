@@ -14,12 +14,13 @@ try {
 
     $equipo = isset($_GET['equipo']) ? trim($_GET['equipo']) : null;
     $tipo = isset($_GET['tipo']) ? trim($_GET['tipo']) : null;
+    $cliente = isset($_GET['cliente']) ? trim($_GET['cliente']) : null;
 
     // Validación básica de entrada — sin esto, un tipo mal escrito devuelve
     // "0 anomalías" en silencio en vez de avisar que el filtro está mal.
-    if ($tipo !== null && $tipo !== '' && !in_array($tipo, ['descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'agua_combustible', 'ralenti'], true)) {
+    if ($tipo !== null && $tipo !== '' && !in_array($tipo, ['descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'agua_combustible', 'ralenti', 'variacion_temperatura'], true)) {
         http_response_code(400);
-        echo json_encode(['error' => 'tipo tiene que ser descarga_detenido, caida_instantanea, consumo_anomalo, agua_combustible o ralenti'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => 'tipo tiene que ser descarga_detenido, caida_instantanea, consumo_anomalo, agua_combustible, ralenti o variacion_temperatura'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -28,7 +29,7 @@ try {
     $hasta = new DateTimeImmutable();
 
     $storage = new Storage($config['db']);
-    $anomalias = $storage->anomaliasFlota($desde, $hasta, $equipo, $tipo);
+    $anomalias = $storage->anomaliasFlota($desde, $hasta, $equipo, $tipo, $cliente);
 
     $totalLitros = array_sum(array_column($anomalias, 'litros_perdidos'));
     $equiposAfectados = count(array_unique(array_column($anomalias, 'equipo')));

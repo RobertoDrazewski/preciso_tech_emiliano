@@ -415,7 +415,7 @@ class Storage
      * "Anomalías" con filtros. Trae también el nombre del equipo (join
      * simple contra la tabla equipos).
      */
-    public function anomaliasFlota(DateTimeInterface $desde, DateTimeInterface $hasta, ?string $equipo = null, ?string $tipo = null, int $limite = 500): array
+    public function anomaliasFlota(DateTimeInterface $desde, DateTimeInterface $hasta, ?string $equipo = null, ?string $tipo = null, ?string $cliente = null, int $limite = 500): array
     {
         $sql = '
             SELECT a.*, e.nombre AS equipo_nombre
@@ -434,6 +434,13 @@ class Storage
         if ($tipo !== null && $tipo !== '') {
             $sql .= ' AND a.tipo = :tipo';
             $params[':tipo'] = $tipo;
+        }
+        if ($cliente !== null && $cliente !== '') {
+            // Filtra por la flota/cliente completa — todos los equipos de
+            // ese cliente, no uno puntual. Pedido de Emiliano: poder ver
+            // cuántas anomalías tiene una flota entera, no equipo por equipo.
+            $sql .= ' AND e.cliente = :cliente';
+            $params[':cliente'] = $cliente;
         }
         $sql .= ' ORDER BY a.fecha DESC LIMIT :limite';
 

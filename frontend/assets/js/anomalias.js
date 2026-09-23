@@ -3,13 +3,35 @@ let equipoSeleccionado = null;
 
 async function init() {
   await cargarListaEquipos();
+  poblarFiltroClientes();
   configurarBuscador();
   aplicarFiltroDesdeUrl();
+  document.getElementById('filtroCliente').addEventListener('change', cargarAnomalias);
   document.getElementById('filtroTipo').addEventListener('change', cargarAnomalias);
   document.getElementById('filtroDias').addEventListener('change', cargarAnomalias);
   document.getElementById('btnFiltrar').addEventListener('click', cargarAnomalias);
   document.getElementById('btnLimpiar').addEventListener('click', limpiarFiltros);
   cargarAnomalias();
+}
+
+/**
+ * Arma el desplegable de "Flota / Cliente" con los clientes reales que ya
+ * tenemos en la flota (sacados de los equipos ya cargados, sin pedir nada
+ * nuevo al backend) — pedido de Emiliano: poder ver cuántas anomalías
+ * tiene una flota/cliente entera, no solo un equipo puntual.
+ */
+function poblarFiltroClientes() {
+  const clientes = [...new Set(
+    TODOS_LOS_EQUIPOS.map(eq => eq.cliente).filter(c => c && c.trim() !== '')
+  )].sort((a, b) => a.localeCompare(b, 'es'));
+
+  const $select = document.getElementById('filtroCliente');
+  clientes.forEach(cliente => {
+    const opt = document.createElement('option');
+    opt.value = cliente;
+    opt.textContent = cliente;
+    $select.appendChild(opt);
+  });
 }
 
 function aplicarFiltroDesdeUrl() {
@@ -101,6 +123,7 @@ function limpiarFiltros() {
   equipoSeleccionado = null;
   document.getElementById('buscarEquipo').value = '';
   document.getElementById('equipoIdSeleccionado').value = '';
+  document.getElementById('filtroCliente').value = '';
   document.getElementById('filtroTipo').value = '';
   document.getElementById('filtroDias').value = '7';
   cargarAnomalias();
@@ -116,11 +139,13 @@ async function cargarAnomalias() {
   $contenido.classList.add('hidden');
 
   const equipoId = document.getElementById('equipoIdSeleccionado').value;
+  const cliente = document.getElementById('filtroCliente').value;
   const tipo = document.getElementById('filtroTipo').value;
   const dias = document.getElementById('filtroDias').value;
 
   const params = new URLSearchParams();
   if (equipoId) params.set('equipo', equipoId);
+  if (cliente) params.set('cliente', cliente);
   if (tipo) params.set('tipo', tipo);
   params.set('dias', dias);
 
