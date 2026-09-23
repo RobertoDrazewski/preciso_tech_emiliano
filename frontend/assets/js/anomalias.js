@@ -169,9 +169,20 @@ async function cargarAnomalias() {
 }
 
 function renderResultados(data) {
-  const filtroTexto = equipoSeleccionado ? `equipo ${equipoSeleccionado.nombre}` : 'toda la flota';
+  // El texto de arriba tiene que decir qué estás mirando: un equipo, una
+  // flota entera, o todo. Antes decía "toda la flota" aunque filtraras
+  // por cliente, y confundía.
+  const cliente = document.getElementById('filtroCliente').value;
+  let filtroTexto = 'todas las flotas';
+  if (equipoSeleccionado) {
+    filtroTexto = `equipo ${equipoSeleccionado.nombre}`;
+  } else if (cliente) {
+    filtroTexto = `flota ${cliente}`;
+  }
   document.getElementById('resumenResultados').textContent =
     `${data.total} anomalía(s) — ${filtroTexto}, últimos ${document.getElementById('filtroDias').value} día(s)`;
+
+  renderPorFlota(data.anomalias, Boolean(cliente || equipoSeleccionado));
 
   // Agrupar anomalías por tipo, para los KPIs por tipo de abajo.
   const porTipo = {};
@@ -196,6 +207,7 @@ function renderResultados(data) {
     { key: 'consumo_anomalo', label: 'Consumo Anómalo' },
     { key: 'agua_combustible', label: 'Agua en Combustible' },
     { key: 'ralenti', label: 'Ralentí' },
+    { key: 'variacion_temperatura', label: 'Variación por temperatura' },
   ];
 
   // KPIs Generales
@@ -293,6 +305,62 @@ function renderLinkGraficoTTM(equipoNombre, fechaISO) {
   const url = linkGraficoTTM(equipoNombre, fechaISO);
   if (!url) return '—';
   return `<a href="${url}" target="_blank" rel="noopener">Ver gráfico ↗</a>`;
+}
+
+/**
+ * Tabla de anomalías agrupadas por flota/cliente, ordenada de la que más
+ * tiene a la que menos. Así de un vistazo se ve qué flota está peor.
+ * Cada fila es clickeable: te filtra esa flota entera.
+ *
+ * Si ya estás mirando una flota o un equipo puntual, la oculto — no tiene
+ * sentido un ranking de una sola fila.
+ */
+function renderPorFlota(anomalias, yaFiltrado) {
+  const $card = document.getElementById('cardPorFlota');
+  if (yaFiltrado || anomalias.length === 0) {
+    $card.classList.add('hidden');
+    return;
+  }
+  $card.classList.remove('hidden');
+
+  const porFlota = {};
+  anomalias.forEach(a => {
+    const flota = a.equipo_cliente || 'Sin cliente asignado';
+    if (!porFlota[flota]) {
+      porFlota[flota] = { cantidad: 0, litros: 0, equipos: new Set() };
+    }
+    porFlota[flota].cantidad++;
+    porFlota[flota].litros += Number(a.litros_perdidos) || 0;
+    porFlota[flota].equipos.add(a.equipo);
+  });
+
+  const filas = Object.entries(porFlota)
+    .sort((x, y) => y[1].cantidad - x[1].cantidad)
+    .map(([flota, info]) => `
+      <tr class="fila-flota" data-flota="${escapeHtml(flota)}" style="cursor:pointer;">
+        <td><strong>${escapeHtml(flota)}</strong></td>
+        <td>${info.cantidad}</td>
+        <td>${info.equipos.size}</td>
+        <td>${info.litros.toFixed(1)} L</td>
+      </tr>
+    `).join('');
+
+  document.getElementById('tablaPorFlota').innerHTML = `
+    <table class="anomalias">
+      <tr><th>Flota / Cliente</th><th>Anomalías</th><th>Vehículos</th><th>Litros</th></tr>
+      ${filas}
+    </table>
+    <p class="page-subtitle" style="margin:8px 0 0 0;">Tocá una flota para ver solo sus anomalías.</p>
+  `;
+
+  document.querySelectorAll('.fila-flota').forEach(fila => {
+    fila.addEventListener('click', () => {
+      const flota = fila.dataset.flota;
+      if (flota === 'Sin cliente asignado') return;
+      document.getElementById('filtroCliente').value = flota;
+      cargarAnomalias();
+    });
+  });
 }
 
 function renderUbicacion(lat, lng) {

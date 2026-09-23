@@ -137,6 +137,14 @@ class AnomalyDetector
             $anomalias[] = $a;
         }
 
+        // Temperatura / nivel: el sensor de nivel "sigue" a la temperatura
+        // mucho más de lo que explica la dilatación del gasoil. No es una
+        // pérdida de combustible, es un aviso de que ese sensor no es
+        // confiable. Ver deteccionTemperaturaNivel() más abajo.
+        foreach ($this->deteccionTemperaturaNivel($lecturas) as $a) {
+            $anomalias[] = $a;
+        }
+
         // ⚠️ Chequeo de sentido físico: si sabemos la capacidad del tanque
         // (real de TTM si la tienen cargada, o si no, la que calculamos
         // solos mirando el historial propio del equipo — no vamos a
@@ -161,6 +169,117 @@ class AnomalyDetector
         }
 
         return $anomalias;
+    }
+
+    /**
+     * Temperatura / nivel — el punto 7 que nos pidió Emiliano.
+     *
+     * La idea: el gasoil se dilata con el calor, así que es normal que el
+     * nivel suba un poco al mediodía y baje de noche con el vehículo
+     * quieto. Lo que busco es el caso en que el nivel acompaña a la
+     * temperatura MUCHO más de lo que explica esa dilatación. Cuando pasa
+     * eso, el sensor de nivel está afectado por la temperatura (mal
+     * calibrado, mal instalado, sonda dañada) y cualquier cálculo de
+     * consumo o pérdida que salga de ese equipo hay que mirarlo con
+     * cuidado.
+     *
+     * Pasos:
+     *  1. Me quedo solo con lecturas del vehículo QUIETO (velocidad 0), con
+     *     combustible y temperatura válidos. Andando, el nivel baja por
+     *     consumo y eso ensucia la comparación.
+     *  2. Si no tengo suficientes lecturas, o la temperatura casi no se
+     *     movió, no hay nada que cruzar y salgo.
+     *  3. Calculo la correlación entre temperatura y nivel (qué tan juntas
+     *     se mueven las dos curvas, de -1 a 1) y la pendiente (cuántos
+     *     litros cambia el nivel por cada grado).
+     *  4. Comparo lo que varió el nivel "por culpa de la temperatura"
+     *     (pendiente × rango de temperatura) contra lo que debería variar
+     *     por dilatación (nivel promedio × coeficiente × rango).
+     *  5. Si la correlación es alta Y la variación supera varias veces la
+     *     esperada, lo marco.
+     *
+     * Para no repetir la misma anomalía en cada corrida del cron, la fecha
+     * de la anomalía es la medianoche del día de la última lectura: como
+     * mucho una por equipo por día.
+     */
+    private function deteccionTemperaturaNivel(array $lecturas): array
+    {
+        $minLecturas   = $this->cfg['temp_min_lecturas'] ?? 30;
+        $rangoMinimo   = $this->cfg['temp_rango_minimo_grados'] ?? 5.0;
+        $corrMinima    = $this->cfg['temp_correlacion_minima'] ?? 0.8;
+        $factorExceso  = $this->cfg['temp_factor_exceso'] ?? 3.0;
+        $variacionMin  = $this->cfg['temp_variacion_minima_litros'] ?? 5.0;
+        $coefDilatacion = $this->cfg['temp_coef_dilatacion'] ?? 0.00083;
+
+        // 1. Solo quieto, con los dos datos válidos.
+        $puntos = [];
+        foreach ($lecturas as $l) {
+            if ((float) $l['velocidad'] !== 0.0) {
+                continue;
+            }
+            if (($l['temp_tanque'] ?? null) === null || $l['combustible_litros'] === null) {
+                continue;
+            }
+            $puntos[] = $l;
+        }
+
+        // 2. ¿Hay con qué trabajar?
+        $n = count($puntos);
+        if ($n < $minLecturas) {
+            return [];
+        }
+        $temps = array_map(fn($p) => (float) $p['temp_tanque'], $puntos);
+        $niveles = array_map(fn($p) => (float) $p['combustible_litros'], $puntos);
+        $rangoTemp = max($temps) - min($temps);
+        if ($rangoTemp < $rangoMinimo) {
+            return [];
+        }
+
+        // 3. Correlación y pendiente (regresión lineal simple, nada raro).
+        $mediaT = array_sum($temps) / $n;
+        $mediaN = array_sum($niveles) / $n;
+        $cov = 0.0;
+        $varT = 0.0;
+        $varN = 0.0;
+        for ($i = 0; $i < $n; $i++) {
+            $dt = $temps[$i] - $mediaT;
+            $dn = $niveles[$i] - $mediaN;
+            $cov += $dt * $dn;
+            $varT += $dt * $dt;
+            $varN += $dn * $dn;
+        }
+        if ($varT == 0.0 || $varN == 0.0) {
+            return []; // una de las dos curvas es plana, no hay correlación posible
+        }
+        $correlacion = $cov / sqrt($varT * $varN);
+        $pendiente = $cov / $varT; // litros por grado
+
+        // 4. Lo que varió por temperatura vs. lo que explica la dilatación.
+        $variacionObservada = abs($pendiente) * $rangoTemp;
+        $variacionEsperada = $mediaN * $coefDilatacion * $rangoTemp;
+
+        // 5. ¿Es para avisar?
+        if (abs($correlacion) < $corrMinima) {
+            return [];
+        }
+        if ($variacionObservada < $variacionMin) {
+            return [];
+        }
+        if ($variacionObservada < $factorExceso * $variacionEsperada) {
+            return []; // se explica por dilatación normal del gasoil, no hay problema
+        }
+
+        $ultima = end($puntos);
+        $fecha = new DateTimeImmutable($ultima['fecha']->format('Y-m-d') . ' 00:00:00', $ultima['fecha']->getTimezone());
+
+        return [$this->construir(
+            $ultima['equipo'], $fecha, 'variacion_temperatura',
+            sprintf(
+                'El nivel medido acompaña a la temperatura del tanque (correlación %.2f): varía unos %.1f L en un rango de %.1f °C, cuando por dilatación del gasoil se esperarían como mucho %.1f L. Probable sensor de nivel afectado por la temperatura — revisar calibración/instalación antes de confiar en sus lecturas.',
+                $correlacion, $variacionObservada, $rangoTemp, $variacionEsperada
+            ),
+            0.0, $correlacion, null, null
+        )];
     }
 
     /**

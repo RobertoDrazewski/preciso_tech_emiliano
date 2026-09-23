@@ -122,6 +122,8 @@ class Storage
             'tanque4_litros'  => $tipoReal,
             'variacion'       => $tipoReal,
             'wif'             => 'INTEGER',
+            'altitud'         => $tipoReal,
+            'temp_tanque'     => $tipoReal,
         ];
         foreach ($nuevasLecturas as $columna => $tipo) {
             if (!in_array($columna, $columnasLecturas, true)) {
@@ -415,10 +417,14 @@ class Storage
      * "Anomalías" con filtros. Trae también el nombre del equipo (join
      * simple contra la tabla equipos).
      */
-    public function anomaliasFlota(DateTimeInterface $desde, DateTimeInterface $hasta, ?string $equipo = null, ?string $tipo = null, ?string $cliente = null, int $limite = 500): array
+    // El límite estaba en 500 y con la flota entera y 30 días se quedaba
+    // corto: los KPIs de arriba (total, litros, vehículos) salían con
+    // menos de lo real porque se calculan sobre lo que devuelve esta
+    // consulta. Lo subí a 5000.
+    public function anomaliasFlota(DateTimeInterface $desde, DateTimeInterface $hasta, ?string $equipo = null, ?string $tipo = null, ?string $cliente = null, int $limite = 5000): array
     {
         $sql = '
-            SELECT a.*, e.nombre AS equipo_nombre
+            SELECT a.*, e.nombre AS equipo_nombre, e.cliente AS equipo_cliente
             FROM anomalias a
             LEFT JOIN equipos e ON e.id = a.equipo
             WHERE a.fecha BETWEEN :desde AND :hasta
@@ -464,11 +470,11 @@ class Storage
                 INSERT INTO lecturas
                     (equipo, fecha, evento, lat, lng, velocidad, combustible_litros,
                      tanque1_litros, tanque2_litros, tanque3_litros, tanque4_litros,
-                     variacion, odometro_km, motor_encendido, wif)
+                     variacion, odometro_km, motor_encendido, wif, altitud, temp_tanque)
                 VALUES
                     (:equipo, :fecha, :evento, :lat, :lng, :velocidad, :combustible_litros,
                      :tanque1_litros, :tanque2_litros, :tanque3_litros, :tanque4_litros,
-                     :variacion, :odometro_km, :motor_encendido, :wif)
+                     :variacion, :odometro_km, :motor_encendido, :wif, :altitud, :temp_tanque)
                 ON CONFLICT (equipo, fecha) DO NOTHING
             ';
         } else {
@@ -476,11 +482,11 @@ class Storage
                 INSERT OR IGNORE INTO lecturas
                     (equipo, fecha, evento, lat, lng, velocidad, combustible_litros,
                      tanque1_litros, tanque2_litros, tanque3_litros, tanque4_litros,
-                     variacion, odometro_km, motor_encendido, wif)
+                     variacion, odometro_km, motor_encendido, wif, altitud, temp_tanque)
                 VALUES
                     (:equipo, :fecha, :evento, :lat, :lng, :velocidad, :combustible_litros,
                      :tanque1_litros, :tanque2_litros, :tanque3_litros, :tanque4_litros,
-                     :variacion, :odometro_km, :motor_encendido, :wif)
+                     :variacion, :odometro_km, :motor_encendido, :wif, :altitud, :temp_tanque)
             ';
         }
         $stmt = $this->pdo->prepare($sql);
@@ -505,6 +511,8 @@ class Storage
                 ':odometro_km'        => $l['odometro_km'],
                 ':motor_encendido'    => $l['motor_encendido'] ? 1 : 0,
                 ':wif'                => isset($l['wif']) && $l['wif'] !== null ? ($l['wif'] ? 1 : 0) : null,
+                ':altitud'            => $l['altitud'] ?? null,
+                ':temp_tanque'        => $l['temp_tanque'] ?? null,
             ]);
             $count += $stmt->rowCount();
         }
@@ -542,6 +550,8 @@ class Storage
                 'odometro_km'        => $r['odometro_km'] !== null ? (float) $r['odometro_km'] : null,
                 'motor_encendido'    => (bool) $r['motor_encendido'],
                 'wif'                => isset($r['wif']) && $r['wif'] !== null ? (bool) $r['wif'] : null,
+                'altitud'            => isset($r['altitud']) && $r['altitud'] !== null ? (float) $r['altitud'] : null,
+                'temp_tanque'        => isset($r['temp_tanque']) && $r['temp_tanque'] !== null ? (float) $r['temp_tanque'] : null,
             ];
         }, $rows);
     }

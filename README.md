@@ -29,7 +29,7 @@ Desarrollado por **Puma Code** para **TTM Desarrollos / Preciso**.
 
 Preciso se conecta a las APIs de TTM (telemetría por vehículo y listado de
 flota), guarda el historial de cada equipo, y analiza esos datos para
-detectar automáticamente cinco tipos de anomalías de combustible — sin
+detectar automáticamente seis tipos de anomalías de combustible — sin
 intervención humana. Sobre eso construye:
 
 - **Un panel web** con el estado de toda la flota, filtrable por cliente,
@@ -160,7 +160,7 @@ descarta — se marca explícitamente en el detalle como "revisar antes de
 confirmar", junto con el ritmo de la pérdida en litros por minuto, para
 que quede a la vista qué tan extremo es el evento.
 
-### Los cinco tipos de anomalía
+### Los seis tipos de anomalía
 
 | Tipo | Cómo se detecta |
 |---|---|
@@ -169,9 +169,25 @@ que quede a la vista qué tan extremo es el evento.
 | **Consumo anómalo** | Una vez que hay al menos 20 caídas confirmadas en el historial del vehículo, cualquier caída nueva se compara estadísticamente (z-score ≥ 3 desvíos estándar) contra el comportamiento normal de **ese vehículo puntual** — no un promedio genérico de la flota. |
 | **Agua en combustible** | Dos señales: el campo del sensor de telemetría (booleano), y el diagnóstico `AGUA` que expone la API de flota de TTM. Se marca en el momento en que la señal pasa a estar activa, no en cada lectura mientras se mantiene. |
 | **Ralentí** | Motor encendido + vehículo detenido + consumo real sostenido durante al menos 15 minutos y 1 litro. A propósito no depende de GPS — muchos equipos operan bajo techo, donde la señal de posición no es confiable. |
+| **Variación por temperatura** | Con el vehículo quieto, se cruza la curva de temperatura del tanque contra la de nivel. El gasoil se dilata ~0,083% por grado, así que algo de variación es normal; si el nivel acompaña a la temperatura con correlación ≥ 0,8 y varía más de 3 veces lo que explica la dilatación (y al menos 5 L), el sensor está afectado por la temperatura y se avisa. No es una pérdida de combustible: es un aviso de que ese sensor no es confiable. Máximo una por equipo por día. |
 
 Todos los umbrales están centralizados en `backend/config/config.php`,
 documentados y ajustables sin tocar lógica de negocio.
+
+### Lecturas sin dato del sensor
+
+Cuando el sensor se desconecta o se está reconectando, la API manda
+lecturas `DATA` con `combustible_total = 0` y todos los tanques en 0
+(también la temperatura). Eso no es un tanque vacío: se trata como "sin
+dato", igual que un evento `TIEMPO`. Sin esto, los gráficos caían a cero
+a cada rato y aparecían caídas falsas de cientos de litros en un minuto.
+
+### Filtro por flota
+
+La pantalla de Anomalías se puede filtrar por flota/cliente (todos los
+vehículos de ese cliente juntos), y muestra un ranking de anomalías por
+flota para ver de un vistazo cuál está peor. Tocando una fila del ranking
+se filtra esa flota.
 
 ### Corroboración adicional
 
@@ -342,7 +358,7 @@ Todos los endpoints están en `backend/public/api/` y devuelven JSON.
 
 **En producción, funcionando:**
 - Conexión a las dos APIs reales de TTM (telemetría y flota).
-- Detección automática de los 5 tipos de anomalía sobre la flota completa.
+- Detección automática de los 6 tipos de anomalía sobre la flota completa.
 - Proceso automático (cron) corriendo cada 5 minutos con alertas por email.
 - Panel con filtros por cliente, servicio y presencia de anomalías.
 - Exportación de informes a PDF.

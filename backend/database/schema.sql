@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS lecturas (
     odometro_km REAL,
     motor_encendido INTEGER,
     wif INTEGER,                   -- Water In Fuel: 1 = agua detectada en el combustible, 0/NULL = sin dato
+    altitud REAL,                  -- metros, viene en el JSON real (22/09/2026)
+    temp_tanque REAL,              -- °C del tanque, para la anomalía temperatura/nivel
     UNIQUE(equipo, fecha)
 );
 

@@ -114,6 +114,44 @@ class DataNormalizer
                 $odometro = null;
             }
 
+            // ⚠️ El cero del sensor desconectado. Mirando el JSON real
+            // (equipo 1061, 11/09) aparecen lecturas DATA con
+            // combustible_total = 0 y TODOS los tanques en 0 (y la
+            // temperatura también en 0). Eso no es un tanque vacío, es el
+            // sensor que en ese momento no tiene dato (se desconectó o se
+            // está reconectando). Si lo tomo como "0 litros" pasa lo que
+            // vimos: el gráfico cae a cero cada dos por tres y aparecen
+            // caídas falsas de 700 L en un minuto. Así que lo trato como
+            // "sin dato" (null), igual que un TIEMPO.
+            $sinDatoDeSensor = false;
+            if ($litros !== null && $litros == 0.0) {
+                $algunTanqueConDato = false;
+                foreach ($tanques as $t) {
+                    if ($t !== null && $t > 0) {
+                        $algunTanqueConDato = true;
+                        break;
+                    }
+                }
+                if (!$algunTanqueConDato) {
+                    $litros = null;
+                    $sinDatoDeSensor = true;
+                }
+            }
+
+            // Temperatura del tanque: si el sensor no tenía dato (el caso de
+            // arriba), el 0 que manda tampoco es real. Fuera de ese caso, un
+            // 0 °C puede ser real (invierno), así que lo dejo.
+            $temp = $this->extractFloat($rec, 'temp_tanque');
+            if ($sinDatoDeSensor || $litros === null) {
+                $temp = null;
+            }
+
+            // El odómetro en 0 tampoco es real (en DATA ya lo anulamos
+            // arriba, pero por las dudas en cualquier evento).
+            if ($odometro !== null && $odometro == 0.0) {
+                $odometro = null;
+            }
+
             $velocidad = $this->extractFloat($rec, 'velocidad') ?? 0.0;
 
             $motorRaw = $this->extract($rec, 'motor_encendido');
@@ -137,6 +175,8 @@ class DataNormalizer
                 'odometro_km'        => $odometro,
                 'motor_encendido'    => $motorEncendido,
                 'wif'                => $wif,
+                'altitud'            => $this->extractFloat($rec, 'altitud'),
+                'temp_tanque'        => $temp,
             ];
         }
 

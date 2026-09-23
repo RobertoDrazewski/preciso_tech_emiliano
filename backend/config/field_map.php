@@ -58,6 +58,22 @@ return [
         'lng' => [
             'raw' => ['longitud'],
         ],
+        // Estos dos los encontré corriendo test_api.php contra el equipo
+        // 1061 el 22/09/2026 — vienen en el JSON real y no los estábamos
+        // levantando.
+        'altitud' => [
+            // Metros sobre el nivel del mar. Por ahora solo lo guardo; la
+            // idea es usarlo más adelante para confirmar que una caída que
+            // se recupera sola fue una pendiente de verdad y no ruido.
+            'raw' => ['altitud'],
+        ],
+        'temp_tanque' => [
+            // Temperatura del tanque en °C. La uso para la anomalía de
+            // "temperatura / nivel" (ver AnomalyDetector). OJO: cuando el
+            // sensor no tiene dato manda 0, igual que el combustible — eso
+            // lo limpio en DataNormalizer.
+            'raw' => ['temp_tanque'],
+        ],
         'velocidad' => [
             'raw' => ['velocidad'],
         ],

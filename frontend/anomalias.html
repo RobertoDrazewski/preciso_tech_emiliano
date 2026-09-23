@@ -74,6 +74,14 @@
     <!-- Bloques tipo KPI -->
     <div class="grid grid-3" id="kpiStats" style="margin-bottom: 20px;"></div>
 
+    <!-- Anomalías agrupadas por flota/cliente (pedido de Emiliano: ver
+         cuántas anomalías tiene cada flota entera, no solo equipo por
+         equipo). Se oculta sola cuando ya estás filtrando una flota. -->
+    <div class="card" id="cardPorFlota" style="margin-bottom: 20px;">
+      <h3 style="margin-top:0; color:var(--color-navy);">Anomalías por flota</h3>
+      <div id="tablaPorFlota"></div>
+    </div>
+
     <div class="card">
       <div id="tablaAnomalias"></div>
     </div>

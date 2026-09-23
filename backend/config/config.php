@@ -123,6 +123,27 @@ return [
         // este piso, ruido de sensor en un motor apagado-pero-marcado-
         // encendido por error podría generar falsos positivos.
         'ralenti_litros_minimos' => 1.0,
+
+        // --- Temperatura / nivel (punto 7 que pidió Emiliano) ---
+        // El gasoil se dilata con el calor: más o menos 0,083% de su
+        // volumen por cada grado. O sea que un tanque con 600 L que pasa
+        // de 10 °C a 30 °C "crece" unos 10 L sin que nadie le cargue nada.
+        // Eso es normal y lo tengo que aceptar. Lo que NO es normal es que
+        // el nivel medido siga a la temperatura mucho más de lo que
+        // explica la dilatación — ahí el sensor está afectado por la
+        // temperatura (mal calibrado, mal instalado) y sus lecturas no son
+        // confiables. Esta anomalía avisa eso.
+        //
+        // Cómo lo mido: con el vehículo quieto (sin consumo), cruzo la
+        // curva de temperatura contra la de nivel y saco la correlación.
+        // Si van muy juntas Y la variación es varias veces mayor a la que
+        // explica la dilatación, lo marco.
+        'temp_coef_dilatacion'         => 0.00083, // por °C, gasoil
+        'temp_correlacion_minima'      => 0.8,     // qué tan "pegadas" tienen que ir las dos curvas (1 = idénticas)
+        'temp_factor_exceso'           => 3.0,     // cuántas veces más que la dilatación normal tiene que variar el nivel
+        'temp_variacion_minima_litros' => 5.0,     // por debajo de esto no vale la pena avisar
+        'temp_rango_minimo_grados'     => 5.0,     // si la temperatura casi no se movió, no hay nada para cruzar
+        'temp_min_lecturas'            => 30,      // con pocos puntos la correlación no dice nada
     ],
 
     // --- Ventanas de tiempo por tipo de informe ---

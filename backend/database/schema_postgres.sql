@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS lecturas (
     odometro_km DOUBLE PRECISION,
     motor_encendido INTEGER,
     wif INTEGER,
+    altitud DOUBLE PRECISION,
+    temp_tanque DOUBLE PRECISION,
     UNIQUE(equipo, fecha)
 );
 
