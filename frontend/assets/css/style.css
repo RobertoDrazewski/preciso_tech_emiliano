@@ -195,6 +195,7 @@ table.anomalias td {
 .tag.agua_combustible { background: #e3f2fd; color: #1565c0; }
 .tag.ralenti { background: #fef3e2; color: #b8730a; }
 .tag.variacion_temperatura { background: #e8f5e9; color: #2e7d32; }
+.tag.desconexion_sensor { background: #eceff1; color: #455a64; }
 
 .empty-state {
   text-align: center;

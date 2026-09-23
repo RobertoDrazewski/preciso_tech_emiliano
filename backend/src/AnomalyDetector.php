@@ -68,7 +68,17 @@ class AnomalyDetector
         // Historial de tasas (L/min) SOLO de caídas ya confirmadas como
         // reales (sin rebotes de pendiente), para que el z-score no se
         // "acostumbre" a ruido de sensor y pierda sensibilidad.
-        $tasas = array_map(fn($c) => $c['litros_perdidos'] / $c['minutos'], $confirmadas);
+        $tasaMaxima = $this->cfg['tasa_maxima_fisica_lpm'] ?? 150.0;
+        // Los saltos imposibles (desconexiones) los dejo afuera de la
+        // estadística: si no, un salto de 800 L en un minuto infla el
+        // promedio del vehículo y después ninguna caída real parece rara.
+        $tasas = [];
+        foreach ($confirmadas as $c) {
+            $t = $c['litros_perdidos'] / $c['minutos'];
+            if ($t <= $tasaMaxima) {
+                $tasas[] = $t;
+            }
+        }
         [$media, $desvio] = $this->mediaYDesvio($tasas);
         $usarZScore = count($tasas) >= $this->cfg['min_history_points'] && $desvio > 0;
 
@@ -78,6 +88,22 @@ class AnomalyDetector
             $notaVariacion = $c['variacion_detectada']
                 ? ' El dispositivo también marcó una variación en ese momento (campo "variacion"), lo que corrobora el evento.'
                 : '';
+
+            // Salto más rápido que cualquier bomba → no es combustible que
+            // sale del tanque, es el sensor que se desconectó o se
+            // reinició (punto 5 de Emiliano: "desconexión de algún
+            // tanque"). Va con 0 L de merma porque no se perdió nada real.
+            if ($tasaPorMinuto > $tasaMaxima) {
+                $anomalias[] = $this->construir(
+                    $equipo, $c['fecha'], 'desconexion_sensor',
+                    sprintf(
+                        'El nivel saltó de golpe %.1f L en %s (%.0f L/min) y no volvió. Ninguna bomba saca combustible tan rápido: es una desconexión o reinicio del sensor/tanque, no una pérdida real. Revisar la instalación.',
+                        $c['litros_perdidos'], $this->textoDuracion($c['minutos']), $tasaPorMinuto
+                    ),
+                    0.0, null, $c['lat'], $c['lng']
+                );
+                continue;
+            }
 
             if ($c['detenido'] && $c['litros_perdidos'] >= $this->cfg['stopped_drop_liters_threshold']) {
                 $anomalias[] = $this->construir(
@@ -97,8 +123,8 @@ class AnomalyDetector
                 $anomalias[] = $this->construir(
                     $equipo, $c['fecha'], 'caida_instantanea',
                     sprintf(
-                        'Caída de %.1f L en %.0f minutos (%.1f L/min), sin recuperarse después.%s',
-                        $c['litros_perdidos'], $c['minutos'], $tasaPorMinuto, $notaVariacion
+                        'Caída de %.1f L en %s (%.1f L/min), sin recuperarse después.%s',
+                        $c['litros_perdidos'], $this->textoDuracion($c['minutos']), $tasaPorMinuto, $notaVariacion
                     ),
                     $c['litros_perdidos'], null, $c['lat'], $c['lng']
                 );
@@ -440,6 +466,12 @@ class AnomalyDetector
                 continue;
             }
 
+            // Si entre las dos lecturas hay un hueco grande, no comparo:
+            // no sé qué pasó en el medio (ver 'max_gap_minutos' en config).
+            if ($minutos > ($this->cfg['max_gap_minutos'] ?? 30)) {
+                continue;
+            }
+
             $finVentana = $cur['fecha']->modify("+{$ventanaMin} minutes");
             if ($finVentana > $ahora) {
                 // Todavía no pasó suficiente tiempo real para saber si esto
@@ -483,7 +515,7 @@ class AnomalyDetector
                 'fecha'                => $cur['fecha'],
                 'litros_perdidos'      => $litrosPerdidos,
                 'minutos'              => $minutos,
-                'detenido'             => !$cur['motor_encendido'] && !$prev['motor_encendido'],
+                'detenido'             => $this->estabaDetenido($prev, $cur),
                 'variacion_detectada'  => $variacionDetectada,
                 'lat'                  => $cur['lat'],
                 'lng'                  => $cur['lng'],
@@ -491,6 +523,54 @@ class AnomalyDetector
         }
 
         return $confirmadas;
+    }
+
+    /**
+     * ¿El vehículo estaba realmente quieto entre estas dos lecturas?
+     *
+     * Antes usaba solo el campo "movimiento" de la API, pero no es
+     * confiable: en el JSON real hay lecturas con movimiento=0 y el camión
+     * a 9 km/h. Resultado: el consumo normal andando (sobre todo subiendo
+     * la cordillera) salía como "descarga con vehículo detenido".
+     *
+     * Ahora pido las dos cosas: velocidad casi cero en ambas lecturas, y
+     * que entre una y otra no se haya movido más de unos metros (si hay
+     * GPS en las dos). Si no hay GPS, me quedo con la velocidad.
+     */
+    private function estabaDetenido(array $prev, array $cur): bool
+    {
+        $velMax = $this->cfg['detenido_velocidad_max_kmh'] ?? 1.0;
+        if ((float) $prev['velocidad'] > $velMax || (float) $cur['velocidad'] > $velMax) {
+            return false;
+        }
+
+        $distMax = $this->cfg['detenido_distancia_max_metros'] ?? 200;
+        if ($prev['lat'] !== null && $prev['lng'] !== null && $cur['lat'] !== null && $cur['lng'] !== null) {
+            if ($this->distanciaMetros($prev['lat'], $prev['lng'], $cur['lat'], $cur['lng']) > $distMax) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** "menos de 1 minuto", "3 minutos", etc. — para que el detalle se lea bien. */
+    private function textoDuracion(float $minutos): string
+    {
+        if ($minutos < 1) {
+            return 'menos de 1 minuto';
+        }
+        return sprintf('%.0f minuto%s', $minutos, round($minutos) == 1 ? '' : 's');
+    }
+
+    /** Distancia entre dos puntos GPS en metros (fórmula de haversine, la de siempre). */
+    private function distanciaMetros(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $r = 6371000.0;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+        return $r * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 
     private function construir(string $equipo, DateTimeInterface $fecha, string $tipo, string $detalle, float $litros, ?float $z, ?float $lat = null, ?float $lng = null): array

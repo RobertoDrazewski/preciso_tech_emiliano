@@ -152,6 +152,16 @@ class DataNormalizer
                 $odometro = null;
             }
 
+            // Coordenadas 0,0: el GPS no tenía fix. Ese punto está en el
+            // medio del océano frente a África, no es una ubicación real —
+            // sin esto aparecían anomalías "ubicadas" en 0.00000, 0.00000.
+            $lat = $this->extractFloat($rec, 'lat');
+            $lng = $this->extractFloat($rec, 'lng');
+            if ($lat !== null && $lng !== null && $lat == 0.0 && $lng == 0.0) {
+                $lat = null;
+                $lng = null;
+            }
+
             $velocidad = $this->extractFloat($rec, 'velocidad') ?? 0.0;
 
             $motorRaw = $this->extract($rec, 'motor_encendido');
@@ -166,8 +176,8 @@ class DataNormalizer
                 'equipo'             => (string) $equipo,
                 'fecha'              => $fecha,
                 'evento'             => $evento,
-                'lat'                => $this->extractFloat($rec, 'lat'),
-                'lng'                => $this->extractFloat($rec, 'lng'),
+                'lat'                => $lat,
+                'lng'                => $lng,
                 'velocidad'          => $velocidad,
                 'combustible_litros' => $litros,
                 'tanques'            => $tanques,

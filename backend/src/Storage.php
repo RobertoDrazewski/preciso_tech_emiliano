@@ -570,6 +570,33 @@ class Storage
      * en la estimación (equipo nuevo, por ejemplo) — en ese caso, quien
      * llama cae al techo genérico.
      */
+    /**
+     * Para el script de reprocesar: qué equipos tienen lecturas guardadas
+     * desde tal fecha. Así solo recalculo los que tienen datos.
+     */
+    public function equiposConLecturasDesde(DateTimeInterface $desde): array
+    {
+        $stmt = $this->pdo->prepare('SELECT DISTINCT equipo FROM lecturas WHERE fecha >= :desde ORDER BY equipo');
+        $stmt->execute([':desde' => $desde->format(DateTimeInterface::ATOM)]);
+        return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'equipo');
+    }
+
+    /**
+     * Borra las anomalías que salen de CALCULAR sobre las lecturas (todas
+     * menos el agua que viene del diagnóstico de TTM, que no se recalcula
+     * desde lecturas). Se usa antes de reprocesar con reglas nuevas.
+     */
+    public function borrarAnomaliasCalculadasDesde(DateTimeInterface $desde): int
+    {
+        $stmt = $this->pdo->prepare("
+            DELETE FROM anomalias
+            WHERE fecha >= :desde
+              AND tipo IN ('descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'ralenti', 'variacion_temperatura', 'desconexion_sensor')
+        ");
+        $stmt->execute([':desde' => $desde->format(DateTimeInterface::ATOM)]);
+        return $stmt->rowCount();
+    }
+
     public function capacidadEstimadaPorHistorial(string $equipo, int $diasHistorial = 90, int $minimoLecturas = 30): ?float
     {
         $desde = (new DateTimeImmutable())->modify("-{$diasHistorial} days")->format(DateTimeInterface::ATOM);

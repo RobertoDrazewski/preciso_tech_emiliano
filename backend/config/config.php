@@ -112,6 +112,32 @@ return [
         // debería perder combustible).
         'stopped_drop_liters_threshold' => 4.0,
 
+        // --- Controles que agregué el 23/09/2026 mirando la lista real ---
+
+        // Hueco máximo entre dos lecturas para compararlas. Si entre una
+        // lectura y la siguiente pasaron más de 30 minutos (sensor sin
+        // dato, equipo apagado, falta de señal), no tengo idea de qué pasó
+        // en el medio: pudo haber cargado, consumido andando, cualquier
+        // cosa. Antes comparaba igual y salían cosas como "perdió 837 L
+        // entre 11:51 y 11:47" — con dos días de hueco entre las lecturas.
+        'max_gap_minutos' => 30,
+
+        // Velocidad máxima a la que se puede sacar combustible de verdad.
+        // Una pistola de surtidor de camión anda entre 40 y 130 L/min; una
+        // bomba de robo, menos. Si una caída es más rápida que esto, no es
+        // combustible saliendo del tanque: es el sensor que se desconectó
+        // o se reinició. No la tiro — la marco como "desconexión de
+        // sensor", que era justamente el punto 5 que pidió Emiliano.
+        'tasa_maxima_fisica_lpm' => 150.0,
+
+        // Para decir que un vehículo estaba DETENIDO no alcanza con el
+        // campo "movimiento" (en el JSON real vimos movimiento=0 con el
+        // camión a 9 km/h). Pido velocidad casi 0 en las dos lecturas Y
+        // que no se haya movido más de esta distancia. Así no confundo el
+        // consumo normal subiendo la cordillera con una descarga.
+        'detenido_velocidad_max_kmh' => 1.0,
+        'detenido_distancia_max_metros' => 200,
+
         // --- Ralentí (motor encendido + detenido + consumiendo) ---
         // A propósito, esto NO usa GPS/posición — Emiliano lo pidió así
         // porque muchos equipos quedan bajo techo (el GPS ahí no sirve) y

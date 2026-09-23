@@ -208,6 +208,7 @@ function renderResultados(data) {
     { key: 'agua_combustible', label: 'Agua en Combustible' },
     { key: 'ralenti', label: 'Ralentí' },
     { key: 'variacion_temperatura', label: 'Variación por temperatura' },
+    { key: 'desconexion_sensor', label: 'Desconexión de sensor' },
   ];
 
   // KPIs Generales
