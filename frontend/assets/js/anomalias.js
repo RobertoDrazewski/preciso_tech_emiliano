@@ -209,6 +209,7 @@ function renderResultados(data) {
     { key: 'ralenti', label: 'Ralentí' },
     { key: 'variacion_temperatura', label: 'Variación por temperatura' },
     { key: 'desconexion_sensor', label: 'Desconexión de sensor' },
+    { key: 'corte_alimentacion', label: 'Corte de alimentación' },
   ];
 
   // KPIs Generales

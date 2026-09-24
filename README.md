@@ -29,7 +29,7 @@ Desarrollado por **Puma Code** para **TTM Desarrollos / Preciso**.
 
 Preciso se conecta a las APIs de TTM (telemetría por vehículo y listado de
 flota), guarda el historial de cada equipo, y analiza esos datos para
-detectar automáticamente siete tipos de anomalías de combustible — sin
+detectar automáticamente ocho tipos de anomalías de combustible — sin
 intervención humana. Sobre eso construye:
 
 - **Un panel web** con el estado de toda la flota, filtrable por cliente,
@@ -160,17 +160,18 @@ descarta — se marca explícitamente en el detalle como "revisar antes de
 confirmar", junto con el ritmo de la pérdida en litros por minuto, para
 que quede a la vista qué tan extremo es el evento.
 
-### Los siete tipos de anomalía
+### Los ocho tipos de anomalía
 
 | Tipo | Cómo se detecta |
 |---|---|
-| **Descarga con vehículo detenido** | Caída confirmada de combustible mientras el vehículo está parado, por encima de 4 litros — un vehículo detenido no debería perder combustible. |
-| **Caída instantánea** | Caída confirmada de al menos 15 litros en 10 minutos o menos, sin necesitar historial previo — regla de seguridad válida desde el primer día. |
+| **Descarga con vehículo detenido** | Caída confirmada de más de 15 litros con el vehículo realmente quieto (velocidad casi 0 y menos de 200 m de desplazamiento por GPS). Solo aplica a vehículos: no a tanques fijos, pozos ni máquinas. |
+| **Caída instantánea** | Caída confirmada de al menos 15 litros en 10 minutos o menos, a un ritmo físicamente posible (hasta 150 L/min). Solo aplica a vehículos. |
 | **Consumo anómalo** | Una vez que hay al menos 20 caídas confirmadas en el historial del vehículo, cualquier caída nueva se compara estadísticamente (z-score ≥ 3 desvíos estándar) contra el comportamiento normal de **ese vehículo puntual** — no un promedio genérico de la flota. |
 | **Agua en combustible** | Dos señales: el campo del sensor de telemetría (booleano), y el diagnóstico `AGUA` que expone la API de flota de TTM. Se marca en el momento en que la señal pasa a estar activa, no en cada lectura mientras se mantiene. |
 | **Ralentí** | Motor encendido + vehículo detenido + consumo real sostenido durante al menos 15 minutos y 1 litro. A propósito no depende de GPS — muchos equipos operan bajo techo, donde la señal de posición no es confiable. |
 | **Variación por temperatura** | Con el vehículo quieto, se cruza la curva de temperatura del tanque contra la de nivel. El gasoil se dilata ~0,083% por grado, así que algo de variación es normal; si el nivel acompaña a la temperatura con correlación ≥ 0,8 y varía más de 3 veces lo que explica la dilatación (y al menos 5 L), el sensor está afectado por la temperatura y se avisa. No es una pérdida de combustible: es un aviso de que ese sensor no es confiable. Máximo una por equipo por día. |
 | **Desconexión de sensor** | Una caída más rápida que cualquier bomba real (más de 150 L/min) no es combustible que sale del tanque: es el sensor que se desconectó o se reinició. Se reporta aparte, con 0 L de merma, para no inflar las pérdidas. Era el punto 5 pedido por TTM ("desconexión de algún tanque"). |
+| **Corte de alimentación** | TTM manda los eventos `POWOFF` (se cortó la alimentación del equipo) y `POWON` (volvió). Cada corte se reporta con su duración, y se compara el último nivel antes del corte con el primero al volver: si faltan 15 L o más, se marca como posible robo — cortar la alimentación para que el sensor no registre la descarga es el patrón clásico. |
 
 Todos los umbrales están centralizados en `backend/config/config.php`,
 documentados y ajustables sin tocar lógica de negocio.
@@ -183,6 +184,17 @@ documentados y ajustables sin tocar lógica de negocio.
   200 m de desplazamiento por GPS. El campo `movimiento` de la API no es
   confiable para esto (viene en 0 con el vehículo andando).
 - **Coordenadas 0,0:** se tratan como GPS sin dato.
+- **Equipos estacionarios:** tanques fijos, pozos, máquinas y generadores
+  no se evalúan con "descarga detenido", "caída instantánea" ni "ralentí"
+  — para ellos estar quietos y entregar/consumir combustible es su
+  funcionamiento normal. Se reconocen por el tipo de la API de equipos o,
+  si el tipo no está bien cargado, por el nombre.
+- **Umbral de descarga detenido en 15 L:** por debajo de eso es ruido
+  propio del sensor (reprocesando 30 días, más de la mitad de estas
+  anomalías eran de menos de 10 L).
+
+Para ver TODO lo que mandan las dos APIs (todos los campos y todos los valores de `evento`, no solo el primer registro):
+`php scripts/diagnostico_apis.php 1076 "2026-09-07 00:00" "2026-09-14 23:59"`
 
 Para recalcular anomalías ya guardadas con las reglas nuevas:
 `php scripts/reprocesar_anomalias.php 30` (usa las lecturas guardadas, no
@@ -372,7 +384,7 @@ Todos los endpoints están en `backend/public/api/` y devuelven JSON.
 
 **En producción, funcionando:**
 - Conexión a las dos APIs reales de TTM (telemetría y flota).
-- Detección automática de los 7 tipos de anomalía sobre la flota completa.
+- Detección automática de los 8 tipos de anomalía sobre la flota completa.
 - Proceso automático (cron) corriendo cada 5 minutos con alertas por email.
 - Panel con filtros por cliente, servicio y presencia de anomalías.
 - Exportación de informes a PDF.

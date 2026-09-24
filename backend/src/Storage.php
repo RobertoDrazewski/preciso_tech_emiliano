@@ -591,7 +591,7 @@ class Storage
         $stmt = $this->pdo->prepare("
             DELETE FROM anomalias
             WHERE fecha >= :desde
-              AND tipo IN ('descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'ralenti', 'variacion_temperatura', 'desconexion_sensor')
+              AND tipo IN ('descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'ralenti', 'variacion_temperatura', 'desconexion_sensor', 'corte_alimentacion')
         ");
         $stmt->execute([':desde' => $desde->format(DateTimeInterface::ATOM)]);
         return $stmt->rowCount();

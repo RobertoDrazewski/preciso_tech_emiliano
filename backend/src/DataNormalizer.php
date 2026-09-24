@@ -87,7 +87,7 @@ class DataNormalizer
                 continue; // sin fecha no podemos ordenar/comparar, se descarta
             }
 
-            $evento = $this->extract($rec, 'evento');
+            $evento = $this->normalizarEvento($this->extract($rec, 'evento'));
 
             $litros = $this->extractFloat($rec, 'combustible_litros');
             if ($litros !== null && ($litros < 0 || $litros > $techo)) {
@@ -107,7 +107,13 @@ class DataNormalizer
                 4 => $this->extractTanque($rec, 'tanque4_litros'),
             ];
 
-            if ($evento === 'TIEMPO') {
+            if ($evento === 'TIEMPO' || $evento === 'POWOFF' || $evento === 'POWON') {
+                // TIEMPO no trae combustible. Y en POWOFF/POWON (corte y
+                // vuelta de la alimentación del equipo, confirmado por
+                // Emiliano) la lectura de combustible de ese instante no es
+                // confiable: el sensor se está apagando o recién arranca.
+                // Me quedo con el evento (que es lo que importa) y el
+                // combustible lo tomo de las lecturas DATA de antes y después.
                 $litros = null;
                 $tanques = [1 => null, 2 => null, 3 => null, 4 => null];
             } elseif ($evento === 'DATA') {
@@ -218,6 +224,29 @@ class DataNormalizer
             }
         }
         return null;
+    }
+
+    /**
+     * Deja el evento siempre escrito igual. Emiliano me dijo que vienen
+     * "POWON" y "POWOFF" literalmente, pero por las dudas acepto también
+     * variantes (minúsculas, "POWER_ON", "power off", etc.) y las llevo a
+     * POWON / POWOFF, así el resto del sistema compara contra una sola
+     * forma.
+     */
+    private function normalizarEvento($evento): ?string
+    {
+        if ($evento === null) {
+            return null;
+        }
+        $e = strtoupper(trim((string) $evento));
+        $soloLetras = preg_replace('/[^A-Z]/', '', $e);
+        if (in_array($soloLetras, ['POWON', 'POWERON'], true)) {
+            return 'POWON';
+        }
+        if (in_array($soloLetras, ['POWOFF', 'POWEROFF'], true)) {
+            return 'POWOFF';
+        }
+        return $e;
     }
 
     private function extractFloat(array $rec, string $fieldKey): ?float

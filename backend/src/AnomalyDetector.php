@@ -63,6 +63,11 @@ class AnomalyDetector
             return [];
         }
 
+        // ¿Es un equipo que no se mueve nunca (tanque fijo, pozo, máquina)?
+        // A esos no les aplican las reglas pensadas para vehículos — ver
+        // 'palabras_equipo_estacionario' en config.
+        $esEstacionario = $this->esEquipoEstacionario($equipo);
+
         $confirmadas = $this->caidasConfirmadas($lecturas, $ahora);
 
         // Historial de tasas (L/min) SOLO de caídas ya confirmadas como
@@ -105,7 +110,10 @@ class AnomalyDetector
                 continue;
             }
 
-            if ($c['detenido'] && $c['litros_perdidos'] >= $this->cfg['stopped_drop_liters_threshold']) {
+            // Descarga detenido y caída instantánea: solo para vehículos. A un
+            // tanque fijo le sacan combustible todo el día (es su trabajo) y
+            // un pozo consume sin moverse — para ellos esto es lo normal.
+            if (!$esEstacionario && $c['detenido'] && $c['litros_perdidos'] >= $this->cfg['stopped_drop_liters_threshold']) {
                 $anomalias[] = $this->construir(
                     $equipo, $c['fecha'], 'descarga_detenido',
                     sprintf(
@@ -117,7 +125,7 @@ class AnomalyDetector
                 continue;
             }
 
-            if ($c['litros_perdidos'] >= $this->cfg['min_drop_liters_instant']
+            if (!$esEstacionario && $c['litros_perdidos'] >= $this->cfg['min_drop_liters_instant']
                 && $c['minutos'] <= $this->cfg['min_drop_window_minutes']
             ) {
                 $anomalias[] = $this->construir(
@@ -159,7 +167,16 @@ class AnomalyDetector
         // Ralentí: motor encendido + detenido + consumiendo, sostenido en
         // el tiempo. A propósito NO usa GPS/posición (Emiliano: muchos
         // equipos quedan bajo techo y ahí el GPS no sirve).
-        foreach ($this->deteccionRalenti($lecturas) as $a) {
+        // El ralentí tampoco tiene sentido en algo que no es un vehículo.
+        if (!$esEstacionario) {
+            foreach ($this->deteccionRalenti($lecturas) as $a) {
+                $anomalias[] = $a;
+            }
+        }
+
+        // Cortes de alimentación (POWOFF/POWON): cada corte se reporta, y si
+        // al volver falta combustible, se marca como posible robo.
+        foreach ($this->deteccionCortesAlimentacion($lecturas) as $a) {
             $anomalias[] = $a;
         }
 
@@ -192,6 +209,115 @@ class AnomalyDetector
                 }
             }
             unset($a);
+        }
+
+        return $anomalias;
+    }
+
+    /**
+     * Cortes de alimentación — eventos POWOFF / POWON que manda TTM.
+     *
+     * Para cada POWOFF busco el POWON que viene después. Si todavía no
+     * volvió (el equipo sigue sin alimentación al final de los datos), no
+     * reporto nada: lo agarra la próxima corrida del cron, cuando ya se
+     * sepa cuánto duró y cómo quedó el tanque. Así no reporto el mismo
+     * corte dos veces con datos distintos.
+     *
+     * Con el corte cerrado, comparo:
+     *   - el último nivel válido ANTES del POWOFF, contra
+     *   - el primer nivel válido DESPUÉS del POWON
+     * (buscando hasta 'corte_margen_lectura_minutos' para cada lado).
+     *
+     * Siempre reporto el corte (Emiliano quiere ver las desconexiones),
+     * pero si al volver faltan 'corte_litros_sospechosos' o más, lo
+     * marco como posible robo y cuento esos litros como merma.
+     *
+     * La fecha de la anomalía es la del POWOFF: siempre la misma para el
+     * mismo corte, así el cron no lo duplica.
+     */
+    private function deteccionCortesAlimentacion(array $lecturas): array
+    {
+        $margen = $this->cfg['corte_margen_lectura_minutos'] ?? 60;
+        $litrosSospechosos = $this->cfg['corte_litros_sospechosos'] ?? 15.0;
+
+        $anomalias = [];
+        $n = count($lecturas);
+
+        for ($i = 0; $i < $n; $i++) {
+            if (($lecturas[$i]['evento'] ?? null) !== 'POWOFF') {
+                continue;
+            }
+            $off = $lecturas[$i];
+
+            // El POWON que cierra este corte.
+            $on = null;
+            for ($j = $i + 1; $j < $n; $j++) {
+                if (($lecturas[$j]['evento'] ?? null) === 'POWON') {
+                    $on = $lecturas[$j];
+                    break;
+                }
+            }
+            if ($on === null) {
+                continue; // sigue cortado, lo veo en la próxima corrida
+            }
+
+            // Último nivel válido antes del corte.
+            $antes = null;
+            for ($k = $i - 1; $k >= 0; $k--) {
+                $l = $lecturas[$k];
+                if (($off['fecha']->getTimestamp() - $l['fecha']->getTimestamp()) / 60 > $margen) {
+                    break;
+                }
+                if ($l['combustible_litros'] !== null) {
+                    $antes = $l;
+                    break;
+                }
+            }
+
+            // Primer nivel válido después de volver.
+            $despues = null;
+            foreach ($lecturas as $l) {
+                if ($l['fecha'] <= $on['fecha']) {
+                    continue;
+                }
+                if (($l['fecha']->getTimestamp() - $on['fecha']->getTimestamp()) / 60 > $margen) {
+                    break;
+                }
+                if ($l['combustible_litros'] !== null) {
+                    $despues = $l;
+                    break;
+                }
+            }
+
+            $minutos = ($on['fecha']->getTimestamp() - $off['fecha']->getTimestamp()) / 60;
+            $texto = sprintf(
+                'Se cortó la alimentación del equipo de %s a %s (%s).',
+                $off['fecha']->format('d/m H:i'), $on['fecha']->format('d/m H:i'), $this->textoDuracion($minutos)
+            );
+            $litros = 0.0;
+
+            if ($antes !== null && $despues !== null) {
+                $diferencia = $antes['combustible_litros'] - $despues['combustible_litros'];
+                if ($diferencia >= $litrosSospechosos) {
+                    $litros = $diferencia;
+                    $texto .= sprintf(
+                        ' Antes del corte tenía %.1f L y al volver %.1f L: faltan %.1f L. Posible robo — es el patrón típico de cortar la alimentación para que no se registre la descarga.',
+                        $antes['combustible_litros'], $despues['combustible_litros'], $diferencia
+                    );
+                } else {
+                    $texto .= sprintf(
+                        ' El nivel antes (%.1f L) y después (%.1f L) no muestra una pérdida significativa.',
+                        $antes['combustible_litros'], $despues['combustible_litros']
+                    );
+                }
+            } else {
+                $texto .= ' No hay lecturas de combustible cerca del corte para comparar el nivel.';
+            }
+
+            $anomalias[] = $this->construir(
+                $off['equipo'], $off['fecha'], 'corte_alimentacion', $texto,
+                $litros, null, $off['lat'], $off['lng']
+            );
         }
 
         return $anomalias;
@@ -452,9 +578,30 @@ class AnomalyDetector
         // la de después, y el hueco desaparece sin que nadie lo vea.
         $lecturasConCombustible = array_values(array_filter($lecturas, fn($l) => $l['combustible_litros'] !== null));
 
+        // Momentos de corte/vuelta de alimentación. Si entre dos lecturas
+        // hubo uno, esa caída la analiza deteccionCortesAlimentacion() —
+        // acá la salteo para no reportar lo mismo dos veces.
+        $eventosAlimentacion = [];
+        foreach ($lecturas as $l) {
+            if (in_array($l['evento'] ?? null, ['POWOFF', 'POWON'], true)) {
+                $eventosAlimentacion[] = $l['fecha'];
+            }
+        }
+
         for ($i = 1; $i < count($lecturasConCombustible); $i++) {
             $prev = $lecturasConCombustible[$i - 1];
             $cur = $lecturasConCombustible[$i];
+
+            $cruzaCorte = false;
+            foreach ($eventosAlimentacion as $f) {
+                if ($f > $prev['fecha'] && $f <= $cur['fecha']) {
+                    $cruzaCorte = true;
+                    break;
+                }
+            }
+            if ($cruzaCorte) {
+                continue;
+            }
 
             $litrosPerdidos = $prev['combustible_litros'] - $cur['combustible_litros'];
             if ($litrosPerdidos <= 0) {
@@ -552,6 +699,28 @@ class AnomalyDetector
         }
 
         return true;
+    }
+
+    /**
+     * ¿Este equipo es de los que no se mueven (tanque fijo, pozo, máquina,
+     * generador)? Miro primero el "tipo" que viene de la API de equipos
+     * de TTM y, si no dice nada, el nombre. Alcanza con que contenga
+     * alguna de las palabras de config ('palabras_equipo_estacionario').
+     * Si el equipo no está en la base, lo trato como vehículo (lo normal).
+     */
+    private function esEquipoEstacionario(string $equipo): bool
+    {
+        $info = $this->storage->equipoPorId($equipo);
+        if (!$info) {
+            return false;
+        }
+        $texto = strtolower(($info['tipo'] ?? '') . ' ' . ($info['nombre'] ?? ''));
+        foreach ($this->cfg['palabras_equipo_estacionario'] ?? [] as $palabra) {
+            if ($palabra !== '' && strpos($texto, strtolower($palabra)) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** "menos de 1 minuto", "3 minutos", etc. — para que el detalle se lea bien. */

@@ -107,10 +107,30 @@ return [
         'min_drop_liters_instant'  => 15.0,
         'min_drop_window_minutes'  => 10,
 
-        // Si el vehículo está detenido (sin movimiento) y la caída CONFIRMADA
-        // supera esta cantidad de litros, se considera sospechosa (parado no
-        // debería perder combustible).
-        'stopped_drop_liters_threshold' => 4.0,
+        // Si el vehículo está detenido y la caída CONFIRMADA supera esta
+        // cantidad de litros, se considera sospechosa (parado no debería
+        // perder combustible).
+        //
+        // Estaba en 4 L y lo subí a 15 L el 24/09/2026: al reprocesar los
+        // últimos 30 días, más de la mitad de las "descargas detenido"
+        // eran de menos de 10 L. Eso es el ruido propio del sensor (el
+        // nivel "tiembla" unos litros aunque nadie toque nada), no robos.
+        // Un robo real rara vez es de menos de 15 L.
+        'stopped_drop_liters_threshold' => 15.0,
+
+        // Equipos que NO se mueven nunca: tanques fijos, pozos, máquinas,
+        // generadores. Para estos no aplican "descarga detenido", "caída
+        // instantánea" ni "ralentí": un tanque fijo está siempre quieto y
+        // su trabajo es que le saquen combustible para cargar camiones; un
+        // pozo tiene un motor que consume todo el día sin moverse. Al
+        // reprocesar, 9 de los 10 equipos con más "descargas" eran de
+        // estos — el 44% del total, todo falso.
+        //
+        // Se detectan por el "tipo" que manda la API de equipos de TTM, y
+        // si el tipo no dice nada, por el nombre (la carga de datos de TTM
+        // no siempre es prolija). Se compara sin importar mayúsculas y
+        // alcanza con que el texto CONTENGA alguna de estas palabras.
+        'palabras_equipo_estacionario' => ['tanque fijo', 'tanquefijo', 'pozo', 'maquina', 'máquina', 'generador'],
 
         // --- Controles que agregué el 23/09/2026 mirando la lista real ---
 
@@ -135,6 +155,20 @@ return [
         // camión a 9 km/h). Pido velocidad casi 0 en las dos lecturas Y
         // que no se haya movido más de esta distancia. Así no confundo el
         // consumo normal subiendo la cordillera con una descarga.
+        // --- Corte de alimentación (POWOFF / POWON) ---
+        // Emiliano confirmó que TTM manda los eventos POWOFF (se cortó la
+        // alimentación del equipo) y POWON (volvió). Cortar la alimentación
+        // es el truco clásico para robar sin que el sensor registre la
+        // descarga: se apaga, se saca, se vuelve a conectar. Por eso
+        // comparo el último nivel antes del corte con el primero después.
+        // Busco esas lecturas hasta esta cantidad de minutos antes del
+        // POWOFF y después del POWON.
+        'corte_margen_lectura_minutos' => 60,
+        // Si al volver faltan al menos estos litros, lo marco como posible
+        // robo durante el corte (uso el mismo criterio que para descarga
+        // detenido: por debajo es ruido del sensor).
+        'corte_litros_sospechosos' => 15.0,
+
         'detenido_velocidad_max_kmh' => 1.0,
         'detenido_distancia_max_metros' => 200,
 
