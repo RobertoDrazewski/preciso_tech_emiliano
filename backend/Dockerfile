@@ -34,4 +34,9 @@ ENV PORT=8000
 # Antes de levantar el servidor, importa/actualiza la flota (data/equipos_flota.json)
 # — es un upsert, no duplica nada si ya estaba importada. Así no hace falta la
 # Railway CLI ni conexión manual para tener la flota cargada en producción.
-CMD ["sh", "-c", "php scripts/importar_equipos.php; php -S 0.0.0.0:${PORT} -t public"]
+# Al arrancar sincronizo la flota con la API de equipos de TTM (nombres,
+# clientes, estado). ANTES corría importar_equipos.php con el Excel viejo
+# de agosto, y cada deploy pisaba los nombres y clientes buenos de TTM y
+# reactivaba equipos dados de baja (de ahí salió el "Sin cliente asignado").
+# Si la API de TTM no responde, el servidor arranca igual (el ";" no corta).
+CMD ["sh", "-c", "php scripts/sincronizar_equipos.php; php -S 0.0.0.0:${PORT} -t public"]

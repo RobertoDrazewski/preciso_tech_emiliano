@@ -7,6 +7,9 @@ async function init() {
   configurarBuscador();
   aplicarFiltroDesdeUrl();
   document.getElementById('filtroCliente').addEventListener('change', cargarAnomalias);
+  document.getElementById('filtroRevision').addEventListener('change', cargarAnomalias);
+  // Cuando se valida o descarta (acá o desde la campanita), recargo todo.
+  window.addEventListener('preciso:revision', cargarAnomalias);
   document.getElementById('filtroTipo').addEventListener('change', cargarAnomalias);
   document.getElementById('filtroDias').addEventListener('change', cargarAnomalias);
   document.getElementById('btnFiltrar').addEventListener('click', cargarAnomalias);
@@ -26,6 +29,11 @@ function poblarFiltroClientes() {
   )].sort((a, b) => a.localeCompare(b, 'es'));
 
   const $select = document.getElementById('filtroCliente');
+  // Siempre ofrezco ver los equipos sin cliente, así se puede revisar qué son.
+  const sinCliente = document.createElement('option');
+  sinCliente.value = '__sin_cliente__';
+  sinCliente.textContent = 'Sin cliente asignado';
+  $select.appendChild(sinCliente);
   clientes.forEach(cliente => {
     const opt = document.createElement('option');
     opt.value = cliente;
@@ -36,6 +44,8 @@ function poblarFiltroClientes() {
 
 function aplicarFiltroDesdeUrl() {
   const params = new URLSearchParams(window.location.search);
+  const revision = params.get('revision');
+  if (revision) document.getElementById('filtroRevision').value = revision;
   const equipoId = params.get('equipo');
   if (!equipoId) return;
 
@@ -126,6 +136,7 @@ function limpiarFiltros() {
   document.getElementById('filtroCliente').value = '';
   document.getElementById('filtroTipo').value = '';
   document.getElementById('filtroDias').value = '7';
+  document.getElementById('filtroRevision').value = 'activas';
   cargarAnomalias();
 }
 
@@ -148,6 +159,8 @@ async function cargarAnomalias() {
   if (cliente) params.set('cliente', cliente);
   if (tipo) params.set('tipo', tipo);
   params.set('dias', dias);
+  const revision = document.getElementById('filtroRevision').value;
+  if (revision) params.set('revision', revision);
 
   try {
     const resp = await fetch(`${window.PRECISO_CONFIG.API_BASE}/anomalias.php?${params.toString()}`);
@@ -168,14 +181,27 @@ async function cargarAnomalias() {
   }
 }
 
+// Cada tipo de anomalía con su ícono y color, para los indicadores de aguja.
+const TIPOS_FIJOS = [
+  { key: 'descarga_detenido',     label: 'Descarga detenido',        icono: 'fa-gas-pump',            color: '#e03131' },
+  { key: 'caida_instantanea',     label: 'Caída instantánea',        icono: 'fa-arrow-trend-down',    color: '#f76707' },
+  { key: 'consumo_anomalo',       label: 'Consumo anómalo',          icono: 'fa-chart-line',          color: '#f59f00' },
+  { key: 'agua_combustible',      label: 'Agua en combustible',      icono: 'fa-droplet',             color: '#1c7ed6' },
+  { key: 'ralenti',               label: 'Ralentí',                  icono: 'fa-hourglass-half',      color: '#868e96' },
+  { key: 'variacion_temperatura', label: 'Variación por temperatura', icono: 'fa-temperature-half',   color: '#2f9e44' },
+  { key: 'desconexion_sensor',    label: 'Desconexión de sensor',    icono: 'fa-plug-circle-xmark',   color: '#495057' },
+  { key: 'corte_alimentacion',    label: 'Corte de alimentación',    icono: 'fa-power-off',           color: '#c2255c' },
+  { key: 'carga_no_coincide',     label: 'Carga no coincide',        icono: 'fa-scale-unbalanced',    color: '#e8590c' },
+];
+
 function renderResultados(data) {
-  // El texto de arriba tiene que decir qué estás mirando: un equipo, una
-  // flota entera, o todo. Antes decía "toda la flota" aunque filtraras
-  // por cliente, y confundía.
+  // El texto de arriba dice qué estás mirando: un equipo, una flota, o todo.
   const cliente = document.getElementById('filtroCliente').value;
   let filtroTexto = 'todas las flotas';
   if (equipoSeleccionado) {
     filtroTexto = `equipo ${equipoSeleccionado.nombre}`;
+  } else if (cliente === '__sin_cliente__') {
+    filtroTexto = 'equipos sin cliente asignado';
   } else if (cliente) {
     filtroTexto = `flota ${cliente}`;
   }
@@ -184,94 +210,97 @@ function renderResultados(data) {
 
   renderPorFlota(data.anomalias, Boolean(cliente || equipoSeleccionado));
 
-  // Agrupar anomalías por tipo, para los KPIs por tipo de abajo.
+  // ---- Indicadores de aguja ----
+  // Todos muestran una proporción (de 0 a 100%), así la aguja siempre
+  // significa algo concreto:
+  //   Total         -> cuánto de lo detectado ya revisaste (alto = bien)
+  //   Por revisar   -> qué parte sigue pendiente (alto = mal)
+  //   Mermas        -> qué parte de los litros ya está confirmada
+  //   Vehículos     -> qué parte de la flota activa tuvo alguna anomalía
+  //   Cada tipo     -> qué parte del total es de ese tipo
+  const st = data.stats || {};
+  const totalRevisables = (st.pendientes || 0) + (st.validadas || 0) + (st.descartadas || 0);
+  const revisadas = (st.validadas || 0) + (st.descartadas || 0);
+  const flota = st.flota_activa || 0;
+
+  let html = '';
+  html += gauge({ titulo: 'Total anomalías', icono: 'fa-triangle-exclamation', color: '#e03131',
+    valor: numeroAR(data.total), sub: `${numeroAR(revisadas)} revisadas de ${numeroAR(totalRevisables)}`,
+    pct: totalRevisables ? revisadas / totalRevisables : 0, invertido: true });
+  html += gauge({ titulo: 'Por revisar', icono: 'fa-bell', color: '#f59f00',
+    valor: numeroAR(st.pendientes), sub: 'esperando validar o descartar',
+    pct: totalRevisables ? (st.pendientes || 0) / totalRevisables : 0 });
+  html += gauge({ titulo: 'Mermas', icono: 'fa-gas-pump', color: '#1c7ed6',
+    valor: `${numeroAR(st.litros_perdidos_totales, 1)} L`, sub: `${numeroAR(st.litros_validados, 1)} L confirmados`,
+    pct: st.litros_perdidos_totales ? (st.litros_validados || 0) / st.litros_perdidos_totales : 0, invertido: true });
+  html += gauge({ titulo: 'Vehículos afectados', icono: 'fa-truck', color: '#7048e8',
+    valor: numeroAR(st.equipos_afectados), sub: `de ${numeroAR(flota)} en la flota activa`,
+    pct: flota ? (st.equipos_afectados || 0) / flota : 0 });
+
   const porTipo = {};
   data.anomalias.forEach(a => {
-    const t = a.tipo || 'otro';
-    if (!porTipo[t]) {
-      porTipo[t] = { count: 0, litros: 0 };
-    }
-    porTipo[t].count++;
-    porTipo[t].litros += (Number(a.litros_perdidos) || 0);
+    if (!porTipo[a.tipo]) porTipo[a.tipo] = { n: 0, litros: 0 };
+    porTipo[a.tipo].n++;
+    porTipo[a.tipo].litros += Number(a.litros_perdidos) || 0;
+  });
+  TIPOS_FIJOS.forEach(t => {
+    const info = porTipo[t.key] || { n: 0, litros: 0 };
+    html += gauge({ titulo: t.label, icono: t.icono, color: t.color,
+      valor: numeroAR(info.n), sub: info.litros > 0 ? `${numeroAR(info.litros, 1)} L` : 'sin merma',
+      pct: data.total ? info.n / data.total : 0 });
   });
 
-  const totalLitros = data.stats ? data.stats.litros_perdidos_totales : 0;
-  const equiposAfectados = data.stats ? data.stats.equipos_afectados : 0;
+  const $kpi = document.getElementById('kpiStats');
+  $kpi.className = 'gauges';
+  $kpi.removeAttribute('style');
+  $kpi.innerHTML = html;
+  animarAgujas($kpi);
 
-  // Los 4 tipos SIEMPRE se muestran, con 0 si no hay — así el panel se ve
-  // igual siempre y solo se van llenando los números, en vez de aparecer y
-  // desaparecer tarjetas según haya o no resultados.
-  const TIPOS_FIJOS = [
-    { key: 'descarga_detenido', label: 'Descarga Detenido' },
-    { key: 'caida_instantanea', label: 'Caída Instantánea' },
-    { key: 'consumo_anomalo', label: 'Consumo Anómalo' },
-    { key: 'agua_combustible', label: 'Agua en Combustible' },
-    { key: 'ralenti', label: 'Ralentí' },
-    { key: 'variacion_temperatura', label: 'Variación por temperatura' },
-    { key: 'desconexion_sensor', label: 'Desconexión de sensor' },
-    { key: 'corte_alimentacion', label: 'Corte de alimentación' },
-    { key: 'carga_no_coincide', label: 'Carga no coincide' },
-  ];
-
-  // KPIs Generales
-  let kpiHtml = `
-    <div class="stat card" style="padding: 15px; text-align: center;">
-      <div class="label" style="font-size: 13px; color: var(--color-text-muted);">Total Anomalías</div>
-      <div class="value ${data.total > 0 ? 'danger' : 'success'}" style="font-size: 24px; font-weight: bold;">${data.total}</div>
-    </div>
-    <div class="stat card" style="padding: 15px; text-align: center;">
-      <div class="label" style="font-size: 13px; color: var(--color-text-muted);">Mermas Totales</div>
-      <div class="value ${totalLitros > 0 ? 'danger' : 'success'}" style="font-size: 24px; font-weight: bold;">${totalLitros.toFixed(1)} L</div>
-    </div>
-    <div class="stat card" style="padding: 15px; text-align: center;">
-      <div class="label" style="font-size: 13px; color: var(--color-text-muted);">Vehículos Afectados</div>
-      <div class="value" style="font-size: 24px; font-weight: bold;">${equiposAfectados}</div>
-    </div>
-  `;
-
-  // KPIs por tipo — fijos, siempre los 4, llenos con 0 si no hay.
-  TIPOS_FIJOS.forEach(({ key, label }) => {
-    const info = porTipo[key] || { count: 0, litros: 0 };
-    kpiHtml += `
-      <div class="stat card" style="padding: 15px; text-align: center; border-left: 4px solid var(--color-navy);">
-        <div class="label" style="font-size: 13px; color: var(--color-text-muted); text-transform: capitalize;">${escapeHtml(label)}</div>
-        <div class="value ${info.count > 0 ? 'danger' : 'success'}" style="font-size: 22px; font-weight: bold;">${info.count} <span style="font-size: 13px; font-weight: normal; color: var(--color-text-muted);">(${info.litros.toFixed(1)} L)</span></div>
-      </div>
-    `;
-  });
-
-  const $kpiContainer = document.getElementById('kpiStats');
-  $kpiContainer.style.display = "grid";
-  $kpiContainer.style.gridTemplateColumns = "repeat(auto-fit, minmax(210px, 1fr))";
-  $kpiContainer.style.gap = "15px";
-  $kpiContainer.innerHTML = kpiHtml;
-
-  // 3. Renderizar la tabla de anomalías
+  // ---- Tabla ----
   const $tabla = document.getElementById('tablaAnomalias');
-
   if (data.anomalias.length === 0) {
     $tabla.innerHTML = `<div class="empty-state">Sin anomalías con estos filtros. 👍</div>`;
     return;
   }
 
   const filas = data.anomalias.map(a => `
-    <tr>
+    <tr data-id="${a.id}">
       <td>${formatearFechaCorta(a.fecha)}</td>
       <td><a href="informe.html?equipo=${encodeURIComponent(a.equipo)}&tipo=semanal">${escapeHtml(a.equipo_nombre)}</a></td>
       <td><span class="tag ${escapeHtml(a.tipo)}">${escapeHtml(a.tipo.replace(/_/g, ' '))}</span></td>
-      <td>${escapeHtml(a.detalle)}</td>
+      <td>${escapeHtml(a.detalle)}${a.comentario_revision ? `<div style="margin-top:4px;color:#777;font-size:12px;"><i class="fa-regular fa-comment"></i> ${escapeHtml(a.comentario_revision)}</div>` : ''}</td>
       <td>${Number(a.litros_perdidos).toFixed(1)} L</td>
       <td>${renderUbicacion(a.lat, a.lng)}</td>
       <td>${renderLinkGraficoTTM(a.equipo_nombre, a.fecha)}</td>
+      <td>${renderRevision(a)}</td>
     </tr>
   `).join('');
 
   $tabla.innerHTML = `
     <table class="anomalias">
-      <tr><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th>Ubicación</th><th>Gráfico</th></tr>
+      <tr><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th>Ubicación</th><th>Gráfico</th><th>Revisión</th></tr>
       ${filas}
     </table>
   `;
+
+  $tabla.querySelectorAll('.rev-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      // Uso la misma lógica que la campanita (pide comentario al descartar,
+      // guarda, y avisa para que todo se actualice).
+      window.revisarAnomalia(Number(b.closest('tr').dataset.id), b.dataset.accion);
+    });
+  });
+}
+
+/** Estado de revisión de una anomalía + los botones que correspondan. */
+function renderRevision(a) {
+  const estado = a.estado_revision || 'pendiente';
+  const etiqueta = { pendiente: 'Pendiente', validada: 'Validada', descartada: 'Descartada' }[estado] || estado;
+  const botones = estado === 'pendiente'
+    ? `<button class="rev-btn validar" data-accion="validar" title="Pasó de verdad"><i class="fa-solid fa-check"></i></button>
+       <button class="rev-btn descartar" data-accion="descartar" title="Falsa alarma"><i class="fa-solid fa-xmark"></i></button>`
+    : `<button class="rev-btn reabrir" data-accion="reabrir" title="Volver a pendiente"><i class="fa-solid fa-rotate-left"></i></button>`;
+  return `<span class="rev-estado ${estado}">${etiqueta}</span><div class="rev-botones">${botones}</div>`;
 }
 
 /**
@@ -369,8 +398,7 @@ function renderPorFlota(anomalias, yaFiltrado) {
   document.querySelectorAll('.fila-flota').forEach(fila => {
     fila.addEventListener('click', () => {
       const flota = fila.dataset.flota;
-      if (flota === 'Sin cliente asignado') return;
-      document.getElementById('filtroCliente').value = flota;
+      document.getElementById('filtroCliente').value = flota === 'Sin cliente asignado' ? '__sin_cliente__' : flota;
       cargarAnomalias();
     });
   });

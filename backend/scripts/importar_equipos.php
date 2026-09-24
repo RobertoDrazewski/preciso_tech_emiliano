@@ -1,5 +1,10 @@
 <?php
 
+// ⚠️ OBSOLETO desde el 24/09/2026: la flota se trae de la API de equipos
+// de TTM con scripts/sincronizar_equipos.php. Este script cargaba el Excel
+// de agosto y pisaba nombres y clientes buenos. Lo dejo solo por si hace
+// falta cargar algo a mano, pero NO se corre más automáticamente.
+
 /**
  * Importa/actualiza la flota completa desde un JSON (id + nombre).
  *

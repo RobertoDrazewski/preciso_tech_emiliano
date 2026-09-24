@@ -61,24 +61,45 @@ function aplicarFiltros() {
   renderLista(filtrados, q);
 }
 
-function renderStats(equipos) {
-  const totalAnomalias = equipos.reduce((acc, e) => acc + e.anomalias_30d, 0);
+/**
+ * Indicadores de aguja del panel. Cada aguja muestra una proporción:
+ *   Flota monitoreada  -> equipos activos que el sistema está siguiendo
+ *   Con anomalías      -> qué parte de la flota tuvo alguna en 30 días
+ *   Anomalías 30 días  -> cuántas son de los equipos con servicio FULL
+ *   Por revisar        -> qué parte de lo detectado espera validación
+ */
+async function renderStats(equipos) {
+  const total = equipos.length;
+  const conAnomalias = equipos.filter(e => e.anomalias_30d > 0).length;
+  const anomalias30 = equipos.reduce((acc, e) => acc + e.anomalias_30d, 0);
+  const anomaliasFull = equipos.filter(e => e.servicio === 'FULL').reduce((acc, e) => acc + e.anomalias_30d, 0);
 
-  document.getElementById('stats').innerHTML = `
-    <div class="stat">
-      <div class="label">Equipos monitoreados</div>
-      <div class="value">${equipos.length}</div>
-    </div>
-    <div class="stat">
-      <div class="label">Anomalías últimos 30 días</div>
-      <div class="value ${totalAnomalias > 0 ? 'danger' : 'success'}">${totalAnomalias}</div>
-    </div>
-    <div class="stat">
-      <div class="label">Estado del sistema</div>
-      <div class="value success">Activo</div>
-    </div>
-  `;
+  // El número de "por revisar" sale del mismo endpoint que la campanita.
+  let pendientes = 0;
+  try {
+    const r = await fetch(`${window.PRECISO_CONFIG.API_BASE}/revision.php?limite=1`);
+    if (r.ok) pendientes = (await r.json()).pendientes || 0;
+  } catch (e) { /* si falla, queda en 0 */ }
+
+  const $stats = document.getElementById('stats');
+  $stats.className = 'gauges';
+  $stats.innerHTML =
+    gauge({ titulo: 'Flota monitoreada', icono: 'fa-truck-fast', color: '#2f9e44',
+      valor: numeroAR(total), sub: 'equipos activos', pct: total ? 1 : 0, invertido: true }) +
+    gauge({ titulo: 'Con anomalías', icono: 'fa-truck-medical', color: '#e03131',
+      valor: numeroAR(conAnomalias), sub: `${total ? Math.round(conAnomalias / total * 100) : 0}% de la flota (30 días)`,
+      pct: total ? conAnomalias / total : 0 }) +
+    gauge({ titulo: 'Anomalías 30 días', icono: 'fa-triangle-exclamation', color: '#f59f00',
+      valor: numeroAR(anomalias30), sub: `${numeroAR(anomaliasFull)} de clientes FULL`,
+      pct: anomalias30 ? anomaliasFull / anomalias30 : 0 }) +
+    gauge({ titulo: 'Por revisar', icono: 'fa-bell', color: '#1c7ed6',
+      valor: numeroAR(pendientes), sub: 'esperando validar o descartar',
+      pct: anomalias30 ? Math.min(1, pendientes / anomalias30) : 0 });
+  animarAgujas($stats);
 }
+
+// Si validan o descartan desde la campanita, actualizo los indicadores.
+window.addEventListener('preciso:revision', () => renderStats(TODOS_LOS_EQUIPOS));
 
 function renderLista(equipos, busqueda) {
   const $lista = document.getElementById('listaEquipos');

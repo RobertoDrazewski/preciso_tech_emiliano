@@ -270,6 +270,46 @@ local, no vuelve a consultar la API externa.
 
 ---
 
+## Revisión de anomalías (campanita)
+
+Arriba a la derecha, en todas las pantallas, hay una campanita con la
+cantidad de anomalías **por revisar**. Desde ahí (o desde la columna
+"Revisión" de la pantalla de Anomalías) cada una se puede:
+
+- **Validar** — "pasó de verdad". Queda confirmada, sale de la campanita y
+  sus litros cuentan como mermas confirmadas.
+- **Descartar** — "falsa alarma". Sale de la campanita, de la lista y de los
+  indicadores por defecto, pero **no se borra**: queda guardada con fecha y
+  comentario, y se ve con el filtro "Descartadas" (se puede reabrir).
+
+Cada validación o descarte es una etiqueta hecha por alguien que conoce la
+flota. Con el tiempo, esas etiquetas son lo que hace falta para ajustar los
+umbrales con datos reales y para entrenar un modelo. Hoy el sistema no tiene
+usuarios ni login, así que se guarda cuándo y el comentario, pero no quién.
+
+Endpoint: `GET/POST /api/revision.php`.
+
+## Indicadores de aguja
+
+Todos los indicadores (panel, anomalías e informe) son de aguja, con tres
+zonas de color. Cada aguja muestra una proporción concreta (por ejemplo,
+"qué parte de la flota tuvo anomalías" o "qué parte de lo detectado ya se
+revisó"), explicada en el código de cada pantalla.
+
+## Token de la API de TTM
+
+Las dos APIs de TTM piden token. Se configura en la variable `API_TOKEN`
+(Railway: en el servicio del backend **y** en el del cron; local: en
+`backend/.env`). Nunca va en el código.
+
+## Sincronización al arrancar
+
+Cada vez que el backend arranca, corre `scripts/sincronizar_equipos.php`
+(flota desde la API de TTM). Antes corría la importación del Excel de
+agosto, que pisaba nombres y clientes buenos y reactivaba equipos dados de
+baja: de ahí salía el "Sin cliente asignado". Además, una carga que no trae
+cliente o estado ya no borra lo que se sabía del equipo.
+
 ## Estructura del proyecto
 
 ```

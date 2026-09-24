@@ -137,6 +137,10 @@ class Storage
             'lng'         => $tipoReal,
             'resuelta'    => 'INTEGER NOT NULL DEFAULT 0',
             'resuelta_en' => 'TEXT',
+            // Revisión humana (24/09/2026): el usuario valida o descarta.
+            'estado_revision'     => "TEXT NOT NULL DEFAULT 'pendiente'",
+            'revisada_en'         => 'TEXT',
+            'comentario_revision' => 'TEXT',
         ];
         foreach ($nuevasAnomalias as $columna => $tipo) {
             if (!in_array($columna, $columnasAnomalias, true)) {
@@ -271,9 +275,22 @@ class Storage
             INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, creado_en, actualizado_en)
             VALUES (:id, :nombre, :activo, :cliente, :estado_raw, :tipo, :marca, :modelo, :capacidad_litros, :diagnostico, :servicio, :ahora, :ahora)
             ON CONFLICT(id) DO UPDATE SET
-                nombre = :nombre, activo = :activo, cliente = :cliente, estado_raw = :estado_raw,
-                tipo = :tipo, marca = :marca, modelo = :modelo, capacidad_litros = :capacidad_litros,
-                diagnostico = :diagnostico, servicio = :servicio, actualizado_en = :ahora
+                nombre = excluded.nombre,
+                -- Una carga que no trae estado (alta manual, script viejo)
+                -- NO cambia si el equipo está activo, ni borra lo que ya
+                -- sabemos (cliente, tipo, etc.). Antes lo pisaba con vacío:
+                -- así apareció "Sin cliente asignado" y se reactivaron
+                -- equipos dados de baja.
+                activo = CASE WHEN excluded.estado_raw IS NULL THEN equipos.activo ELSE excluded.activo END,
+                cliente = COALESCE(excluded.cliente, equipos.cliente),
+                estado_raw = COALESCE(excluded.estado_raw, equipos.estado_raw),
+                tipo = COALESCE(excluded.tipo, equipos.tipo),
+                marca = COALESCE(excluded.marca, equipos.marca),
+                modelo = COALESCE(excluded.modelo, equipos.modelo),
+                capacidad_litros = COALESCE(excluded.capacidad_litros, equipos.capacidad_litros),
+                diagnostico = CASE WHEN excluded.estado_raw IS NULL THEN equipos.diagnostico ELSE excluded.diagnostico END,
+                servicio = COALESCE(excluded.servicio, equipos.servicio),
+                actualizado_en = excluded.actualizado_en
         ');
         $stmt->execute([
             ':id'                => $id,
@@ -331,10 +348,22 @@ class Storage
                 INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, creado_en, actualizado_en)
                 VALUES ' . implode(', ', $filas) . '
                 ON CONFLICT(id) DO UPDATE SET
-                    nombre = excluded.nombre, activo = excluded.activo, cliente = excluded.cliente,
-                    estado_raw = excluded.estado_raw, tipo = excluded.tipo, marca = excluded.marca,
-                    modelo = excluded.modelo, capacidad_litros = excluded.capacidad_litros,
-                    diagnostico = excluded.diagnostico, servicio = excluded.servicio, actualizado_en = excluded.actualizado_en
+                nombre = excluded.nombre,
+                -- Una carga que no trae estado (alta manual, script viejo)
+                -- NO cambia si el equipo está activo, ni borra lo que ya
+                -- sabemos (cliente, tipo, etc.). Antes lo pisaba con vacío:
+                -- así apareció "Sin cliente asignado" y se reactivaron
+                -- equipos dados de baja.
+                activo = CASE WHEN excluded.estado_raw IS NULL THEN equipos.activo ELSE excluded.activo END,
+                cliente = COALESCE(excluded.cliente, equipos.cliente),
+                estado_raw = COALESCE(excluded.estado_raw, equipos.estado_raw),
+                tipo = COALESCE(excluded.tipo, equipos.tipo),
+                marca = COALESCE(excluded.marca, equipos.marca),
+                modelo = COALESCE(excluded.modelo, equipos.modelo),
+                capacidad_litros = COALESCE(excluded.capacidad_litros, equipos.capacidad_litros),
+                diagnostico = CASE WHEN excluded.estado_raw IS NULL THEN equipos.diagnostico ELSE excluded.diagnostico END,
+                servicio = COALESCE(excluded.servicio, equipos.servicio),
+                actualizado_en = excluded.actualizado_en
             ';
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($valores);
@@ -449,7 +478,11 @@ class Storage
             $sql .= ' AND a.tipo = :tipo';
             $params[':tipo'] = $tipo;
         }
-        if ($cliente !== null && $cliente !== '') {
+        if ($cliente === '__sin_cliente__') {
+            // Opción "Sin cliente asignado" del filtro: equipos a los que TTM
+            // no les cargó cliente.
+            $sql .= " AND (e.cliente IS NULL OR e.cliente = '')";
+        } elseif ($cliente !== null && $cliente !== '') {
             // Filtra por la flota/cliente completa — todos los equipos de
             // ese cliente, no uno puntual. Pedido de Emiliano: poder ver
             // cuántas anomalías tiene una flota entera, no equipo por equipo.
@@ -742,6 +775,62 @@ class Storage
      * panel. No se filtra por período: una anomalía sigue "pendiente"
      * hasta que alguien la resuelve, sin importar cuándo pasó.
      */
+    /**
+     * Revisión de una anomalía por una persona (la campanita).
+     *   - validar:   "pasó de verdad". Queda confirmada y cuenta en las mermas confirmadas.
+     *   - descartar: "falsa alarma". No se borra: queda guardada con fecha y
+     *                comentario, se puede ver con el filtro "Descartadas".
+     *   - reabrir:   vuelve a pendiente (por si se tocó mal).
+     * Estas marcas son etiquetas hechas por alguien que conoce la flota: con
+     * el tiempo son lo que hace falta para ajustar umbrales y entrenar un
+     * modelo con datos reales.
+     */
+    public function revisarAnomalia(int $id, string $accion, ?string $comentario = null): bool
+    {
+        $estados = ['validar' => 'validada', 'descartar' => 'descartada', 'reabrir' => 'pendiente'];
+        if (!isset($estados[$accion])) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare('
+            UPDATE anomalias SET estado_revision = :estado, revisada_en = :ahora, comentario_revision = :comentario
+            WHERE id = :id
+        ');
+        $stmt->execute([
+            ':estado'     => $estados[$accion],
+            ':ahora'      => $accion === 'reabrir' ? null : (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+            ':comentario' => $comentario !== null && trim($comentario) !== '' ? trim($comentario) : null,
+            ':id'         => $id,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /** Cuántas anomalías esperan revisión (el número de la campanita). Solo equipos activos. */
+    public function contarPendientesRevision(): int
+    {
+        $stmt = $this->pdo->query("
+            SELECT COUNT(*) AS c FROM anomalias a
+            JOIN equipos e ON e.id = a.equipo AND e.activo = 1
+            WHERE a.estado_revision = 'pendiente'
+        ");
+        return (int) ($stmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+    }
+
+    /** Las últimas pendientes, para el desplegable de la campanita. */
+    public function ultimasPendientesRevision(int $limite = 15): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT a.id, a.equipo, a.fecha, a.tipo, a.detalle, a.litros_perdidos, e.nombre AS equipo_nombre, e.cliente AS equipo_cliente
+            FROM anomalias a
+            JOIN equipos e ON e.id = a.equipo AND e.activo = 1
+            WHERE a.estado_revision = 'pendiente'
+            ORDER BY a.fecha DESC
+            LIMIT :limite
+        ");
+        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function contarAnomaliasPendientesGlobal(): int
     {
         $stmt = $this->pdo->query('

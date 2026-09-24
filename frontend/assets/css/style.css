@@ -278,7 +278,7 @@ table.anomalias td {
 .filtros-card { position: relative; }
 .filtros-grid {
   display: grid;
-  grid-template-columns: 2fr 1.3fr 1fr 1fr auto;
+  grid-template-columns: 2fr 1.3fr 1fr 1fr 1fr auto;
   gap: 14px;
   align-items: end;
 }
@@ -349,3 +349,111 @@ table.anomalias td {
   margin-left: 6px;
   display: none;
 }
+
+/* =====================================================================
+   TEMA PRECISO (24/09/2026) — igual al panel de TTM: header negro con el
+   logo, barra lateral gris oscura, ámbar del logo como acento, tarjetas
+   blancas con borde de color a la izquierda e ícono. Va al final del
+   archivo a propósito: pisa lo de arriba sin tener que tocarlo.
+   ===================================================================== */
+:root {
+  --color-bg: #f1f2f6;
+  --color-navy: #111111;
+  --color-accent: #ffb000;
+  --color-accent-dark: #e09a00;
+  --color-sidebar: #2b2d31;
+  --color-sidebar-hover: #3a3d42;
+  --font: 'Nunito', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --ancho-sidebar: 220px;
+  --alto-header: 88px;
+}
+body { font-family: var(--font); background: var(--color-bg); }
+
+/* Header negro con logo, campanita y usuario */
+.app-header {
+  position: fixed; top: 0; left: var(--ancho-sidebar); right: 0; z-index: 50;
+  height: var(--alto-header); background: #000; color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px;
+}
+.app-logo img { height: 58px; display: block; }
+.app-header-derecha { display: flex; align-items: center; gap: 22px; }
+.app-usuario { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #ddd;
+  padding-left: 22px; border-left: 1px solid #333; }
+.app-usuario i { font-size: 26px; color: #fff; }
+
+/* Barra lateral */
+.app-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--ancho-sidebar); z-index: 60;
+  background: var(--color-sidebar); color: #e8e8e8; display: flex; flex-direction: column;
+  padding-top: 24px;
+}
+.sidebar-seccion { color: var(--color-accent); font-size: 11.5px; font-weight: 800;
+  letter-spacing: .6px; text-transform: uppercase; padding: 10px 22px; }
+.app-sidebar nav a { display: flex; align-items: center; gap: 12px; padding: 13px 22px;
+  color: #e8e8e8; text-decoration: none; font-size: 14.5px; }
+.app-sidebar nav a i { width: 18px; text-align: center; }
+.app-sidebar nav a:hover { background: var(--color-sidebar-hover); }
+.app-sidebar nav a.activo { color: var(--color-accent); background: #232428; border-left: 3px solid var(--color-accent); padding-left: 19px; }
+.sidebar-pie { margin-top: auto; padding: 18px 22px; font-size: 11.5px; color: #8b8d92; }
+
+/* Contenido */
+.app-main { margin-left: var(--ancho-sidebar); padding-top: var(--alto-header); min-height: 100vh; }
+.app-main .container { max-width: 1280px; padding-top: 26px; }
+.card { border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.page-title { color: #222; }
+.btn { background: var(--color-accent); color: #111; border-color: var(--color-accent); }
+.btn.secondary { background: #fff; color: #333; }
+
+/* Celular: la barra lateral pasa arriba, horizontal */
+@media (max-width: 860px) {
+  :root { --alto-header: 70px; }
+  .app-sidebar { position: static; width: auto; flex-direction: row; padding: 0; overflow-x: auto; }
+  .app-sidebar nav { display: flex; }
+  .sidebar-seccion, .sidebar-pie { display: none; }
+  .app-header { position: static; padding: 0 16px; }
+  .app-logo img { height: 40px; }
+  .app-usuario span { display: none; }
+  .app-main { margin-left: 0; padding-top: 0; }
+}
+
+/* ---------- Indicadores de aguja ---------- */
+.gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.gauge-card { background: #fff; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  border-left: 4px solid var(--g-color, #999); padding: 14px 16px 12px; position: relative; }
+.gauge-card .g-titulo { color: #3b5bdb; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; padding-right: 36px; }
+.gauge-card .g-icono { position: absolute; top: 12px; right: 14px; font-size: 24px; color: var(--g-color, #999); }
+.gauge-card svg { display: block; width: 100%; max-width: 190px; margin: 6px auto 0; }
+.gauge-card .g-valor { text-align: center; font-size: 24px; font-weight: 800; color: #222; margin-top: -6px; }
+.gauge-card .g-sub { text-align: center; font-size: 12.5px; color: var(--color-text-muted); min-height: 16px; }
+.gauge-card .g-aguja { transition: transform .9s cubic-bezier(.2,.8,.2,1); transform-origin: 100px 100px; }
+
+/* ---------- Campanita ---------- */
+.campana { position: relative; }
+.campana-boton { background: none; border: 0; color: #4dabf7; font-size: 22px; cursor: pointer; position: relative; padding: 6px; }
+.campana-numero { position: absolute; top: -2px; right: -8px; background: #e03131; color: #fff; font-size: 11px;
+  font-weight: 800; border-radius: 10px; padding: 1px 6px; min-width: 18px; text-align: center; }
+.campana-panel { position: absolute; right: 0; top: 46px; width: 420px; max-height: 70vh; overflow-y: auto; background: #fff;
+  color: #222; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.25); z-index: 100; }
+.campana-panel header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border); font-weight: 800; }
+.campana-panel header a { font-size: 12.5px; font-weight: 700; color: #3b5bdb; text-decoration: none; }
+.campana-item { padding: 12px 16px; border-bottom: 1px solid var(--color-border); font-size: 13px; }
+.campana-item .ci-arriba { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.campana-item .ci-equipo { font-weight: 800; }
+.campana-item .ci-fecha { color: var(--color-text-muted); font-size: 12px; white-space: nowrap; }
+.campana-item .ci-detalle { color: #444; margin: 4px 0 8px; }
+.campana-vacia { padding: 26px 16px; text-align: center; color: var(--color-text-muted); }
+
+/* ---------- Botones de revisión ---------- */
+.rev-botones { display: flex; gap: 6px; flex-wrap: wrap; }
+.rev-btn { border: 1px solid; border-radius: 5px; padding: 4px 9px; font-size: 12px; font-weight: 700; cursor: pointer; background: #fff; font-family: var(--font); }
+.rev-btn.validar { color: #2b8a3e; border-color: #2b8a3e; }
+.rev-btn.validar:hover { background: #2b8a3e; color: #fff; }
+.rev-btn.descartar { color: #c92a2a; border-color: #c92a2a; }
+.rev-btn.descartar:hover { background: #c92a2a; color: #fff; }
+.rev-btn.reabrir { color: #555; border-color: #aaa; }
+.rev-estado { display: inline-block; font-size: 11.5px; font-weight: 800; border-radius: 10px; padding: 2px 9px; margin-bottom: 4px; }
+.rev-estado.pendiente { background: #fff3bf; color: #8a6d00; }
+.rev-estado.validada { background: #d3f9d8; color: #2b8a3e; }
+.rev-estado.descartada { background: #eee; color: #777; text-decoration: line-through; }

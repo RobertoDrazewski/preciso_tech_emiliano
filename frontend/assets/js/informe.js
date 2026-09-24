@@ -71,33 +71,47 @@ async function cargarInforme() {
   }
 }
 
+/**
+ * Indicadores de aguja del informe. Las escalas dependen del período
+ * (no es lo mismo un día que un mes):
+ *   Km recorridos    -> contra un tope razonable del período
+ *   Consumo promedio -> L/100km en escala de 0 a 80 (verde hasta ~32,
+ *                       amarillo hasta ~56, rojo arriba: camión pesado)
+ *   Combustible      -> contra lo que consumiría ese recorrido a 60 L/100km
+ *   Litros perdidos  -> qué parte de todo lo que se fue del tanque fue anomalía
+ *   Anomalías        -> contra 10 en el período (10 o más: aguja al máximo)
+ *   Cobertura        -> lecturas recibidas contra las esperadas (una cada
+ *                       5 minutos): muestra si el equipo reportó bien
+ */
 function renderStats(r) {
-  document.getElementById('stats').innerHTML = `
-    <div class="stat">
-      <div class="label">Km recorridos</div>
-      <div class="value">${r.km_recorridos !== null ? formatNum(r.km_recorridos) + ' km' : '—'}</div>
-    </div>
-    <div class="stat">
-      <div class="label">Combustible consumido</div>
-      <div class="value">${formatNum(r.litros_consumidos_total)} L</div>
-    </div>
-    <div class="stat">
-      <div class="label">Consumo promedio</div>
-      <div class="value">${r.consumo_l_100km !== null ? formatNum(r.consumo_l_100km) + ' L/100km' : '—'}</div>
-    </div>
-    <div class="stat">
-      <div class="label">Litros perdidos en anomalías</div>
-      <div class="value ${r.litros_perdidos_anomalos > 0 ? 'danger' : 'success'}">${formatNum(r.litros_perdidos_anomalos)} L</div>
-    </div>
-    <div class="stat">
-      <div class="label">Anomalías detectadas</div>
-      <div class="value ${r.cantidad_anomalias > 0 ? 'danger' : 'success'}">${r.cantidad_anomalias}</div>
-    </div>
-    <div class="stat">
-      <div class="label">Lecturas recibidas</div>
-      <div class="value">${r.cantidad_lecturas}</div>
-    </div>
-  `;
+  const dias = { diario: 1, semanal: 7, mensual: 30 }[tipo] || 1;
+  const km = r.km_recorridos || 0;
+  const consumido = r.litros_consumidos_total || 0;
+  const perdidos = r.litros_perdidos_anomalos || 0;
+  const esperadas = dias * 24 * 12;
+
+  const $stats = document.getElementById('stats');
+  $stats.className = 'gauges';
+  $stats.innerHTML =
+    gauge({ titulo: 'Km recorridos', icono: 'fa-road', color: '#e03131',
+      valor: r.km_recorridos !== null ? `${formatNum(km)} km` : '—', sub: `período ${tipoLabel.toLowerCase()}`,
+      pct: km / (dias * 800), invertido: true }) +
+    gauge({ titulo: 'Consumo promedio', icono: 'fa-gauge-high', color: '#1098ad',
+      valor: r.consumo_l_100km !== null ? `${formatNum(r.consumo_l_100km)} L/100` : '—', sub: 'litros cada 100 km',
+      pct: (r.consumo_l_100km || 0) / 80 }) +
+    gauge({ titulo: 'Combustible consumido', icono: 'fa-droplet', color: '#f59f00',
+      valor: `${formatNum(consumido)} L`, sub: km > 0 ? `a 60 L/100 serían ${formatNum(km * 0.6)} L` : '',
+      pct: km > 0 ? consumido / (km * 0.6) : 0 }) +
+    gauge({ titulo: 'Litros perdidos', icono: 'fa-gas-pump', color: '#c92a2a',
+      valor: `${formatNum(perdidos)} L`, sub: 'en anomalías del período',
+      pct: (consumido + perdidos) > 0 ? perdidos / (consumido + perdidos) : 0 }) +
+    gauge({ titulo: 'Anomalías', icono: 'fa-triangle-exclamation', color: '#f76707',
+      valor: String(r.cantidad_anomalias), sub: 'detectadas en el período',
+      pct: r.cantidad_anomalias / 10 }) +
+    gauge({ titulo: 'Cobertura de datos', icono: 'fa-satellite-dish', color: '#2f9e44',
+      valor: `${Math.min(100, Math.round(r.cantidad_lecturas / esperadas * 100))}%`, sub: `${r.cantidad_lecturas} lecturas recibidas`,
+      pct: r.cantidad_lecturas / esperadas, invertido: true });
+  animarAgujas($stats);
 }
 
 function renderCharts(r) {

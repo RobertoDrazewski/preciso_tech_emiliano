@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS anomalias (
     alertado INTEGER NOT NULL DEFAULT 0,
     resuelta INTEGER NOT NULL DEFAULT 0,
     resuelta_en TEXT,
+    estado_revision TEXT NOT NULL DEFAULT 'pendiente',  -- pendiente | validada | descartada
+    revisada_en TEXT,
+    comentario_revision TEXT,
     creado_en TEXT NOT NULL
 );
 

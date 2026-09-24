@@ -35,6 +35,9 @@ CREATE TABLE IF NOT EXISTS anomalias (
     alertado INTEGER NOT NULL DEFAULT 0,
     resuelta INTEGER NOT NULL DEFAULT 0,   -- se marca en 1 cuando alguien descarga/manda el PDF que la incluye
     resuelta_en TEXT,
+    estado_revision TEXT NOT NULL DEFAULT 'pendiente',  -- pendiente | validada | descartada
+    revisada_en TEXT,
+    comentario_revision TEXT,
     creado_en TEXT NOT NULL
 );
 

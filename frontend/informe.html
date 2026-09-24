@@ -4,18 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="tituloPagina">Preciso · Informe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
-<div class="topbar">
-  <div class="brand">PRECISO <span>· Informes</span></div>
+<header class="app-header">
+  <a href="index.html" class="app-logo" title="Preciso — Gestión de flotas">
+    <img src="assets/img/logo.png" alt="Preciso">
+  </a>
+  <div class="app-header-derecha">
+    <div id="campana" class="campana"></div>
+    <div class="app-usuario"><i class="fa-solid fa-circle-user"></i><span>Módulo de anomalías</span></div>
+  </div>
+</header>
+<aside class="app-sidebar">
+  <div class="sidebar-seccion">Herramientas</div>
   <nav>
-    <a href="index.html">Panel</a>
-    <a href="anomalias.html">Anomalías</a>
+    <a href="index.html" class="activo"><i class="fa-solid fa-gauge-high"></i><span>Panel de flota</span></a>
+    <a href="anomalias.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Anomalías</span></a>
+    <a href="anomalias.html?revision=pendiente"><i class="fa-solid fa-bell"></i><span>Por revisar</span></a>
   </nav>
-</div>
-
+  <div class="sidebar-pie">Desarrollado por Puma Code</div>
+</aside>
+<main class="app-main">
 <div class="container">
   <h1 class="page-title" id="titulo">Informe</h1>
   <p class="page-subtitle" id="subtitulo"></p>
@@ -64,7 +78,11 @@
   <p class="footer-note">Preciso · Módulo de informes y detección de anomalías — desarrollado por Puma Code</p>
 </div>
 
+</main>
+
 <script src="assets/js/config.php"></script>
+<script src="assets/js/gauge.js"></script>
+<script src="assets/js/campana.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
