@@ -395,10 +395,11 @@ class Storage
     public function contarAnomaliasPorEquipo(DateTimeInterface $desde, DateTimeInterface $hasta): array
     {
         $stmt = $this->pdo->prepare('
-            SELECT equipo, COUNT(*) as cantidad
-            FROM anomalias
-            WHERE fecha BETWEEN :desde AND :hasta
-            GROUP BY equipo
+            SELECT a.equipo, COUNT(*) as cantidad
+            FROM anomalias a
+            JOIN equipos e ON e.id = a.equipo AND e.activo = 1
+            WHERE a.fecha BETWEEN :desde AND :hasta
+            GROUP BY a.equipo
         ');
         $stmt->execute([
             ':desde' => $desde->format(DateTimeInterface::ATOM),
@@ -417,6 +418,12 @@ class Storage
      * "Anomalías" con filtros. Trae también el nombre del equipo (join
      * simple contra la tabla equipos).
      */
+    // Solo equipos ACTIVOS (24/09/2026): los que TTM ya no tiene en su
+    // API (o tiene suspendidos) quedan desactivados, pero sus lecturas
+    // viejas siguen guardadas. Si mostraba sus anomalías, aparecían
+    // "fantasmas" con nombres viejos del Excel (ej. "ONZ859 (Volvo - 370)")
+    // que ni siquiera abren en el sistema de TTM.
+    //
     // El límite estaba en 500 y con la flota entera y 30 días se quedaba
     // corto: los KPIs de arriba (total, litros, vehículos) salían con
     // menos de lo real porque se calculan sobre lo que devuelve esta
@@ -426,8 +433,9 @@ class Storage
         $sql = '
             SELECT a.*, e.nombre AS equipo_nombre, e.cliente AS equipo_cliente
             FROM anomalias a
-            LEFT JOIN equipos e ON e.id = a.equipo
+            JOIN equipos e ON e.id = a.equipo
             WHERE a.fecha BETWEEN :desde AND :hasta
+              AND e.activo = 1
         ';
         $params = [
             ':desde' => $desde->format(DateTimeInterface::ATOM),
@@ -576,7 +584,13 @@ class Storage
      */
     public function equiposConLecturasDesde(DateTimeInterface $desde): array
     {
-        $stmt = $this->pdo->prepare('SELECT DISTINCT equipo FROM lecturas WHERE fecha >= :desde ORDER BY equipo');
+        // Solo equipos activos: no tiene sentido recalcular anomalías de
+        // equipos que TTM ya no tiene o tiene suspendidos.
+        $stmt = $this->pdo->prepare('
+            SELECT DISTINCT l.equipo FROM lecturas l
+            JOIN equipos e ON e.id = l.equipo AND e.activo = 1
+            WHERE l.fecha >= :desde ORDER BY l.equipo
+        ');
         $stmt->execute([':desde' => $desde->format(DateTimeInterface::ATOM)]);
         return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'equipo');
     }
@@ -730,7 +744,11 @@ class Storage
      */
     public function contarAnomaliasPendientesGlobal(): int
     {
-        $stmt = $this->pdo->query('SELECT COUNT(*) as cantidad FROM anomalias WHERE resuelta = 0');
+        $stmt = $this->pdo->query('
+            SELECT COUNT(*) as cantidad FROM anomalias a
+            JOIN equipos e ON e.id = a.equipo AND e.activo = 1
+            WHERE a.resuelta = 0
+        ');
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return (int) ($row['cantidad'] ?? 0);
     }
