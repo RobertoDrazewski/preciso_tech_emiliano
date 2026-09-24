@@ -130,7 +130,13 @@ return [
         // si el tipo no dice nada, por el nombre (la carga de datos de TTM
         // no siempre es prolija). Se compara sin importar mayúsculas y
         // alcanza con que el texto CONTENGA alguna de estas palabras.
-        'palabras_equipo_estacionario' => ['tanque fijo', 'tanquefijo', 'pozo', 'maquina', 'máquina', 'generador'],
+        //
+        // El 24/09/2026 corrí diagnostico_apis.php y aparecieron tipos que
+        // no conocíamos: "equipo frio" (117 equipos: el motor de frío
+        // consume aunque el camión esté parado, así que "descarga detenido"
+        // y "ralentí" siempre darían falso), "tanque stock" y "tanque
+        // movil" (entregan combustible, igual que un tanque fijo).
+        'palabras_equipo_estacionario' => ['tanque fijo', 'tanquefijo', 'tanque stock', 'tanque movil', 'tanque móvil', 'equipo frio', 'equipo frío', 'pozo', 'maquina', 'máquina', 'generador'],
 
         // --- Controles que agregué el 23/09/2026 mirando la lista real ---
 
@@ -168,6 +174,19 @@ return [
         // robo durante el corte (uso el mismo criterio que para descarga
         // detenido: por debajo es ruido del sensor).
         'corte_litros_sospechosos' => 15.0,
+
+        // --- Carga informada vs. medida (punto 3 de Emiliano) ---
+        // TTM manda un evento CARGA con la cantidad informada en el campo
+        // "variacion" (Emiliano: "la carga informada viene en variacion").
+        // Comparo eso contra lo que realmente subió el nivel: el nivel
+        // antes de la carga contra el más alto que alcanzó después, cuando
+        // el combustible ya se asentó en el tanque.
+        'carga_margen_lectura_minutos'   => 60,   // hasta dónde busco el nivel de antes
+        'carga_ventana_asentamiento_min' => 30,   // cuánto espero después para medir cuánto subió
+        // Diferencia mínima para avisar: tiene que superar las DOS cosas
+        // (así no salta por 3 L en una carga chica ni por 10 L en una de 400).
+        'carga_diferencia_min_litros'    => 10.0,
+        'carga_diferencia_min_porcentaje' => 0.15,
 
         'detenido_velocidad_max_kmh' => 1.0,
         'detenido_distancia_max_metros' => 200,

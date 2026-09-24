@@ -197,6 +197,7 @@ table.anomalias td {
 .tag.variacion_temperatura { background: #e8f5e9; color: #2e7d32; }
 .tag.desconexion_sensor { background: #eceff1; color: #455a64; }
 .tag.corte_alimentacion { background: #fce4ec; color: #ad1457; }
+.tag.carga_no_coincide { background: #fff8e1; color: #f57f17; }
 
 .empty-state {
   text-align: center;

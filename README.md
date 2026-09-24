@@ -29,7 +29,7 @@ Desarrollado por **Puma Code** para **TTM Desarrollos / Preciso**.
 
 Preciso se conecta a las APIs de TTM (telemetría por vehículo y listado de
 flota), guarda el historial de cada equipo, y analiza esos datos para
-detectar automáticamente ocho tipos de anomalías de combustible — sin
+detectar automáticamente nueve tipos de anomalías de combustible — sin
 intervención humana. Sobre eso construye:
 
 - **Un panel web** con el estado de toda la flota, filtrable por cliente,
@@ -160,7 +160,7 @@ descarta — se marca explícitamente en el detalle como "revisar antes de
 confirmar", junto con el ritmo de la pérdida en litros por minuto, para
 que quede a la vista qué tan extremo es el evento.
 
-### Los ocho tipos de anomalía
+### Los nueve tipos de anomalía
 
 | Tipo | Cómo se detecta |
 |---|---|
@@ -168,10 +168,11 @@ que quede a la vista qué tan extremo es el evento.
 | **Caída instantánea** | Caída confirmada de al menos 15 litros en 10 minutos o menos, a un ritmo físicamente posible (hasta 150 L/min). Solo aplica a vehículos. |
 | **Consumo anómalo** | Una vez que hay al menos 20 caídas confirmadas en el historial del vehículo, cualquier caída nueva se compara estadísticamente (z-score ≥ 3 desvíos estándar) contra el comportamiento normal de **ese vehículo puntual** — no un promedio genérico de la flota. |
 | **Agua en combustible** | Dos señales: el campo del sensor de telemetría (booleano), y el diagnóstico `AGUA` que expone la API de flota de TTM. Se marca en el momento en que la señal pasa a estar activa, no en cada lectura mientras se mantiene. |
-| **Ralentí** | Motor encendido + vehículo detenido + consumo real sostenido durante al menos 15 minutos y 1 litro. A propósito no depende de GPS — muchos equipos operan bajo techo, donde la señal de posición no es confiable. |
+| **Ralentí** | Motor encendido + vehículo detenido + consumo real sostenido durante al menos 15 minutos y 1 litro. El motor encendido sale de los eventos de contacto `IGON`/`IGOFF` que manda TTM. No depende de GPS — muchos equipos operan bajo techo. Solo aplica a vehículos. |
 | **Variación por temperatura** | Con el vehículo quieto, se cruza la curva de temperatura del tanque contra la de nivel. El gasoil se dilata ~0,083% por grado, así que algo de variación es normal; si el nivel acompaña a la temperatura con correlación ≥ 0,8 y varía más de 3 veces lo que explica la dilatación (y al menos 5 L), el sensor está afectado por la temperatura y se avisa. No es una pérdida de combustible: es un aviso de que ese sensor no es confiable. Máximo una por equipo por día. |
 | **Desconexión de sensor** | Una caída más rápida que cualquier bomba real (más de 150 L/min) no es combustible que sale del tanque: es el sensor que se desconectó o se reinició. Se reporta aparte, con 0 L de merma, para no inflar las pérdidas. Era el punto 5 pedido por TTM ("desconexión de algún tanque"). |
 | **Corte de alimentación** | TTM manda los eventos `POWOFF` (se cortó la alimentación del equipo) y `POWON` (volvió). Cada corte se reporta con su duración, y se compara el último nivel antes del corte con el primero al volver: si faltan 15 L o más, se marca como posible robo — cortar la alimentación para que el sensor no registre la descarga es el patrón clásico. |
+| **Carga no coincide** | TTM manda un evento `CARGA` con los litros informados en `variacion`. Se compara contra lo que realmente subió el nivel (antes de la carga vs. el máximo en los 30 minutos siguientes). Si la diferencia supera 10 L y el 15%, se avisa; si entró menos de lo informado, esa diferencia cuenta como merma. |
 
 Todos los umbrales están centralizados en `backend/config/config.php`,
 documentados y ajustables sin tocar lógica de negocio.
@@ -199,6 +200,22 @@ Para ver TODO lo que mandan las dos APIs (todos los campos y todos los valores d
 Para recalcular anomalías ya guardadas con las reglas nuevas:
 `php scripts/reprocesar_anomalias.php 30` (usa las lecturas guardadas, no
 consulta la API).
+
+### Eventos que manda la API de telemetría
+
+Relevado con `diagnostico_apis.php` sobre una semana real (24/09/2026). El
+campo `evento` puede ser:
+
+| Evento | Qué es | Uso en el sistema |
+|---|---|---|
+| `DATA` | Lectura de combustible y tanques | Base de todos los cálculos |
+| `TIEMPO` | Reporte periódico (odómetro, sin combustible) | Odómetro / km |
+| `IGON` / `IGOFF` | Contacto del motor prendido / apagado | Motor encendido (ralentí) |
+| `POWON` / `POWOFF` | Alimentación del equipo vuelve / se corta | Corte de alimentación |
+| `CARGA` | Carga de combustible, litros en `variacion` | Carga no coincide |
+
+El campo `movimiento` casi nunca viene con dato (4 de 3.612 registros), por
+eso no se usa para decidir si el motor está encendido.
 
 ### Lecturas sin dato del sensor
 
@@ -384,7 +401,7 @@ Todos los endpoints están en `backend/public/api/` y devuelven JSON.
 
 **En producción, funcionando:**
 - Conexión a las dos APIs reales de TTM (telemetría y flota).
-- Detección automática de los 8 tipos de anomalía sobre la flota completa.
+- Detección automática de los 9 tipos de anomalía sobre la flota completa.
 - Proceso automático (cron) corriendo cada 5 minutos con alertas por email.
 - Panel con filtros por cliente, servicio y presencia de anomalías.
 - Exportación de informes a PDF.

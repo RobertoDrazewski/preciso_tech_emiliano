@@ -63,6 +63,12 @@ class AnomalyDetector
             return [];
         }
 
+        // El contacto del motor: TTM lo manda como eventos IGON / IGOFF.
+        // El campo "movimiento" que usábamos casi nunca viene con dato (4 de
+        // 3.612 registros en una semana real), así que el "motor encendido"
+        // estaba casi siempre en falso y el ralentí no andaba.
+        $lecturas = $this->aplicarEstadoIgnicion($lecturas);
+
         // ¿Es un equipo que no se mueve nunca (tanque fijo, pozo, máquina)?
         // A esos no les aplican las reglas pensadas para vehículos — ver
         // 'palabras_equipo_estacionario' en config.
@@ -174,6 +180,11 @@ class AnomalyDetector
             }
         }
 
+        // Carga informada vs. medida (evento CARGA).
+        foreach ($this->deteccionCargas($lecturas, $ahora) as $a) {
+            $anomalias[] = $a;
+        }
+
         // Cortes de alimentación (POWOFF/POWON): cada corte se reporta, y si
         // al volver falta combustible, se marca como posible robo.
         foreach ($this->deteccionCortesAlimentacion($lecturas) as $a) {
@@ -215,6 +226,133 @@ class AnomalyDetector
     }
 
     /**
+     * Pone el "motor encendido" de cada lectura según los eventos de
+     * contacto IGON (se prendió) / IGOFF (se apagó) que manda TTM.
+     *
+     * Recorro en orden y voy arrastrando el estado. Para las lecturas de
+     * antes del primer evento, lo deduzco del propio evento: si el
+     * primero es IGOFF, antes estaba prendido; si es IGON, estaba apagado.
+     * Si en todo el período no hay ningún IGON/IGOFF, no toco nada y queda
+     * lo que ya había (mejor eso que inventar).
+     */
+    private function aplicarEstadoIgnicion(array $lecturas): array
+    {
+        $primero = null;
+        foreach ($lecturas as $l) {
+            if (in_array($l['evento'] ?? null, ['IGON', 'IGOFF'], true)) {
+                $primero = $l['evento'];
+                break;
+            }
+        }
+        if ($primero === null) {
+            return $lecturas;
+        }
+
+        $encendido = ($primero === 'IGOFF');
+        foreach ($lecturas as $i => $l) {
+            if (($l['evento'] ?? null) === 'IGON') {
+                $encendido = true;
+            } elseif (($l['evento'] ?? null) === 'IGOFF') {
+                $encendido = false;
+            }
+            $lecturas[$i]['motor_encendido'] = $encendido;
+        }
+        return $lecturas;
+    }
+
+    /**
+     * Carga informada vs. medida — punto 3 de Emiliano.
+     *
+     * TTM manda un evento CARGA con los litros informados en "variacion".
+     * Para cada uno comparo:
+     *   - lo informado, contra
+     *   - lo que subió de verdad el nivel: el último nivel válido antes de
+     *     la carga contra el más alto que alcanzó en los 30 minutos
+     *     siguientes (le doy tiempo a que el combustible se asiente).
+     *
+     * Si la diferencia pasa los dos mínimos de config (litros y
+     * porcentaje), aviso. Si entró MENOS de lo informado, esa diferencia
+     * cuenta como merma (se pagó combustible que no está en el tanque);
+     * si entró MÁS, igual aviso, pero sin merma.
+     *
+     * Si todavía no pasaron los 30 minutos desde la carga, espero a la
+     * próxima corrida. La fecha de la anomalía es la del evento CARGA, así
+     * el cron no la duplica.
+     */
+    private function deteccionCargas(array $lecturas, DateTimeInterface $ahora): array
+    {
+        $margen = $this->cfg['carga_margen_lectura_minutos'] ?? 60;
+        $asentamiento = $this->cfg['carga_ventana_asentamiento_min'] ?? 30;
+        $minLitros = $this->cfg['carga_diferencia_min_litros'] ?? 10.0;
+        $minPct = $this->cfg['carga_diferencia_min_porcentaje'] ?? 0.15;
+
+        $anomalias = [];
+        $n = count($lecturas);
+
+        for ($i = 0; $i < $n; $i++) {
+            $carga = $lecturas[$i];
+            if (($carga['evento'] ?? null) !== 'CARGA' || ($carga['variacion'] ?? null) === null || (float) $carga['variacion'] == 0.0) {
+                continue;
+            }
+            $finAsentamiento = $carga['fecha']->modify("+{$asentamiento} minutes");
+            if ($finAsentamiento > $ahora) {
+                continue; // todavía se está asentando, lo veo en la próxima corrida
+            }
+            $informada = abs((float) $carga['variacion']);
+
+            // Nivel antes de la carga.
+            $antes = null;
+            for ($k = $i - 1; $k >= 0; $k--) {
+                $l = $lecturas[$k];
+                if (($carga['fecha']->getTimestamp() - $l['fecha']->getTimestamp()) / 60 > $margen) {
+                    break;
+                }
+                if ($l['combustible_litros'] !== null && ($l['evento'] ?? null) !== 'CARGA') {
+                    $antes = $l['combustible_litros'];
+                    break;
+                }
+            }
+
+            // Nivel más alto después (incluye la propia lectura de la carga).
+            $despues = null;
+            foreach ($lecturas as $l) {
+                if ($l['fecha'] < $carga['fecha'] || $l['fecha'] > $finAsentamiento) {
+                    continue;
+                }
+                if ($l['combustible_litros'] !== null) {
+                    $despues = $despues === null ? $l['combustible_litros'] : max($despues, $l['combustible_litros']);
+                }
+            }
+
+            if ($antes === null || $despues === null) {
+                continue; // no tengo cómo medir, no invento
+            }
+
+            $medida = $despues - $antes;
+            $diferencia = $medida - $informada;
+            if (abs($diferencia) < $minLitros || abs($diferencia) < $informada * $minPct) {
+                continue; // coincide razonablemente
+            }
+
+            $merma = $diferencia < 0 ? abs($diferencia) : 0.0;
+            $detalle = sprintf(
+                'Carga informada por el sensor: %.1f L. Lo que subió el nivel del tanque: %.1f L (de %.1f L a %.1f L). ',
+                $informada, $medida, $antes, $despues
+            );
+            $detalle .= $diferencia < 0
+                ? sprintf('Entraron %.1f L menos de lo informado.', abs($diferencia))
+                : sprintf('Entraron %.1f L más de lo informado.', $diferencia);
+
+            $anomalias[] = $this->construir(
+                $carga['equipo'], $carga['fecha'], 'carga_no_coincide', $detalle,
+                $merma, null, $carga['lat'], $carga['lng']
+            );
+        }
+
+        return $anomalias;
+    }
+
+    /**
      * Cortes de alimentación — eventos POWOFF / POWON que manda TTM.
      *
      * Para cada POWOFF busco el POWON que viene después. Si todavía no
@@ -249,13 +387,25 @@ class AnomalyDetector
             }
             $off = $lecturas[$i];
 
-            // El POWON que cierra este corte.
+            // El POWON que cierra este corte. Si antes aparece otro POWOFF,
+            // salteo este y me quedo con el último (en los datos reales hay
+            // más POWON que POWOFF: el equipo a veces se reinicia sin un
+            // corte previo, y no quiero emparejar mal).
             $on = null;
+            $hayOtroOff = false;
             for ($j = $i + 1; $j < $n; $j++) {
-                if (($lecturas[$j]['evento'] ?? null) === 'POWON') {
+                $ev = $lecturas[$j]['evento'] ?? null;
+                if ($ev === 'POWOFF') {
+                    $hayOtroOff = true;
+                    break;
+                }
+                if ($ev === 'POWON') {
                     $on = $lecturas[$j];
                     break;
                 }
+            }
+            if ($hayOtroOff) {
+                continue;
             }
             if ($on === null) {
                 continue; // sigue cortado, lo veo en la próxima corrida

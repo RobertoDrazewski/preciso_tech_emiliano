@@ -18,9 +18,9 @@ try {
 
     // Validación básica de entrada — sin esto, un tipo mal escrito devuelve
     // "0 anomalías" en silencio en vez de avisar que el filtro está mal.
-    if ($tipo !== null && $tipo !== '' && !in_array($tipo, ['descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'agua_combustible', 'ralenti', 'variacion_temperatura', 'desconexion_sensor', 'corte_alimentacion'], true)) {
+    if ($tipo !== null && $tipo !== '' && !in_array($tipo, ['descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'agua_combustible', 'ralenti', 'variacion_temperatura', 'desconexion_sensor', 'corte_alimentacion', 'carga_no_coincide'], true)) {
         http_response_code(400);
-        echo json_encode(['error' => 'tipo tiene que ser descarga_detenido, caida_instantanea, consumo_anomalo, agua_combustible, ralenti, variacion_temperatura, desconexion_sensor o corte_alimentacion'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => 'tipo tiene que ser descarga_detenido, caida_instantanea, consumo_anomalo, agua_combustible, ralenti, variacion_temperatura, desconexion_sensor, corte_alimentacion o carga_no_coincide'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 

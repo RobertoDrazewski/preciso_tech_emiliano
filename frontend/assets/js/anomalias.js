@@ -210,6 +210,7 @@ function renderResultados(data) {
     { key: 'variacion_temperatura', label: 'Variación por temperatura' },
     { key: 'desconexion_sensor', label: 'Desconexión de sensor' },
     { key: 'corte_alimentacion', label: 'Corte de alimentación' },
+    { key: 'carga_no_coincide', label: 'Carga no coincide' },
   ];
 
   // KPIs Generales
