@@ -46,6 +46,10 @@ function aplicarFiltroDesdeUrl() {
   const params = new URLSearchParams(window.location.search);
   const revision = params.get('revision');
   if (revision) document.getElementById('filtroRevision').value = revision;
+  const tipoUrl = params.get('tipo');
+  if (tipoUrl) document.getElementById('filtroTipo').value = tipoUrl;
+  const diasUrl = params.get('dias');
+  if (diasUrl && document.querySelector(`#filtroDias option[value="${diasUrl}"]`)) document.getElementById('filtroDias').value = diasUrl;
   const equipoId = params.get('equipo');
   if (!equipoId) return;
 
@@ -224,16 +228,16 @@ function renderResultados(data) {
   const flota = st.flota_activa || 0;
 
   let html = '';
-  html += gauge({ titulo: 'Total anomalías', icono: 'fa-triangle-exclamation', color: '#e03131',
+  html += gauge({ datos: { accion: 'todo' }, titulo: 'Total anomalías', icono: 'fa-triangle-exclamation', color: '#e03131',
     valor: numeroAR(data.total), sub: `${numeroAR(revisadas)} revisadas de ${numeroAR(totalRevisables)}`,
     pct: totalRevisables ? revisadas / totalRevisables : 0, invertido: true });
-  html += gauge({ titulo: 'Por revisar', icono: 'fa-bell', color: '#f59f00',
+  html += gauge({ datos: { revision: 'pendiente' }, titulo: 'Por revisar', icono: 'fa-bell', color: '#f59f00',
     valor: numeroAR(st.pendientes), sub: 'esperando validar o descartar',
     pct: totalRevisables ? (st.pendientes || 0) / totalRevisables : 0 });
-  html += gauge({ titulo: 'Mermas', icono: 'fa-gas-pump', color: '#1c7ed6',
+  html += gauge({ datos: { revision: 'validada' }, titulo: 'Mermas', icono: 'fa-gas-pump', color: '#1c7ed6',
     valor: `${numeroAR(st.litros_perdidos_totales, 1)} L`, sub: `${numeroAR(st.litros_validados, 1)} L confirmados`,
     pct: st.litros_perdidos_totales ? (st.litros_validados || 0) / st.litros_perdidos_totales : 0, invertido: true });
-  html += gauge({ titulo: 'Vehículos afectados', icono: 'fa-truck', color: '#7048e8',
+  html += gauge({ datos: { accion: 'porflota' }, titulo: 'Vehículos afectados', icono: 'fa-truck', color: '#7048e8',
     valor: numeroAR(st.equipos_afectados), sub: `de ${numeroAR(flota)} en la flota activa`,
     pct: flota ? (st.equipos_afectados || 0) / flota : 0 });
 
@@ -245,7 +249,7 @@ function renderResultados(data) {
   });
   TIPOS_FIJOS.forEach(t => {
     const info = porTipo[t.key] || { n: 0, litros: 0 };
-    html += gauge({ titulo: t.label, icono: t.icono, color: t.color,
+    html += gauge({ datos: { tipo: t.key }, titulo: t.label, icono: t.icono, color: t.color,
       valor: numeroAR(info.n), sub: info.litros > 0 ? `${numeroAR(info.litros, 1)} L` : 'sin merma',
       pct: data.total ? info.n / data.total : 0 });
   });
@@ -255,6 +259,7 @@ function renderResultados(data) {
   $kpi.removeAttribute('style');
   $kpi.innerHTML = html;
   animarAgujas($kpi);
+  engancharClicksTarjetas($kpi);
 
   // ---- Tabla ----
   const $tabla = document.getElementById('tablaAnomalias');
@@ -288,6 +293,40 @@ function renderResultados(data) {
       // Uso la misma lógica que la campanita (pide comentario al descartar,
       // guarda, y avisa para que todo se actualice).
       window.revisarAnomalia(Number(b.closest('tr').dataset.id), b.dataset.accion);
+    });
+  });
+}
+
+/**
+ * Click en las tarjetas de arriba: te llevan a esas anomalías.
+ *   - un tipo        -> filtra ese tipo y baja a la tabla (otro click lo saca)
+ *   - Por revisar    -> solo las pendientes
+ *   - Mermas         -> solo las validadas (las mermas confirmadas)
+ *   - Total          -> saca el filtro de tipo y vuelve a las activas
+ *   - Vehículos      -> baja al ranking por flota
+ */
+function engancharClicksTarjetas($contenedor) {
+  const tipoActual = document.getElementById('filtroTipo').value;
+  $contenedor.querySelectorAll('.gauge-card[data-tipo]').forEach(c => {
+    if (c.dataset.tipo === tipoActual) c.classList.add('seleccionada');
+  });
+  $contenedor.querySelectorAll('.gauge-card.clickeable').forEach(c => {
+    c.addEventListener('click', async () => {
+      const d = c.dataset;
+      if (d.tipo) {
+        const $tipo = document.getElementById('filtroTipo');
+        $tipo.value = $tipo.value === d.tipo ? '' : d.tipo;
+      } else if (d.revision) {
+        document.getElementById('filtroRevision').value = d.revision;
+      } else if (d.accion === 'todo') {
+        document.getElementById('filtroTipo').value = '';
+        document.getElementById('filtroRevision').value = 'activas';
+      } else if (d.accion === 'porflota') {
+        document.getElementById('cardPorFlota').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      await cargarAnomalias();
+      document.getElementById('tablaAnomalias').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 }

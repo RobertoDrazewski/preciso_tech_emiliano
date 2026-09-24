@@ -457,3 +457,44 @@ body { font-family: var(--font); background: var(--color-bg); }
 .rev-estado.pendiente { background: #fff3bf; color: #8a6d00; }
 .rev-estado.validada { background: #d3f9d8; color: #2b8a3e; }
 .rev-estado.descartada { background: #eee; color: #777; text-decoration: line-through; }
+
+/* =====================================================================
+   AJUSTE SOBRIO (24/09/2026): la primera versión tenía demasiado color y
+   fondo gris; se sentía como una pantalla de alarmas. Fondo casi blanco,
+   tarjetas con borde fino en vez de sombra y barra de color, títulos e
+   íconos en gris. El color queda solo en lo que importa (la campanita, las
+   etiquetas de tipo y la zona de la aguja).
+   ===================================================================== */
+:root { --color-bg: #f8f9fb; --color-border: #e6e8ec; }
+body { background: var(--color-bg); color: #2b2f36; }
+.card { box-shadow: none; border: 1px solid var(--color-border); border-radius: 8px; }
+.page-title { font-weight: 800; color: #1f2329; }
+.page-subtitle { color: #6b7280; }
+
+.gauge-card {
+  border: 1px solid var(--color-border); border-left: 1px solid var(--color-border);
+  box-shadow: none; border-radius: 8px; padding: 14px 16px 12px;
+  text-decoration: none; color: inherit; display: block;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.gauge-card .g-titulo { color: #5c636e; font-weight: 700; font-size: 11.5px; letter-spacing: .5px; }
+.gauge-card .g-icono { color: #b0b6bf; font-size: 18px; }
+.gauge-card .g-valor { color: #1f2329; font-size: 22px; }
+.gauge-card .g-sub { color: #8a919c; }
+
+/* Tarjetas que llevan a algún lado */
+.gauge-card.clickeable { cursor: pointer; }
+.gauge-card.clickeable:hover { border-color: var(--color-accent); box-shadow: 0 4px 14px rgba(0,0,0,.06); transform: translateY(-1px); }
+.gauge-card.clickeable:hover .g-icono { color: var(--color-accent); }
+.gauge-card.seleccionada { border-color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+
+/* Etiquetas de tipo y estados, en tonos más apagados */
+.tag { font-weight: 700; border-radius: 4px; }
+.rev-estado.pendiente { background: #f7f0dc; color: #7a6320; }
+.rev-estado.validada { background: #e3efe6; color: #3f6b4c; }
+.rev-btn.validar { color: #3f6b4c; border-color: #b9d3c1; }
+.rev-btn.validar:hover { background: #3f6b4c; border-color: #3f6b4c; }
+.rev-btn.descartar { color: #8a4a4a; border-color: #e0c3c3; }
+.rev-btn.descartar:hover { background: #8a4a4a; border-color: #8a4a4a; }
+.simulado-banner { background: #fbf7ec; border-color: #eadfbf; color: #6f5a1f; font-weight: 600; }
+table.anomalias th { color: #6b7280; }

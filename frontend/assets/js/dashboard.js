@@ -86,13 +86,13 @@ async function renderStats(equipos) {
   $stats.innerHTML =
     gauge({ titulo: 'Flota monitoreada', icono: 'fa-truck-fast', color: '#2f9e44',
       valor: numeroAR(total), sub: 'equipos activos', pct: total ? 1 : 0, invertido: true }) +
-    gauge({ titulo: 'Con anomalías', icono: 'fa-truck-medical', color: '#e03131',
+    gauge({ enlace: 'anomalias.html?dias=30', titulo: 'Con anomalías', icono: 'fa-truck-medical', color: '#e03131',
       valor: numeroAR(conAnomalias), sub: `${total ? Math.round(conAnomalias / total * 100) : 0}% de la flota (30 días)`,
       pct: total ? conAnomalias / total : 0 }) +
-    gauge({ titulo: 'Anomalías 30 días', icono: 'fa-triangle-exclamation', color: '#f59f00',
+    gauge({ enlace: 'anomalias.html?dias=30', titulo: 'Anomalías 30 días', icono: 'fa-triangle-exclamation', color: '#f59f00',
       valor: numeroAR(anomalias30), sub: `${numeroAR(anomaliasFull)} de clientes FULL`,
       pct: anomalias30 ? anomaliasFull / anomalias30 : 0 }) +
-    gauge({ titulo: 'Por revisar', icono: 'fa-bell', color: '#1c7ed6',
+    gauge({ enlace: 'anomalias.html?revision=pendiente', titulo: 'Por revisar', icono: 'fa-bell', color: '#1c7ed6',
       valor: numeroAR(pendientes), sub: 'esperando validar o descartar',
       pct: anomalias30 ? Math.min(1, pendientes / anomalias30) : 0 });
   animarAgujas($stats);

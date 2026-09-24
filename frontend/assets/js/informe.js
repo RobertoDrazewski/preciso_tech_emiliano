@@ -89,6 +89,8 @@ function renderStats(r) {
   const consumido = r.litros_consumidos_total || 0;
   const perdidos = r.litros_perdidos_anomalos || 0;
   const esperadas = dias * 24 * 12;
+  // Anomalías y litros perdidos llevan a la pantalla de Anomalías de este equipo.
+  const verAnomalias = `anomalias.html?equipo=${encodeURIComponent(equipoId)}&dias=${dias}`;
 
   const $stats = document.getElementById('stats');
   $stats.className = 'gauges';
@@ -102,10 +104,10 @@ function renderStats(r) {
     gauge({ titulo: 'Combustible consumido', icono: 'fa-droplet', color: '#f59f00',
       valor: `${formatNum(consumido)} L`, sub: km > 0 ? `a 60 L/100 serían ${formatNum(km * 0.6)} L` : '',
       pct: km > 0 ? consumido / (km * 0.6) : 0 }) +
-    gauge({ titulo: 'Litros perdidos', icono: 'fa-gas-pump', color: '#c92a2a',
+    gauge({ enlace: verAnomalias, titulo: 'Litros perdidos', icono: 'fa-gas-pump', color: '#c92a2a',
       valor: `${formatNum(perdidos)} L`, sub: 'en anomalías del período',
       pct: (consumido + perdidos) > 0 ? perdidos / (consumido + perdidos) : 0 }) +
-    gauge({ titulo: 'Anomalías', icono: 'fa-triangle-exclamation', color: '#f76707',
+    gauge({ enlace: verAnomalias, titulo: 'Anomalías', icono: 'fa-triangle-exclamation', color: '#f76707',
       valor: String(r.cantidad_anomalias), sub: 'detectadas en el período',
       pct: r.cantidad_anomalias / 10 }) +
     gauge({ titulo: 'Cobertura de datos', icono: 'fa-satellite-dish', color: '#2f9e44',
