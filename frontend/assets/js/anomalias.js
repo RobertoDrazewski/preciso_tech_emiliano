@@ -294,6 +294,16 @@ function linkGraficoTTM(equipoNombre, fechaISO) {
   hasta.setDate(hasta.getDate() + 1);
   hasta.setHours(23, 59, 0, 0);
 
+  // Nunca pedir una fecha en el futuro: si la anomalía es de hoy, "un día
+  // después" cae mañana, y el reportes.php de TTM con una fecha futura no
+  // muestra nada (así dejó de andar el link con las anomalías del día).
+  // Tope: hoy a las 23:59, igual que el link de ejemplo de Emiliano.
+  const finDeHoy = new Date();
+  finDeHoy.setHours(23, 59, 0, 0);
+  if (hasta > finDeHoy) {
+    hasta.setTime(finDeHoy.getTime());
+  }
+
   const pad = (n) => String(n).padStart(2, '0');
   const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${d.getHours()}:${pad(d.getMinutes())}`;
 
