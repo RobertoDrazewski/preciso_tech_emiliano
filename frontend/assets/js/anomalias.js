@@ -241,21 +241,36 @@ function renderResultados(data) {
     valor: numeroAR(st.equipos_afectados), sub: `de ${numeroAR(flota)} en la flota activa`,
     pct: flota ? (st.equipos_afectados || 0) / flota : 0 });
 
+  // Los 9 tipos van en UNA tarjeta con una barra por tipo (antes eran 9
+  // tarjetas y ocupaban media pantalla). La barra es la parte del total que
+  // corresponde a ese tipo. Cada fila es clickeable: filtra ese tipo.
   const porTipo = {};
   data.anomalias.forEach(a => {
     if (!porTipo[a.tipo]) porTipo[a.tipo] = { n: 0, litros: 0 };
     porTipo[a.tipo].n++;
     porTipo[a.tipo].litros += Number(a.litros_perdidos) || 0;
   });
-  TIPOS_FIJOS.forEach(t => {
+  const maxTipo = Math.max(1, ...TIPOS_FIJOS.map(t => (porTipo[t.key] || { n: 0 }).n));
+  const filasTipo = TIPOS_FIJOS.map(t => {
     const info = porTipo[t.key] || { n: 0, litros: 0 };
-    html += gauge({ datos: { tipo: t.key }, titulo: t.label, icono: t.icono, color: t.color,
-      valor: numeroAR(info.n), sub: info.litros > 0 ? `${numeroAR(info.litros, 1)} L` : 'sin merma',
-      pct: data.total ? info.n / data.total : 0 });
-  });
+    const ancho = (info.n / maxTipo * 100).toFixed(1);
+    return `
+      <div class="tipo-fila clickeable" data-tipo="${t.key}">
+        <i class="fa-solid ${t.icono}"></i>
+        <span class="tipo-nombre">${t.label}</span>
+        <span class="tipo-barra"><span data-ancho="${ancho}" style="width:0"></span></span>
+        <span class="tipo-num">${numeroAR(info.n)}</span>
+        <span class="tipo-litros">${info.litros > 0 ? numeroAR(info.litros, 1) + ' L' : '—'}</span>
+      </div>`;
+  }).join('');
+  html = `<div class="kpi-fila">${html}</div>
+    <div class="card tipos-card">
+      <div class="tipos-cab"><span>Anomalías por tipo</span><span class="tipos-ayuda">tocá un tipo para filtrarlo</span></div>
+      ${filasTipo}
+    </div>`;
 
   const $kpi = document.getElementById('kpiStats');
-  $kpi.className = 'gauges';
+  $kpi.className = '';
   $kpi.removeAttribute('style');
   $kpi.innerHTML = html;
   animarAgujas($kpi);
@@ -307,10 +322,10 @@ function renderResultados(data) {
  */
 function engancharClicksTarjetas($contenedor) {
   const tipoActual = document.getElementById('filtroTipo').value;
-  $contenedor.querySelectorAll('.gauge-card[data-tipo]').forEach(c => {
+  $contenedor.querySelectorAll('[data-tipo]').forEach(c => {
     if (c.dataset.tipo === tipoActual) c.classList.add('seleccionada');
   });
-  $contenedor.querySelectorAll('.gauge-card.clickeable').forEach(c => {
+  $contenedor.querySelectorAll('.clickeable').forEach(c => {
     c.addEventListener('click', async () => {
       const d = c.dataset;
       if (d.tipo) {

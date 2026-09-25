@@ -123,18 +123,21 @@ function renderCharts(r) {
 
   chartCombustibleInstance = new Chart(document.getElementById('chartCombustible'), {
     type: 'line',
-    data: { datasets: [{ label: 'Combustible (L)', data: r.serie_combustible, borderColor: '#f2a71b', backgroundColor: 'rgba(242,167,27,0.15)', fill: true, tension: 0.25, pointRadius: 0 }] },
+    // spanGaps: entre lectura y lectura de combustible hay registros sin dato
+    // (TIEMPO, eventos). Sin esto, el relleno bajaba a cero en cada hueco y
+    // el gráfico se llenaba de rayas verticales que parecían caídas.
+    data: { datasets: [{ label: 'Combustible (L)', data: r.serie_combustible, borderColor: '#f2a71b', backgroundColor: 'rgba(242,167,27,0.15)', fill: true, tension: 0.25, pointRadius: 0, spanGaps: true }] },
     // devicePixelRatio alto a propósito: el gráfico se ve igual en pantalla,
     // pero el canvas de fondo queda en mayor resolución — necesario para que
     // no salga borroso al exportarlo al PDF (ahí se estira para ocupar todo
     // el ancho de la hoja, y una imagen de baja resolución se nota pixelada).
-    options: { devicePixelRatio: 3, scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
   });
 
   chartVelocidadInstance = new Chart(document.getElementById('chartVelocidad'), {
     type: 'line',
     data: { datasets: [{ label: 'Velocidad km/h', data: r.serie_velocidad, borderColor: '#0d1b2e', backgroundColor: 'rgba(13,27,46,0.08)', fill: true, tension: 0.25, pointRadius: 0 }] },
-    options: { devicePixelRatio: 3, scales: { x: { type: 'time' } }, plugins: { legend: { display: false } } }
+    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time' } }, plugins: { legend: { display: false } } }
   });
 
   const coloresTanque = { 1: '#f2a71b', 2: '#0d1b2e', 3: '#1f9d55', 4: '#c0392b' };
@@ -160,7 +163,7 @@ function renderCharts(r) {
         pointRadius: 0,
       })),
     },
-    options: { devicePixelRatio: 3, scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: true } } }
+    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: true } } }
   });
 }
 
@@ -325,6 +328,16 @@ function escapeHtml(str) {
 
 document.getElementById('btnDescargarPdf').addEventListener('click', generarPDF);
 
+/**
+ * PDF del informe con la MISMA disposición que la pantalla:
+ *   - franja negra con el logo (como el panel de TTM)
+ *   - los indicadores en recuadros de 3 x 2
+ *   - a la izquierda los gráficos, uno arriba del otro, todos del mismo tamaño
+ *   - a la derecha el mapa en un cuadrado
+ *   - abajo, a todo el ancho, la tabla de anomalías
+ * Antes cada gráfico se estiraba al ancho de la hoja y las letras salían
+ * gigantes; ahora cada uno ocupa su columna y mantiene su proporción.
+ */
 async function generarPDF() {
   if (!ULTIMO_INFORME) return;
 
@@ -336,142 +349,177 @@ async function generarPDF() {
   try {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const anchoPagina = doc.internal.pageSize.getWidth();
-    const altoPagina = doc.internal.pageSize.getHeight();
-    const margen = 14;
-    const anchoUtil = anchoPagina - margen * 2;
-    let y = margen;
+    const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
+    const M = 12;                 // margen
+    const util = W - M * 2;       // ancho útil
+    const r = ULTIMO_INFORME.reporte;
 
-    function saltoDePaginaSiHaceFalta(alturaNecesaria) {
-      if (y + alturaNecesaria > altoPagina - margen) {
-        doc.addPage();
-        y = margen;
-      }
+    // --- Franja negra con el logo ---
+    doc.setFillColor(0, 0, 0);
+    doc.rect(0, 0, W, 22, 'F');
+    const logo = await imagenComoDataUrl('assets/img/logo.png');
+    if (logo) {
+      doc.addImage(logo.dataUrl, 'PNG', M, 5, 12 * logo.proporcion, 12, undefined, 'FAST');
     }
-
-    // --- Encabezado ---
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(13, 27, 46);
-    doc.text('Preciso · Informe de flota', margen, y);
-    y += 8;
-
-    doc.setFontSize(12);
-    doc.text(`${tipoLabel} — ${ULTIMO_INFORME.equipo.nombre} (equipo ${ULTIMO_INFORME.equipo.id})`, margen, y);
-    y += 6;
-
+    doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
+    doc.text('Informe de flota', W - M, 10, { align: 'right' });
+    doc.setTextColor(255, 176, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${tipoLabel}`, W - M, 15, { align: 'right' });
+
+    // --- Título del informe ---
+    let y = 31;
+    doc.setTextColor(31, 35, 41);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text(`${ULTIMO_INFORME.equipo.nombre}`, M, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     doc.setTextColor(107, 114, 128);
-    doc.text(`Período: ${formatearFecha(ULTIMO_INFORME.desde)} — ${formatearFecha(ULTIMO_INFORME.hasta)}`, margen, y);
-    y += 5;
-    doc.text(`Generado: ${new Date().toLocaleString('es-AR')}`, margen, y);
-    y += 5;
+    doc.text(`Equipo ${ULTIMO_INFORME.equipo.id} · Período: ${formatearFecha(ULTIMO_INFORME.desde)} — ${formatearFecha(ULTIMO_INFORME.hasta)} · Generado: ${new Date().toLocaleString('es-AR')}`, M, y + 5);
+    y += 11;
     if (ULTIMO_INFORME.simulado) {
-      doc.setTextColor(180, 90, 0);
-      doc.text('⚠ Datos SIMULADOS — la API real estaba fuera de servicio al momento de generar este informe.', margen, y);
+      doc.setTextColor(150, 100, 20);
+      doc.text('Datos SIMULADOS: la API real no estaba disponible al generar este informe.', M, y);
       y += 5;
     }
-    y += 3;
 
-    // --- Resumen numérico ---
-    const r = ULTIMO_INFORME.reporte;
-    const resumen = [
+    // --- Indicadores en recuadros (3 x 2) ---
+    const kpis = [
       ['Km recorridos', r.km_recorridos !== null ? `${formatNum(r.km_recorridos)} km` : '—'],
-      ['Combustible consumido', `${formatNum(r.litros_consumidos_total)} L`],
       ['Consumo promedio', r.consumo_l_100km !== null ? `${formatNum(r.consumo_l_100km)} L/100km` : '—'],
-      ['Litros perdidos en anomalías', `${formatNum(r.litros_perdidos_anomalos)} L`],
-      ['Anomalías detectadas', `${r.cantidad_anomalias}`],
+      ['Combustible consumido', `${formatNum(r.litros_consumidos_total)} L`],
+      ['Litros perdidos', `${formatNum(r.litros_perdidos_anomalos)} L`],
+      ['Anomalías', `${r.cantidad_anomalias}`],
       ['Lecturas recibidas', `${r.cantidad_lecturas}`],
     ];
-    doc.autoTable({
-      startY: y,
-      margin: { left: margen, right: margen },
-      body: resumen,
-      theme: 'plain',
-      styles: { fontSize: 9.5, cellPadding: 1.2 },
-      columnStyles: { 0: { fontStyle: 'bold', textColor: [13, 27, 46] }, 1: { textColor: [30, 30, 30] } },
+    const cajaW = (util - 2 * 4) / 3;
+    const cajaH = 15;
+    kpis.forEach(([titulo, valor], i) => {
+      const x = M + (i % 3) * (cajaW + 4);
+      const yy = y + Math.floor(i / 3) * (cajaH + 3);
+      doc.setDrawColor(230, 232, 236);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(x, yy, cajaW, cajaH, 1.5, 1.5, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(92, 99, 110);
+      doc.text(titulo.toUpperCase(), x + 4, yy + 5.5);
+      doc.setFontSize(12);
+      doc.setTextColor(31, 35, 41);
+      doc.text(valor, x + 4, yy + 12);
     });
-    y = doc.lastAutoTable.finalY + 8;
+    y += 2 * cajaH + 3 + 7;
 
-    // --- Gráficos (imagen directa del canvas, calidad exacta) ---
-    await agregarGrafico(doc, chartCombustibleInstance, 'Nivel de combustible (litros)', margen, anchoUtil, () => y, (v) => (y = v), saltoDePaginaSiHaceFalta);
-    if (chartTanquesInstance) {
-      await agregarGrafico(doc, chartTanquesInstance, 'Detalle por tanque', margen, anchoUtil, () => y, (v) => (y = v), saltoDePaginaSiHaceFalta);
+    // --- Dos columnas: gráficos a la izquierda, mapa a la derecha ---
+    const colIzqW = util * 0.60;
+    const colDerX = M + colIzqW + 6;
+    const colDerW = util - colIzqW - 6;
+    const inicioColumnas = y;
+
+    const graficos = [
+      [chartCombustibleInstance, 'Nivel de combustible (litros)'],
+      [chartTanquesInstance, 'Detalle por tanque'],
+      [chartVelocidadInstance, 'Velocidad (km/h)'],
+    ].filter(([g]) => g);
+
+    let yIzq = inicioColumnas;
+    for (const [grafico, titulo] of graficos) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(31, 35, 41);
+      doc.text(titulo, M, yIzq);
+      const c = grafico.canvas;
+      const alto = colIzqW * (c.height / c.width);
+      // Los gráficos van en JPEG sobre fondo blanco: en PNG a alta resolución
+      // el PDF pesaba 14 MB, imposible de mandar por mail.
+      doc.addImage(graficoComoJpeg(c), 'JPEG', M, yIzq + 2, colIzqW, alto, undefined, 'FAST');
+      yIzq += alto + 9;
     }
-    await agregarGrafico(doc, chartVelocidadInstance, 'Velocidad (km/h)', margen, anchoUtil, () => y, (v) => (y = v), saltoDePaginaSiHaceFalta);
 
-    // --- Mapa (screenshot real vía html2canvas, tiles de Esri por el tema de CORS) ---
+    let yDer = inicioColumnas;
     const $cardMapa = document.getElementById('cardMapa');
     if (mapaInstance && !$cardMapa.classList.contains('hidden')) {
-      saltoDePaginaSiHaceFalta(14);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(13, 27, 46);
-      doc.text('Recorrido', margen, y);
-      y += 5;
-
+      doc.setFontSize(9);
+      doc.setTextColor(31, 35, 41);
+      doc.text('Recorrido', colDerX, yDer);
       try {
-        const mapaCanvas = await html2canvas(document.getElementById('mapa'), { useCORS: true, logging: false });
-        const alturaImg = (mapaCanvas.height * anchoUtil) / mapaCanvas.width;
-        saltoDePaginaSiHaceFalta(alturaImg);
-        doc.addImage(mapaCanvas.toDataURL('image/png'), 'PNG', margen, y, anchoUtil, alturaImg);
-        y += alturaImg + 8;
+        const mapaCanvas = await html2canvas(document.getElementById('mapa'), { useCORS: true, logging: false, scale: 2 });
+        // Recorto al cuadrado del centro, por si el mapa en pantalla no es cuadrado.
+        const lado = Math.min(mapaCanvas.width, mapaCanvas.height);
+        const cuadrado = document.createElement('canvas');
+        cuadrado.width = lado;
+        cuadrado.height = lado;
+        cuadrado.getContext('2d').drawImage(mapaCanvas, (mapaCanvas.width - lado) / 2, (mapaCanvas.height - lado) / 2, lado, lado, 0, 0, lado, lado);
+        doc.addImage(cuadrado.toDataURL('image/jpeg', 0.85), 'JPEG', colDerX, yDer + 2, colDerW, colDerW, undefined, 'FAST');
       } catch (e) {
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
         doc.setTextColor(180, 40, 40);
-        doc.text('No se pudo capturar el mapa para este PDF.', margen, y);
-        y += 8;
+        doc.text('No se pudo capturar el mapa.', colDerX, yDer + 8);
       }
+      yDer += colDerW + 9;
     }
 
-    // --- Tabla de anomalías ---
-    saltoDePaginaSiHaceFalta(14);
+    // --- Anomalías, abajo y a todo el ancho ---
+    y = Math.max(yIzq, yDer) + 2;
+    if (y > H - 40) {
+      doc.addPage();
+      y = M + 6;
+    }
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(13, 27, 46);
-    doc.text('Anomalías del período', margen, y);
-    y += 4;
+    doc.setTextColor(31, 35, 41);
+    doc.text('Anomalías del período', M, y);
+    y += 3;
 
     if (r.anomalias.length === 0) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
-      doc.setTextColor(60, 130, 80);
-      doc.text('Sin anomalías detectadas en este período.', margen, y + 4);
-      y += 10;
+      doc.setTextColor(63, 107, 76);
+      doc.text('Sin anomalías detectadas en este período.', M, y + 5);
     } else {
       doc.autoTable({
         startY: y,
-        margin: { left: margen, right: margen },
+        margin: { left: M, right: M, top: M, bottom: 16 },
         head: [['Fecha', 'Tipo', 'Detalle', 'Litros', 'Ubicación']],
         body: r.anomalias.map(a => [
           formatearFechaCorta(a.fecha),
           a.tipo.replace(/_/g, ' '),
           a.detalle,
           `${formatNum(a.litros_perdidos)} L`,
-          (a.lat !== null && a.lat !== undefined && a.lng !== null && a.lng !== undefined) 
-            ? `${Number(a.lat).toFixed(5)}, ${Number(a.lng).toFixed(5)}` 
+          (a.lat !== null && a.lat !== undefined && a.lng !== null && a.lng !== undefined)
+            ? `${Number(a.lat).toFixed(5)}, ${Number(a.lng).toFixed(5)}`
             : '—',
         ]),
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [13, 27, 46], textColor: [255, 255, 255] },
-        columnStyles: { 2: { cellWidth: 60 } },
+        styles: { fontSize: 7.5, cellPadding: 2, textColor: [43, 47, 54], lineColor: [230, 232, 236], lineWidth: 0.1 },
+        headStyles: { fillColor: [43, 45, 49], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 249, 251] },
+        columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 28 }, 3: { cellWidth: 16 }, 4: { cellWidth: 30 } },
       });
-      y = doc.lastAutoTable.finalY + 6;
     }
 
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text('Preciso · Módulo de informes y detección de anomalías — desarrollado por Puma Code', margen, altoPagina - 8);
+    // --- Pie en todas las hojas, con número de página ---
+    const paginas = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= paginas; i++) {
+      doc.setPage(i);
+      doc.setDrawColor(230, 232, 236);
+      doc.line(M, H - 11, W - M, H - 11);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(150, 150, 150);
+      doc.text('Preciso · Módulo de informes y detección de anomalías — desarrollado por Puma Code', M, H - 7);
+      doc.text(`Página ${i} de ${paginas}`, W - M, H - 7, { align: 'right' });
+    }
 
     const nombreArchivo = `preciso_informe_${equipoId}_${tipo}_${new Date().toISOString().slice(0, 10)}.pdf`;
     doc.save(nombreArchivo);
 
     // Se generó y descargó el PDF -> las anomalías de este período quedan
-    // "atendidas" (marcadas resueltas en la base, se ve reflejado en la
-    // pantalla de Anomalías).
+    // "atendidas" (marcadas resueltas en la base).
     await marcarResueltas();
   } catch (e) {
     alert('No se pudo generar el PDF: ' + e.message);
@@ -479,6 +527,34 @@ async function generarPDF() {
     $btn.disabled = false;
     $btn.textContent = textoOriginal;
   }
+}
+
+/** Pasa un gráfico a JPEG con fondo blanco (el canvas es transparente y en JPEG quedaría negro). */
+function graficoComoJpeg(canvas) {
+  const c = document.createElement('canvas');
+  c.width = canvas.width;
+  c.height = canvas.height;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(canvas, 0, 0);
+  return c.toDataURL('image/jpeg', 0.85);
+}
+
+/** Carga una imagen (el logo) y la devuelve como dataURL + su proporción ancho/alto. */
+function imagenComoDataUrl(url) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      resolve({ dataUrl: c.toDataURL('image/png'), proporcion: img.naturalWidth / img.naturalHeight });
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
 }
 
 async function marcarResueltas() {
@@ -499,25 +575,5 @@ async function marcarResueltas() {
   }
 }
 
-async function agregarGrafico(doc, chartInstance, titulo, margen, anchoUtil, getY, setY, saltoDePaginaSiHaceFalta) {
-  if (!chartInstance) return;
-  let y = getY();
-
-  saltoDePaginaSiHaceFalta(14);
-  y = getY();
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(13, 27, 46);
-  doc.text(titulo, margen, y);
-  y += 4;
-
-  const canvas = chartInstance.canvas;
-  const alturaImg = (canvas.height * anchoUtil) / canvas.width;
-  saltoDePaginaSiHaceFalta(alturaImg);
-  y = getY();
-  doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', margen, y, anchoUtil, alturaImg);
-  y += alturaImg + 8;
-  setY(y);
-}
 
 cargarInforme();

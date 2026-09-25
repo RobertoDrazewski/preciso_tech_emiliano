@@ -51,12 +51,36 @@ foreach (array_slice($argv, 1) as $arg) {
     }
 }
 
-/** Abre una conexión nueva. La uso al arrancar y cada vez que hay que reconectar. */
+/**
+ * Abre una conexión nueva. La uso al arrancar y cada vez que hay que
+ * reconectar. Si el proxy de Railway tarda en responder (me pasó: "timeout
+ * expired" justo en una reconexión), reintento hasta 5 veces esperando un
+ * poco más cada vez, antes de rendirme.
+ */
 function conectar(array $config): array
 {
-    $storage = new Storage($config['db']);
-    $detector = new AnomalyDetector($config['anomaly'], $storage);
-    return [$storage, $detector];
+    $ultimoError = null;
+    for ($intento = 1; $intento <= 5; $intento++) {
+        try {
+            $storage = new Storage($config['db']);
+            $detector = new AnomalyDetector($config['anomaly'], $storage);
+            return [$storage, $detector];
+        } catch (PDOException $e) {
+            $ultimoError = $e;
+            echo "  ! No pude conectar a la base (intento {$intento}/5). Espero y reintento...\n";
+            sleep(5 * $intento);
+        }
+    }
+    throw $ultimoError;
+}
+
+/** Si no hay forma de conectar, corto prolijo: el avance ya quedó guardado. */
+function cortarProlijo(Throwable $e): void
+{
+    echo "\n✗ No pude seguir: " . $e->getMessage() . "\n";
+    echo "  Tu avance quedó guardado hasta el último equipo terminado.\n";
+    echo "  Cuando la conexión ande, seguí con:  php scripts/reprocesar_anomalias.php --continuar\n";
+    exit(1);
 }
 
 [$storage, $detector] = conectar($config);
@@ -124,7 +148,11 @@ $total = count($equipos);
 foreach ($equipos as $i => $equipoId) {
     // Reconexión preventiva, para no tener la misma conexión abierta todo el rato.
     if ($i > 0 && $i % RECONECTAR_CADA === 0) {
-        [$storage, $detector] = conectar($config);
+        try {
+            [$storage, $detector] = conectar($config);
+        } catch (Throwable $e) {
+            cortarProlijo($e);
+        }
     }
 
     $ok = false;
@@ -157,8 +185,8 @@ foreach ($equipos as $i => $equipoId) {
             sleep(3 * $intento);
             try {
                 [$storage, $detector] = conectar($config);
-            } catch (PDOException $e2) {
-                // Si ni siquiera puedo reconectar, lo intento en la próxima vuelta del for.
+            } catch (Throwable $e2) {
+                cortarProlijo($e2);
             }
         }
     }

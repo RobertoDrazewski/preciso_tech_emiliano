@@ -49,24 +49,30 @@
   <div id="contenido" class="hidden">
     <div class="grid grid-3" id="stats"></div>
 
-    <div class="card">
-      <h3 style="margin-top:0; color:var(--color-navy);">Nivel de combustible (litros)</h3>
-      <canvas id="chartCombustible" height="90"></canvas>
-    </div>
-
-    <div class="card hidden" id="cardTanques">
-      <h3 style="margin-top:0; color:var(--color-navy);">Detalle por tanque</h3>
-      <canvas id="chartTanques" height="90"></canvas>
-    </div>
-
-    <div class="card">
-      <h3 style="margin-top:0; color:var(--color-navy);">Velocidad (km/h)</h3>
-      <canvas id="chartVelocidad" height="90"></canvas>
-    </div>
-
-    <div class="card hidden" id="cardMapa">
-      <h3 style="margin-top:0; color:var(--color-navy);">Recorrido</h3>
-      <div id="mapa"></div>
+    <!-- Gráficos a la izquierda (uno arriba del otro, todos del mismo alto)
+         y el mapa a la derecha en un cuadrado. Las anomalías van abajo, a
+         todo el ancho. El PDF se arma con esta misma disposición. -->
+    <div class="informe-grid">
+      <div class="informe-graficos">
+        <div class="card grafico-card">
+          <h3>Nivel de combustible (litros)</h3>
+          <div class="grafico-caja"><canvas id="chartCombustible"></canvas></div>
+        </div>
+        <div class="card grafico-card hidden" id="cardTanques">
+          <h3>Detalle por tanque</h3>
+          <div class="grafico-caja"><canvas id="chartTanques"></canvas></div>
+        </div>
+        <div class="card grafico-card">
+          <h3>Velocidad (km/h)</h3>
+          <div class="grafico-caja"><canvas id="chartVelocidad"></canvas></div>
+        </div>
+      </div>
+      <div class="informe-mapa">
+        <div class="card hidden" id="cardMapa">
+          <h3>Recorrido</h3>
+          <div id="mapa"></div>
+        </div>
+      </div>
     </div>
 
     <div class="card">

@@ -103,8 +103,13 @@ class ReportBuilder
         //      sistema de origen para el mismo período).
         $litrosConsumidosTotal = $this->calcularConsumoReal($lecturas, $anomalyConfig);
 
+        // Consumo cada 100 km: solo si el vehículo anduvo algo. Con muy
+        // pocos km (un camión parado toda la semana, en ralentí) la cuenta
+        // da números absurdos — vimos "6.894 L/100km" con 1,9 km. Por
+        // debajo de este mínimo, no lo muestro.
+        $kmMinimoParaPromedio = 20;
         $consumoPromedioL100km = null;
-        if ($kmRecorridos && $kmRecorridos > 0 && $litrosConsumidosTotal > 0) {
+        if ($kmRecorridos && $kmRecorridos >= $kmMinimoParaPromedio && $litrosConsumidosTotal > 0) {
             $consumoPromedioL100km = round(($litrosConsumidosTotal / $kmRecorridos) * 100, 1);
         }
 
