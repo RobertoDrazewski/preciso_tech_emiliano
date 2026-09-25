@@ -1,0 +1,19 @@
+Preciso — Módulo de informes y detección de anomalías
+Versión: 2026-09-25 FINAL
+Desarrollado por Puma Code
+
+Incluye:
+- 9 tipos de anomalía (descarga detenido, caída instantánea, consumo anómalo,
+  agua en combustible, ralentí con contacto IGON/IGOFF, variación por
+  temperatura, desconexión de sensor, corte de alimentación POWON/POWOFF,
+  carga no coincide)
+- Equipos estacionarios excluidos (tanques fijos/stock/móviles, pozos,
+  máquinas, equipos de frío, generadores)
+- Sincronización de flota con la API de TTM al arrancar (ya no el Excel)
+- Token de API (variable API_TOKEN)
+- Campanita con validar / descartar anomalías
+- KPIs con barras, filtros por flota, cliente y revisión
+- Informe con gráficos a la izquierda y mapa a la derecha; PDF igual
+- Reprocesado de anomalías resistente a cortes de conexión
+
+Para confirmar que tenés esta versión:  cat VERSION.txt
