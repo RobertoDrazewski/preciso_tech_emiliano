@@ -174,6 +174,12 @@ return [
         // robo durante el corte (uso el mismo criterio que para descarga
         // detenido: por debajo es ruido del sensor).
         'corte_litros_sospechosos' => 15.0,
+        // ¿Reportar también los cortes SIN pérdida de combustible? En false
+        // desde el 25/09/2026: reprocesando 30 días salieron 14.032 cortes,
+        // casi todos del chofer cortando la batería al terminar el turno
+        // (normal, todos los días). Lo que importa es el corte después del
+        // cual FALTA combustible. Si algún día quieren ver todos, true.
+        'corte_reportar_sin_perdida' => false,
 
         // --- Carga informada vs. medida (punto 3 de Emiliano) ---
         // TTM manda un evento CARGA con la cantidad informada en el campo
@@ -183,6 +189,10 @@ return [
         // el combustible ya se asentó en el tanque.
         'carga_margen_lectura_minutos'   => 60,   // hasta dónde busco el nivel de antes
         'carga_ventana_asentamiento_min' => 30,   // cuánto espero después para medir cuánto subió
+        // Una carga real puede venir partida en varios eventos CARGA seguidos
+        // (vimos 24, 19 y 32 L en cuatro minutos para una sola carga). Los
+        // que están a menos de estos minutos uno del otro son UNA carga.
+        'carga_agrupar_minutos'          => 30,
         // Diferencia mínima para avisar: tiene que superar las DOS cosas
         // (así no salta por 3 L en una carga chica ni por 10 L en una de 400).
         'carga_diferencia_min_litros'    => 10.0,

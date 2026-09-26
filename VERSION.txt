@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-09-25 FINAL
+Versión: 2026-09-25 FINAL v2
 Desarrollado por Puma Code
 
 Incluye:
@@ -15,5 +15,6 @@ Incluye:
 - KPIs con barras, filtros por flota, cliente y revisión
 - Informe con gráficos a la izquierda y mapa a la derecha; PDF igual
 - Reprocesado de anomalías resistente a cortes de conexión
+- v2: cortes de alimentación solo si falta combustible; eventos CARGA seguidos agrupados en una sola carga
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

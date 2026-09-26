@@ -289,21 +289,42 @@ class AnomalyDetector
         $anomalias = [];
         $n = count($lecturas);
 
+        $agrupar = $this->cfg['carga_agrupar_minutos'] ?? 30;
+
         for ($i = 0; $i < $n; $i++) {
             $carga = $lecturas[$i];
             if (($carga['evento'] ?? null) !== 'CARGA' || ($carga['variacion'] ?? null) === null || (float) $carga['variacion'] == 0.0) {
                 continue;
             }
-            $finAsentamiento = $carga['fecha']->modify("+{$asentamiento} minutes");
+
+            // Junto los eventos CARGA que vienen seguidos: son una sola carga
+            // partida en pedazos. Sumo lo informado de todos.
+            $grupo = [$carga];
+            $ultima = $carga;
+            for ($j = $i + 1; $j < $n; $j++) {
+                $l = $lecturas[$j];
+                if (($l['fecha']->getTimestamp() - $ultima['fecha']->getTimestamp()) / 60 > $agrupar) {
+                    break;
+                }
+                if (($l['evento'] ?? null) === 'CARGA' && ($l['variacion'] ?? null) !== null && (float) $l['variacion'] != 0.0) {
+                    $grupo[] = $l;
+                    $ultima = $l;
+                    $i = $j; // no vuelvo a procesar estos eventos
+                }
+            }
+
+            $finAsentamiento = $ultima['fecha']->modify("+{$asentamiento} minutes");
             if ($finAsentamiento > $ahora) {
                 continue; // todavía se está asentando, lo veo en la próxima corrida
             }
-            $informada = abs((float) $carga['variacion']);
+            $informada = array_sum(array_map(fn($g) => abs((float) $g['variacion']), $grupo));
 
-            // Nivel antes de la carga.
+            // Nivel antes del primer evento de la carga.
             $antes = null;
-            for ($k = $i - 1; $k >= 0; $k--) {
-                $l = $lecturas[$k];
+            foreach (array_reverse($lecturas) as $l) {
+                if ($l['fecha'] >= $carga['fecha']) {
+                    continue;
+                }
                 if (($carga['fecha']->getTimestamp() - $l['fecha']->getTimestamp()) / 60 > $margen) {
                     break;
                 }
@@ -313,7 +334,7 @@ class AnomalyDetector
                 }
             }
 
-            // Nivel más alto después (incluye la propia lectura de la carga).
+            // Nivel más alto desde la primera carga hasta que se asentó la última.
             $despues = null;
             foreach ($lecturas as $l) {
                 if ($l['fecha'] < $carga['fecha'] || $l['fecha'] > $finAsentamiento) {
@@ -335,9 +356,10 @@ class AnomalyDetector
             }
 
             $merma = $diferencia < 0 ? abs($diferencia) : 0.0;
+            $partes = count($grupo) > 1 ? sprintf(' (en %d eventos de carga seguidos)', count($grupo)) : '';
             $detalle = sprintf(
-                'Carga informada por el sensor: %.1f L. Lo que subió el nivel del tanque: %.1f L (de %.1f L a %.1f L). ',
-                $informada, $medida, $antes, $despues
+                'Carga informada por el sensor: %.1f L%s. Lo que subió el nivel del tanque: %.1f L (de %.1f L a %.1f L). ',
+                $informada, $partes, $medida, $antes, $despues
             );
             $detalle .= $diferencia < 0
                 ? sprintf('Entraron %.1f L menos de lo informado.', abs($diferencia))
@@ -445,6 +467,15 @@ class AnomalyDetector
                 $off['fecha']->format('d/m H:i'), $on['fecha']->format('d/m H:i'), $this->textoDuracion($minutos)
             );
             $litros = 0.0;
+            $reportarSinPerdida = $this->cfg['corte_reportar_sin_perdida'] ?? false;
+
+            // Sin pérdida (o sin lecturas para comparar), por defecto no lo
+            // reporto: es el corta-corriente de todos los días.
+            $hayPerdida = $antes !== null && $despues !== null
+                && ($antes['combustible_litros'] - $despues['combustible_litros']) >= $litrosSospechosos;
+            if (!$hayPerdida && !$reportarSinPerdida) {
+                continue;
+            }
 
             if ($antes !== null && $despues !== null) {
                 $diferencia = $antes['combustible_litros'] - $despues['combustible_litros'];
