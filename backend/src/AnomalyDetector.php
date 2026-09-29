@@ -321,13 +321,12 @@ class AnomalyDetector
                 continue; // todavía se está asentando, lo veo en la próxima corrida
             }
 
-            // Lo informado: con varios eventos CARGA seguidos no está claro
-            // si cada "variacion" es un tramo (hay que sumarlos) o el total
-            // recalculado (hay que tomar el mayor). Hasta confirmarlo con
-            // Emiliano, calculo las dos y solo aviso si lo medido no coincide
-            // con NINGUNA — así no invento anomalías por interpretar mal.
-            $variaciones = array_map(fn($g) => abs((float) $g['variacion']), $grupo);
-            $informadas = array_unique([array_sum($variaciones), max($variaciones)]);
+            // Lo informado es la SUMA de todos los eventos CARGA seguidos.
+            // Confirmado por Emiliano (30/09/2026): el chofer carga el tanque
+            // 1, corta (una carga), pasa al tanque 2 (otra carga). Cada evento
+            // es un tramo, y como el nivel que medimos es el total de todos
+            // los tanques, lo informado también tiene que ser el total.
+            $informada = array_sum(array_map(fn($g) => abs((float) $g['variacion']), $grupo));
 
             // Lo medido, como lo hace el propio sensor (Emiliano, 29/09/2026):
             // ESTABILIDAD INICIAL contra ESTABILIDAD FINAL. No dos lecturas
@@ -362,24 +361,13 @@ class AnomalyDetector
             $despues = $this->mediana(array_filter($posteriores, fn($v) => $v >= $maximo - $tolerancia));
 
             $medida = $despues - $antes;
-            $coincide = false;
-            $informada = null;
-            foreach ($informadas as $inf) {
-                $dif = abs($medida - $inf);
-                if ($dif < $minLitros || $dif < $inf * $minPct) {
-                    $coincide = true;
-                }
-                if ($informada === null || abs($medida - $inf) < abs($medida - $informada)) {
-                    $informada = $inf; // me quedo con la interpretación más cercana
-                }
-            }
-            if ($coincide) {
-                continue;
-            }
             $diferencia = $medida - $informada;
+            if (abs($diferencia) < $minLitros || abs($diferencia) < $informada * $minPct) {
+                continue; // coincide razonablemente
+            }
 
             $merma = $diferencia < 0 ? abs($diferencia) : 0.0;
-            $partes = count($grupo) > 1 ? sprintf(' (en %d eventos de carga seguidos)', count($grupo)) : '';
+            $partes = count($grupo) > 1 ? sprintf(' (suma de %d cargas seguidas)', count($grupo)) : '';
             $detalle = sprintf(
                 'Carga informada por el sensor: %.1f L%s. Carga medida por nivel (estabilidad inicial %.1f L → estabilidad final %.1f L): %.1f L. ',
                 $informada, $partes, $antes, $despues, $medida
