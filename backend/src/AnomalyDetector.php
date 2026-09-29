@@ -252,7 +252,18 @@ class AnomalyDetector
         }
 
         $encendido = ($primero === 'IGOFF');
+        $maxHueco = $this->cfg['max_gap_minutos'] ?? 30;
+        $anterior = null;
         foreach ($lecturas as $i => $l) {
+            // Después de un hueco sin datos no asumo que el motor siguió
+            // prendido: si llegó un IGON y el equipo dejó de reportar (por
+            // ejemplo, por un corte de alimentación), el IGOFF nunca llega y
+            // el motor quedaba "prendido" días enteros. Hasta el próximo
+            // evento de contacto, lo tomo como apagado.
+            if ($anterior !== null && ($l['fecha']->getTimestamp() - $anterior['fecha']->getTimestamp()) / 60 > $maxHueco) {
+                $encendido = false;
+            }
+            $anterior = $l;
             if (($l['evento'] ?? null) === 'IGON') {
                 $encendido = true;
             } elseif (($l['evento'] ?? null) === 'IGOFF') {
@@ -368,9 +379,12 @@ class AnomalyDetector
 
             $merma = $diferencia < 0 ? abs($diferencia) : 0.0;
             $partes = count($grupo) > 1 ? sprintf(' (suma de %d cargas seguidas)', count($grupo)) : '';
+            // La hora de la carga va en el texto para poder buscarla directo en
+            // el gráfico de combustible de TTM y comparar.
+            $horaCarga = $carga['fecha']->format('H:i') . ($ultima['fecha'] != $carga['fecha'] ? ' a ' . $ultima['fecha']->format('H:i') : '');
             $detalle = sprintf(
-                'Carga informada por el sensor: %.1f L%s. Carga medida por nivel (estabilidad inicial %.1f L → estabilidad final %.1f L): %.1f L. ',
-                $informada, $partes, $antes, $despues, $medida
+                'Carga de las %s. Informada por el sensor: %.1f L%s. Medida por nivel (estabilidad inicial %.1f L → estabilidad final %.1f L): %.1f L. ',
+                $horaCarga, $informada, $partes, $antes, $despues, $medida
             );
             $detalle .= $diferencia < 0
                 ? sprintf('Entraron %.1f L menos de lo informado.', abs($diferencia))
@@ -678,8 +692,27 @@ class AnomalyDetector
         $finBloque = null;
         $combustibleInicio = null;
         $combustibleUltimo = null;
+        $maxHueco = $this->cfg['max_gap_minutos'] ?? 30;
+        $anterior = null;
 
         foreach ($lecturas as $l) {
+            // Si entre esta lectura y la anterior hay un hueco sin datos, el
+            // bloque de ralentí en curso termina ACÁ: no sé qué pasó en el
+            // medio. Sin esto aparecían ralentís de "3.868 minutos" que en
+            // realidad eran dos días sin datos del equipo (30/09/2026).
+            if ($anterior !== null && $inicioBloque !== null
+                && ($l['fecha']->getTimestamp() - $anterior['fecha']->getTimestamp()) / 60 > $maxHueco) {
+                $anomalia = $this->evaluarBloqueRalenti($anterior['equipo'] ?? null, $inicioBloque, $finBloque, $combustibleInicio, $combustibleUltimo, $minMinutos, $minLitros);
+                if ($anomalia !== null) {
+                    $anomalias[] = $anomalia;
+                }
+                $inicioBloque = null;
+                $finBloque = null;
+                $combustibleInicio = null;
+                $combustibleUltimo = null;
+            }
+            $anterior = $l;
+
             $enRalenti = $l['motor_encendido'] === true && (float) $l['velocidad'] === 0.0;
 
             if ($enRalenti) {
@@ -741,7 +774,11 @@ class AnomalyDetector
             $equipo, $fin, 'ralenti',
             sprintf(
                 'Motor encendido y vehículo detenido durante %.0f minutos (de %s a %s), consumiendo %.1f L en ralentí.',
-                $minutos, $inicio->format('H:i'), $fin->format('H:i'), $litrosConsumidos
+                $minutos,
+                // Si cruza la medianoche muestro el día, si no queda confuso ("de 23:40 a 00:20").
+                $inicio->format('Y-m-d') === $fin->format('Y-m-d') ? $inicio->format('H:i') : $inicio->format('d/m H:i'),
+                $inicio->format('Y-m-d') === $fin->format('Y-m-d') ? $fin->format('H:i') : $fin->format('d/m H:i'),
+                $litrosConsumidos
             ),
             $litrosConsumidos, null, null, null // sin lat/lng a propósito, ver comentario de la función que llama a esto
         );
