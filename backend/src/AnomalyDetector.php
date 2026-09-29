@@ -44,7 +44,10 @@ class AnomalyDetector
 
     public function __construct(array $anomalyConfig, Storage $storage)
     {
-        $this->cfg = $anomalyConfig;
+        // Los umbrales que el usuario cambió desde la pantalla (tabla
+        // "parametros") pisan los de config.php. Si nunca tocó nada, quedan
+        // los de config.
+        $this->cfg = array_merge($anomalyConfig, $storage->parametrosGuardados());
         $this->storage = $storage;
     }
 
@@ -147,7 +150,7 @@ class AnomalyDetector
 
             if ($usarZScore) {
                 $z = ($tasaPorMinuto - $media) / $desvio;
-                if ($z >= $this->cfg['z_threshold']) {
+                if ($z >= $this->cfg['z_threshold'] && $c['litros_perdidos'] >= ($this->cfg['consumo_anomalo_litros_minimos'] ?? 10.0)) {
                     $anomalias[] = $this->construir(
                         $equipo, $c['fecha'], 'consumo_anomalo',
                         sprintf(
@@ -317,49 +320,69 @@ class AnomalyDetector
             if ($finAsentamiento > $ahora) {
                 continue; // todavía se está asentando, lo veo en la próxima corrida
             }
-            $informada = array_sum(array_map(fn($g) => abs((float) $g['variacion']), $grupo));
 
-            // Nivel antes del primer evento de la carga.
-            $antes = null;
-            foreach (array_reverse($lecturas) as $l) {
-                if ($l['fecha'] >= $carga['fecha']) {
-                    continue;
-                }
-                if (($carga['fecha']->getTimestamp() - $l['fecha']->getTimestamp()) / 60 > $margen) {
-                    break;
-                }
-                if ($l['combustible_litros'] !== null && ($l['evento'] ?? null) !== 'CARGA') {
-                    $antes = $l['combustible_litros'];
-                    break;
-                }
-            }
+            // Lo informado: con varios eventos CARGA seguidos no está claro
+            // si cada "variacion" es un tramo (hay que sumarlos) o el total
+            // recalculado (hay que tomar el mayor). Hasta confirmarlo con
+            // Emiliano, calculo las dos y solo aviso si lo medido no coincide
+            // con NINGUNA — así no invento anomalías por interpretar mal.
+            $variaciones = array_map(fn($g) => abs((float) $g['variacion']), $grupo);
+            $informadas = array_unique([array_sum($variaciones), max($variaciones)]);
 
-            // Nivel más alto desde la primera carga hasta que se asentó la última.
-            $despues = null;
+            // Lo medido, como lo hace el propio sensor (Emiliano, 29/09/2026):
+            // ESTABILIDAD INICIAL contra ESTABILIDAD FINAL. No dos lecturas
+            // sueltas (así me daba 46 L en una carga de 71: tomaba un punto
+            // en el medio de la subida).
+            //   - Meseta de antes: las lecturas de hasta 'carga_margen_lectura_minutos'
+            //     antes de la carga que están cerca del nivel más bajo.
+            //   - Meseta de después: las lecturas hasta que se asentó que
+            //     están cerca del nivel más alto.
+            // De cada meseta tomo la mediana (un pico de ruido no la mueve).
+            $tolerancia = $this->cfg['carga_tolerancia_meseta_litros'] ?? 3.0;
+            $inicioVentana = $carga['fecha']->modify("-{$margen} minutes");
+            $previas = [];
+            $posteriores = [];
             foreach ($lecturas as $l) {
-                if ($l['fecha'] < $carga['fecha'] || $l['fecha'] > $finAsentamiento) {
+                if ($l['combustible_litros'] === null) {
                     continue;
                 }
-                if ($l['combustible_litros'] !== null) {
-                    $despues = $despues === null ? $l['combustible_litros'] : max($despues, $l['combustible_litros']);
+                if ($l['fecha'] >= $inicioVentana && $l['fecha'] <= $ultima['fecha']) {
+                    $previas[] = $l['combustible_litros'];
+                }
+                if ($l['fecha'] >= $carga['fecha'] && $l['fecha'] <= $finAsentamiento) {
+                    $posteriores[] = $l['combustible_litros'];
                 }
             }
-
-            if ($antes === null || $despues === null) {
+            if (count($previas) === 0 || count($posteriores) === 0) {
                 continue; // no tengo cómo medir, no invento
             }
+            $minimo = min($previas);
+            $maximo = max($posteriores);
+            $antes = $this->mediana(array_filter($previas, fn($v) => $v <= $minimo + $tolerancia));
+            $despues = $this->mediana(array_filter($posteriores, fn($v) => $v >= $maximo - $tolerancia));
 
             $medida = $despues - $antes;
-            $diferencia = $medida - $informada;
-            if (abs($diferencia) < $minLitros || abs($diferencia) < $informada * $minPct) {
-                continue; // coincide razonablemente
+            $coincide = false;
+            $informada = null;
+            foreach ($informadas as $inf) {
+                $dif = abs($medida - $inf);
+                if ($dif < $minLitros || $dif < $inf * $minPct) {
+                    $coincide = true;
+                }
+                if ($informada === null || abs($medida - $inf) < abs($medida - $informada)) {
+                    $informada = $inf; // me quedo con la interpretación más cercana
+                }
             }
+            if ($coincide) {
+                continue;
+            }
+            $diferencia = $medida - $informada;
 
             $merma = $diferencia < 0 ? abs($diferencia) : 0.0;
             $partes = count($grupo) > 1 ? sprintf(' (en %d eventos de carga seguidos)', count($grupo)) : '';
             $detalle = sprintf(
-                'Carga informada por el sensor: %.1f L%s. Lo que subió el nivel del tanque: %.1f L (de %.1f L a %.1f L). ',
-                $informada, $partes, $medida, $antes, $despues
+                'Carga informada por el sensor: %.1f L%s. Carga medida por nivel (estabilidad inicial %.1f L → estabilidad final %.1f L): %.1f L. ',
+                $informada, $partes, $antes, $despues, $medida
             );
             $detalle .= $diferencia < 0
                 ? sprintf('Entraron %.1f L menos de lo informado.', abs($diferencia))
@@ -902,6 +925,18 @@ class AnomalyDetector
             }
         }
         return false;
+    }
+
+    /** Mediana de una lista de números (la uso para las mesetas de las cargas). */
+    private function mediana(array $valores): float
+    {
+        $v = array_values($valores);
+        sort($v);
+        $n = count($v);
+        if ($n === 0) {
+            return 0.0;
+        }
+        return $n % 2 ? (float) $v[intdiv($n, 2)] : ($v[$n / 2 - 1] + $v[$n / 2]) / 2;
     }
 
     /** "menos de 1 minuto", "3 minutos", etc. — para que el detalle se lea bien. */

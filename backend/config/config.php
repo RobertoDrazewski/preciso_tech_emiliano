@@ -94,7 +94,12 @@ return [
         // z-score a partir del cual una caída YA CONFIRMADA (no recuperada)
         // se considera anómala (comparado contra el historial propio de
         // caídas confirmadas de ese vehículo, en L/min).
-        'z_threshold' => 3.0,
+        // Subido de 3 a 4 el 29/09/2026: con 3 salían más de 1.300 por
+        // semana, muchas de 4-6 L. Se puede cambiar desde la pantalla.
+        'z_threshold' => 4.0,
+        // Y además un piso de litros: una caída de 4 L puede ser
+        // "estadísticamente rara" y aun así no le importa a nadie.
+        'consumo_anomalo_litros_minimos' => 10.0,
 
         // Mínimo de caídas confirmadas en el historial antes de confiar en
         // el z-score. Con menos que esto, se usa solo el umbral absoluto.
@@ -193,6 +198,10 @@ return [
         // (vimos 24, 19 y 32 L en cuatro minutos para una sola carga). Los
         // que están a menos de estos minutos uno del otro son UNA carga.
         'carga_agrupar_minutos'          => 30,
+        // Para medir la carga como el sensor: nivel estable antes contra
+        // nivel estable después. Una lectura cuenta como "estable" si está a
+        // menos de estos litros del mínimo (antes) o del máximo (después).
+        'carga_tolerancia_meseta_litros' => 3.0,
         // Diferencia mínima para avisar: tiene que superar las DOS cosas
         // (así no salta por 3 L en una carga chica ni por 10 L en una de 400).
         'carga_diferencia_min_litros'    => 10.0,
@@ -207,7 +216,9 @@ return [
         // porque motor+velocidad+consumo ya alcanza para detectarlo bien.
         // Un bloque de ralentí tiene que durar al menos esto para contar
         // (así no se marca cada semáforo en rojo como "ralentí").
-        'ralenti_minutos_minimos' => 15,
+        // 30 min (antes 15): calentar el motor o esperar una carga 15-20
+        // minutos es normal en un camión. Se puede cambiar desde la pantalla.
+        'ralenti_minutos_minimos' => 30,
         // Y tiene que haber consumido al menos esto en ese bloque — sin
         // este piso, ruido de sensor en un motor apagado-pero-marcado-
         // encendido por error podría generar falsos positivos.

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preciso · Tickets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header class="app-header">
+  <a href="index.html" class="app-logo" title="Preciso — Gestión de flotas">
+    <img src="assets/img/logo.png" alt="Preciso">
+  </a>
+  <div class="app-header-derecha">
+    <div id="campana" class="campana"></div>
+    <div class="app-usuario"><i class="fa-solid fa-circle-user"></i><span>Módulo de anomalías</span></div>
+  </div>
+</header>
+<aside class="app-sidebar">
+  <div class="sidebar-seccion">Herramientas</div>
+  <nav>
+    <a href="index.html"><i class="fa-solid fa-gauge-high"></i><span>Panel de flota</span></a>
+    <a href="anomalias.html"><i class="fa-solid fa-triangle-exclamation"></i><span>Anomalías</span></a>
+    <a href="tickets.html" class="activo"><i class="fa-solid fa-ticket"></i><span>Tickets</span></a>
+  </nav>
+  <div class="sidebar-pie">Desarrollado por Puma Code</div>
+</aside>
+<main class="app-main">
+
+<div class="container">
+  <h1 class="page-title">Tickets de anomalías</h1>
+  <p class="page-subtitle">Cada anomalía es un ticket: se notifica a operaciones, se cierra cuando está informada, o se rechaza si es falsa alarma.</p>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="tk-filtros">
+      <div class="filtro-campo">
+        <label for="tkDias">Período</label>
+        <select id="tkDias">
+          <option value="7">Últimos 7 días</option>
+          <option value="30" selected>Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+        </select>
+      </div>
+      <div class="filtro-campo">
+        <label for="tkCliente">Flota / Cliente</label>
+        <select id="tkCliente"><option value="">Todas las flotas</option></select>
+      </div>
+      <div class="filtro-campo">
+        <label for="tkBuscar">Buscar</label>
+        <input type="text" id="tkBuscar" placeholder="Patente, ticket, observación…">
+      </div>
+    </div>
+  </div>
+
+  <div id="tkLoading" class="loading-state">Cargando tickets…</div>
+  <div id="tkContenido" class="hidden">
+    <div id="tkStats" class="kpi-fila"></div>
+    <div class="tk-pestanas" id="tkPestanas"></div>
+    <div class="card"><div id="tkTabla"></div></div>
+  </div>
+</div>
+
+</main>
+
+<script src="assets/js/config.php"></script>
+<script src="assets/js/gauge.js"></script>
+<script src="assets/js/campana.js"></script>
+<script src="assets/js/tickets-ui.js"></script>
+<script src="assets/js/tickets.js"></script>
+</body>
+</html>

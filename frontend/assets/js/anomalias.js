@@ -223,20 +223,20 @@ function renderResultados(data) {
   //   Vehículos     -> qué parte de la flota activa tuvo alguna anomalía
   //   Cada tipo     -> qué parte del total es de ese tipo
   const st = data.stats || {};
-  const totalRevisables = (st.pendientes || 0) + (st.validadas || 0) + (st.descartadas || 0);
-  const revisadas = (st.validadas || 0) + (st.descartadas || 0);
+  const totalRevisables = (st.pendientes || 0) + (st.notificadas || 0) + (st.informadas || 0) + (st.rechazadas || 0);
+  const revisadas = totalRevisables - (st.pendientes || 0);
   const flota = st.flota_activa || 0;
 
   let html = '';
   html += gauge({ datos: { accion: 'todo' }, titulo: 'Total anomalías', icono: 'fa-triangle-exclamation', color: '#e03131',
     valor: numeroAR(data.total), sub: `${numeroAR(revisadas)} revisadas de ${numeroAR(totalRevisables)}`,
     pct: totalRevisables ? revisadas / totalRevisables : 0, invertido: true });
-  html += gauge({ datos: { revision: 'pendiente' }, titulo: 'Por revisar', icono: 'fa-bell', color: '#f59f00',
-    valor: numeroAR(st.pendientes), sub: 'esperando validar o descartar',
+  html += gauge({ datos: { revision: 'pendiente' }, titulo: 'Por notificar', icono: 'fa-inbox', color: '#f59f00',
+    valor: numeroAR(st.pendientes), sub: 'tickets que nadie vio todavía',
     pct: totalRevisables ? (st.pendientes || 0) / totalRevisables : 0 });
-  html += gauge({ datos: { revision: 'validada' }, titulo: 'Mermas', icono: 'fa-gas-pump', color: '#1c7ed6',
-    valor: `${numeroAR(st.litros_perdidos_totales, 1)} L`, sub: `${numeroAR(st.litros_validados, 1)} L confirmados`,
-    pct: st.litros_perdidos_totales ? (st.litros_validados || 0) / st.litros_perdidos_totales : 0, invertido: true });
+  html += gauge({ datos: { revision: 'notificada' }, titulo: 'Mermas', icono: 'fa-gas-pump', color: '#1c7ed6',
+    valor: `${numeroAR(st.litros_perdidos_totales, 1)} L`, sub: `${numeroAR(st.litros_confirmados, 1)} L en tickets notificados o informados`,
+    pct: st.litros_perdidos_totales ? (st.litros_confirmados || 0) / st.litros_perdidos_totales : 0, invertido: true });
   html += gauge({ datos: { accion: 'porflota' }, titulo: 'Vehículos afectados', icono: 'fa-truck', color: '#7048e8',
     valor: numeroAR(st.equipos_afectados), sub: `de ${numeroAR(flota)} en la flota activa`,
     pct: flota ? (st.equipos_afectados || 0) / flota : 0 });
@@ -261,6 +261,7 @@ function renderResultados(data) {
         <span class="tipo-barra"><span data-ancho="${ancho}" style="width:0"></span></span>
         <span class="tipo-num">${numeroAR(info.n)}</span>
         <span class="tipo-litros">${info.litros > 0 ? numeroAR(info.litros, 1) + ' L' : '—'}</span>
+        <button class="tipo-ajustes" data-ajustes="${t.key}" title="Ajustar los umbrales de ${t.label}"><i class="fa-solid fa-sliders"></i></button>
       </div>`;
   }).join('');
   html = `<div class="kpi-fila">${html}</div>
@@ -292,31 +293,26 @@ function renderResultados(data) {
       <td>${Number(a.litros_perdidos).toFixed(1)} L</td>
       <td>${renderUbicacion(a.lat, a.lng)}</td>
       <td>${renderLinkGraficoTTM(a.equipo_nombre, a.fecha)}</td>
-      <td>${renderRevision(a)}</td>
+      <td>${renderObservacion(a)}</td>
+      <td>${renderEstadoTicket(a)}<div class="rev-botones">${renderAccionesTicket(a)}</div></td>
     </tr>
   `).join('');
 
   $tabla.innerHTML = `
     <table class="anomalias">
-      <tr><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th>Ubicación</th><th>Gráfico</th><th>Revisión</th></tr>
+      <tr><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th>Ubicación</th><th>Gráfico</th><th style="min-width:200px">Observación</th><th>Ticket</th></tr>
       ${filas}
     </table>
   `;
 
-  $tabla.querySelectorAll('.rev-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      // Uso la misma lógica que la campanita (pide comentario al descartar,
-      // guarda, y avisa para que todo se actualice).
-      window.revisarAnomalia(Number(b.closest('tr').dataset.id), b.dataset.accion);
-    });
-  });
+  engancharTickets($tabla);
 }
 
 /**
  * Click en las tarjetas de arriba: te llevan a esas anomalías.
  *   - un tipo        -> filtra ese tipo y baja a la tabla (otro click lo saca)
  *   - Por revisar    -> solo las pendientes
- *   - Mermas         -> solo las validadas (las mermas confirmadas)
+ *   - Mermas         -> los tickets notificados (mermas corroboradas)
  *   - Total          -> saca el filtro de tipo y vuelve a las activas
  *   - Vehículos      -> baja al ranking por flota
  */
@@ -324,6 +320,14 @@ function engancharClicksTarjetas($contenedor) {
   const tipoActual = document.getElementById('filtroTipo').value;
   $contenedor.querySelectorAll('[data-tipo]').forEach(c => {
     if (c.dataset.tipo === tipoActual) c.classList.add('seleccionada');
+  });
+  // Botón de ajustes de cada tipo: abre sus umbrales (no filtra).
+  $contenedor.querySelectorAll('.tipo-ajustes').forEach(b => {
+    b.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const t = TIPOS_FIJOS.find(x => x.key === b.dataset.ajustes);
+      abrirParametros(b.dataset.ajustes, t ? t.label : b.dataset.ajustes);
+    });
   });
   $contenedor.querySelectorAll('.clickeable').forEach(c => {
     c.addEventListener('click', async () => {
@@ -346,16 +350,6 @@ function engancharClicksTarjetas($contenedor) {
   });
 }
 
-/** Estado de revisión de una anomalía + los botones que correspondan. */
-function renderRevision(a) {
-  const estado = a.estado_revision || 'pendiente';
-  const etiqueta = { pendiente: 'Pendiente', validada: 'Validada', descartada: 'Descartada' }[estado] || estado;
-  const botones = estado === 'pendiente'
-    ? `<button class="rev-btn validar" data-accion="validar" title="Pasó de verdad"><i class="fa-solid fa-check"></i></button>
-       <button class="rev-btn descartar" data-accion="descartar" title="Falsa alarma"><i class="fa-solid fa-xmark"></i></button>`
-    : `<button class="rev-btn reabrir" data-accion="reabrir" title="Volver a pendiente"><i class="fa-solid fa-rotate-left"></i></button>`;
-  return `<span class="rev-estado ${estado}">${etiqueta}</span><div class="rev-botones">${botones}</div>`;
-}
 
 /**
  * Arma el link al gráfico de sensor de TTM (pedido de Emiliano, 09/09/2026)
@@ -480,3 +474,68 @@ function escapeHtml(str) {
 }
 
 init();
+
+/**
+ * Ventana de umbrales de un tipo de anomalía (pedido de Emiliano: que los
+ * umbrales se puedan ajustar sin tocar código). Cada campo se guarda con su
+ * botón; "Volver al original" borra el ajuste y vuelve al de config.php.
+ * El servidor valida el rango, así que acá solo muestro lo que responde.
+ */
+async function abrirParametros(tipo, nombre) {
+  const $modal = document.getElementById('modalParametros');
+  const $cuerpo = document.getElementById('modalCuerpo');
+  document.getElementById('modalTitulo').textContent = `Umbrales · ${nombre}`;
+  $cuerpo.innerHTML = '<p>Cargando…</p>';
+  $modal.hidden = false;
+
+  let params = [];
+  try {
+    const r = await fetch(`${window.PRECISO_CONFIG.API_BASE}/parametros.php`);
+    params = (await r.json()).tipos[tipo] || [];
+  } catch (e) {
+    $cuerpo.innerHTML = '<p>No se pudieron cargar los umbrales.</p>';
+    return;
+  }
+  if (params.length === 0) {
+    $cuerpo.innerHTML = '<p>Este tipo no tiene umbrales para ajustar: lo marca directamente el sensor / el diagnóstico de TTM.</p>';
+    return;
+  }
+
+  $cuerpo.innerHTML = params.map(p => `
+    <div class="param" data-clave="${p.clave}">
+      <label>${escapeHtml(p.nombre)} <span class="param-unidad">(${escapeHtml(p.unidad)})</span>
+        ${p.modificado ? '<span class="param-mod">ajustado</span>' : ''}</label>
+      <div class="param-fila">
+        <input type="number" step="any" min="${p.min}" max="${p.max}" value="${p.valor}">
+        <button type="button" class="btn param-guardar">Guardar</button>
+        ${p.modificado ? `<button type="button" class="btn secondary param-restaurar" title="Original: ${p.por_defecto}">Volver al original (${p.por_defecto})</button>` : ''}
+      </div>
+      <div class="param-ayuda">${escapeHtml(p.ayuda)} Rango permitido: ${p.min} a ${p.max}.</div>
+      <div class="param-estado"></div>
+    </div>`).join('');
+
+  const enviar = async (clave, cuerpo, $estado) => {
+    try {
+      const r = await fetch(`${window.PRECISO_CONFIG.API_BASE}/parametros.php`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clave, ...cuerpo }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Error');
+      abrirParametros(tipo, nombre); // recargo para mostrar "ajustado" / original
+    } catch (e) {
+      $estado.textContent = e.message;
+    }
+  };
+  $cuerpo.querySelectorAll('.param').forEach($p => {
+    const $estado = $p.querySelector('.param-estado');
+    $p.querySelector('.param-guardar').addEventListener('click', () =>
+      enviar($p.dataset.clave, { valor: $p.querySelector('input').value }, $estado));
+    const $rest = $p.querySelector('.param-restaurar');
+    if ($rest) $rest.addEventListener('click', () => enviar($p.dataset.clave, { restaurar: true }, $estado));
+  });
+}
+
+document.getElementById('modalCerrar').addEventListener('click', () => { document.getElementById('modalParametros').hidden = true; });
+document.getElementById('modalParametros').addEventListener('click', (ev) => {
+  if (ev.target.id === 'modalParametros') ev.currentTarget.hidden = true;
+});

@@ -560,3 +560,58 @@ table.anomalias th { color: #6b7280; }
   .tipo-fila { grid-template-columns: 18px 1fr 40px; }
   .tipo-barra, .tipo-litros { display: none; }
 }
+
+/* =====================================================================
+   TICKETS Y UMBRALES (29/09/2026)
+   ===================================================================== */
+.tk-estado { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; border-radius: 10px; padding: 2px 9px; white-space: nowrap; }
+.tk-estado.pendiente  { background: #f7f0dc; color: #7a6320; }
+.tk-estado.notificada { background: #e6ecf7; color: #3b5a8c; }
+.tk-estado.informada  { background: #e3efe6; color: #3f6b4c; }
+.tk-estado.rechazada  { background: #eeeeee; color: #777; }
+.tk-numero { font-size: 11px; color: #8a919c; margin: 3px 0 5px; }
+
+.tk-obs { width: 100%; min-width: 180px; font-family: var(--font); font-size: 12.5px; border: 1px solid var(--color-border);
+  border-radius: 6px; padding: 6px 8px; resize: vertical; background: #fcfcfd; }
+.tk-obs:focus { outline: none; border-color: var(--color-accent); background: #fff; }
+.tk-obs-estado { font-size: 11px; color: #3f6b4c; min-height: 14px; }
+
+.tk-btn { border: 1px solid; border-radius: 5px; padding: 4px 9px; font-size: 12px; font-weight: 700; cursor: pointer;
+  background: #fff; font-family: var(--font); white-space: nowrap; }
+.tk-btn.principal { color: #3b5a8c; border-color: #b9c8e2; }
+.tk-btn.principal:hover { background: #3b5a8c; border-color: #3b5a8c; color: #fff; }
+.tk-btn.secundario { color: #6b7280; border-color: #d9dce1; }
+.tk-btn.secundario:hover { background: #6b7280; border-color: #6b7280; color: #fff; }
+
+.tk-filtros { display: grid; grid-template-columns: 1fr 1.4fr 1.6fr; gap: 14px; }
+.tk-pestanas { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.tk-pestana { border: 1px solid var(--color-border); background: #fff; border-radius: 18px; padding: 6px 13px; font-size: 13px;
+  font-weight: 700; color: #5c636e; cursor: pointer; font-family: var(--font); }
+.tk-pestana span { background: #eef0f3; border-radius: 9px; padding: 0 7px; margin-left: 4px; font-size: 11.5px; }
+.tk-pestana.activa { border-color: var(--color-accent); color: #1f2329; background: #fff8e6; }
+.tk-historial { margin-top: 6px; background: none; border: 0; color: #5c636e; font-size: 12px; cursor: pointer; padding: 0; font-family: var(--font); }
+.tk-historial:hover { color: #1f2329; text-decoration: underline; }
+.tk-historial-lista { margin-top: 6px; font-size: 11.5px; color: #4b5563; border-left: 2px solid var(--color-border); padding-left: 8px; }
+.tk-evento { margin-bottom: 4px; }
+.kpi-card.seleccionada { border-color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-accent); }
+
+/* Botón de ajustes al lado de cada tipo + ventana de umbrales */
+.tipo-fila { grid-template-columns: 20px minmax(150px, 1.2fr) minmax(0, 3fr) 48px 84px 30px; }
+.tipo-ajustes { background: none; border: 1px solid transparent; border-radius: 5px; color: #9aa1ab; cursor: pointer; padding: 3px 6px; }
+.tipo-ajustes:hover { border-color: var(--color-border); color: #1f2329; background: #fff; }
+.modal-fondo { position: fixed; inset: 0; background: rgba(17, 17, 17, .45); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-fondo[hidden] { display: none; }
+.modal-caja { background: #fff; border-radius: 10px; width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 18px 20px; }
+.modal-cab { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 15px; margin-bottom: 12px; }
+.modal-x { background: none; border: 0; font-size: 24px; cursor: pointer; color: #6b7280; line-height: 1; }
+.modal-nota { font-size: 12px; color: #8a919c; margin: 10px 0 0; }
+.param { border-top: 1px solid var(--color-border); padding: 12px 0; }
+.param label { font-weight: 700; font-size: 13px; display: block; margin-bottom: 6px; }
+.param-unidad { font-weight: 400; color: #8a919c; }
+.param-mod { background: #fff3d6; color: #7a6320; font-size: 10.5px; font-weight: 800; border-radius: 8px; padding: 1px 7px; margin-left: 6px; }
+.param-fila { display: flex; gap: 8px; flex-wrap: wrap; }
+.param-fila input { width: 110px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 6px; font-family: var(--font); }
+.param-ayuda { font-size: 12px; color: #6b7280; margin-top: 6px; }
+.param-estado { font-size: 12px; color: #a33; margin-top: 4px; }
+@media (max-width: 800px) { .tk-filtros { grid-template-columns: 1fr; } }
+.tk-filtros input[type="text"] { width: 100%; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 6px; font-family: var(--font); font-size: 14px; background: #fff; }

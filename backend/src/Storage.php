@@ -16,6 +16,16 @@
  */
 class Storage
 {
+    /**
+     * Qué tipos de anomalía cuentan como MERMA (combustible que se perdió o
+     * pudo haberse robado). Ralentí y consumo anómalo quedan afuera: son
+     * combustible gastado de más, no perdido — si los sumaba, la pantalla
+     * mostraba 200.000 L de "mermas" por semana y nadie lo iba a creer.
+     * Lo uso en un solo lugar para que la pantalla, el informe y el PDF
+     * digan lo mismo.
+     */
+    public const TIPOS_MERMA = ['descarga_detenido', 'caida_instantanea', 'corte_alimentacion', 'carga_no_coincide', 'desconexion_sensor'];
+
     private PDO $pdo;
     private string $driver; // 'sqlite' | 'pgsql'
 
@@ -39,6 +49,7 @@ class Storage
 
         $this->migrarTablaEquipos();
         $this->migrarTablaEstado();
+        $this->migrarTablasTickets();
         $this->migrarColumnasNuevas();
     }
 
@@ -189,6 +200,61 @@ class Storage
         if (!$this->tablaExiste('estado')) {
             $this->pdo->exec("CREATE TABLE estado (clave TEXT PRIMARY KEY, valor TEXT)");
         }
+    }
+
+    /**
+     * Tablas del sistema de tickets y de los umbrales editables (29/09/2026):
+     *   ticket_eventos -> historial de cada ticket (cada cambio de estado o
+     *                     de observación, con fecha)
+     *   parametros     -> umbrales de detección que el usuario cambia desde
+     *                     la pantalla; pisan los valores de config.php
+     * Además paso los estados viejos al ciclo nuevo:
+     *   validada -> notificada, descartada -> rechazada.
+     */
+    private function migrarTablasTickets(): void
+    {
+        if (!$this->tablaExiste('ticket_eventos')) {
+            $id = $this->driver === 'pgsql' ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+            $this->pdo->exec("CREATE TABLE ticket_eventos (
+                id {$id},
+                anomalia_id INTEGER NOT NULL,
+                fecha TEXT NOT NULL,
+                estado TEXT,
+                observacion TEXT
+            )");
+        }
+        if (!$this->tablaExiste('parametros')) {
+            $this->pdo->exec("CREATE TABLE parametros (clave TEXT PRIMARY KEY, valor TEXT NOT NULL, actualizado_en TEXT)");
+        }
+        if ($this->tablaExiste('anomalias') && in_array('estado_revision', $this->columnasDe('anomalias'), true)) {
+            $this->pdo->exec("UPDATE anomalias SET estado_revision = 'notificada' WHERE estado_revision = 'validada'");
+            $this->pdo->exec("UPDATE anomalias SET estado_revision = 'rechazada' WHERE estado_revision = 'descartada'");
+        }
+    }
+
+    /** Umbrales guardados desde la pantalla (clave => número). */
+    public function parametrosGuardados(): array
+    {
+        $out = [];
+        foreach ($this->pdo->query('SELECT clave, valor FROM parametros')->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $out[$r['clave']] = (float) $r['valor'];
+        }
+        return $out;
+    }
+
+    public function guardarParametro(string $clave, float $valor): void
+    {
+        $stmt = $this->pdo->prepare('
+            INSERT INTO parametros (clave, valor, actualizado_en) VALUES (:c, :v, :a)
+            ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado_en = excluded.actualizado_en
+        ');
+        $stmt->execute([':c' => $clave, ':v' => (string) $valor, ':a' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)]);
+    }
+
+    public function borrarParametro(string $clave): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM parametros WHERE clave = :c');
+        $stmt->execute([':c' => $clave]);
     }
 
     public function getEstado(string $clave): ?string
@@ -638,6 +704,9 @@ class Storage
         $stmt = $this->pdo->prepare("
             DELETE FROM anomalias
             WHERE fecha >= :desde
+              -- Solo las que nadie tocó: un ticket notificado, informado o
+              -- rechazado es trabajo del operador y no se pierde al reprocesar.
+              AND estado_revision = 'pendiente'
               AND tipo IN ('descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'ralenti', 'variacion_temperatura', 'desconexion_sensor', 'corte_alimentacion', 'carga_no_coincide')
         ");
         $stmt->execute([':desde' => $desde->format(DateTimeInterface::ATOM)]);
@@ -776,32 +845,57 @@ class Storage
      * hasta que alguien la resuelve, sin importar cuándo pasó.
      */
     /**
-     * Revisión de una anomalía por una persona (la campanita).
-     *   - validar:   "pasó de verdad". Queda confirmada y cuenta en las mermas confirmadas.
-     *   - descartar: "falsa alarma". No se borra: queda guardada con fecha y
-     *                comentario, se puede ver con el filtro "Descartadas".
-     *   - reabrir:   vuelve a pendiente (por si se tocó mal).
-     * Estas marcas son etiquetas hechas por alguien que conoce la flota: con
-     * el tiempo son lo que hace falta para ajustar umbrales y entrenar un
-     * modelo con datos reales.
+     * Ciclo de vida del ticket de una anomalía (pedido de Emiliano, 29/09/2026):
+     *
+     *   pendiente  ("Por notificar") -> recién detectada, nadie la vio.
+     *   notificada -> el operador la corroboró y avisó a operaciones para
+     *                 que llamen el móvil a revisión.
+     *   informada  -> operaciones ya lo revisó / se informó: ticket cerrado.
+     *   rechazada  -> falsa alarma. No se borra, queda en el historial.
+     *
+     * Acciones: notificar, informar, rechazar, reabrir (vuelve a "por
+     * notificar"), y observacion (solo cambia el texto del operador, sin
+     * cambiar el estado). Cada acción queda en ticket_eventos con su fecha
+     * y la observación de ese momento, así el ticket tiene su historia.
      */
-    public function revisarAnomalia(int $id, string $accion, ?string $comentario = null): bool
+    public function revisarAnomalia(int $id, string $accion, ?string $observacion = null): bool
     {
-        $estados = ['validar' => 'validada', 'descartar' => 'descartada', 'reabrir' => 'pendiente'];
-        if (!isset($estados[$accion])) {
+        $estados = ['notificar' => 'notificada', 'informar' => 'informada', 'rechazar' => 'rechazada', 'reabrir' => 'pendiente'];
+        $obs = $observacion !== null && trim($observacion) !== '' ? trim($observacion) : null;
+        $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+
+        if ($accion === 'observacion') {
+            $stmt = $this->pdo->prepare('UPDATE anomalias SET comentario_revision = :obs WHERE id = :id');
+            $stmt->execute([':obs' => $obs, ':id' => $id]);
+            $nuevoEstado = null;
+        } elseif (isset($estados[$accion])) {
+            $nuevoEstado = $estados[$accion];
+            // Si viene observación la actualizo; si no, dejo la que tenía.
+            $stmt = $this->pdo->prepare('
+                UPDATE anomalias
+                SET estado_revision = :estado, revisada_en = :ahora,
+                    comentario_revision = COALESCE(:obs, comentario_revision)
+                WHERE id = :id
+            ');
+            $stmt->execute([':estado' => $nuevoEstado, ':ahora' => $accion === 'reabrir' ? null : $ahora, ':obs' => $obs, ':id' => $id]);
+        } else {
             return false;
         }
-        $stmt = $this->pdo->prepare('
-            UPDATE anomalias SET estado_revision = :estado, revisada_en = :ahora, comentario_revision = :comentario
-            WHERE id = :id
-        ');
-        $stmt->execute([
-            ':estado'     => $estados[$accion],
-            ':ahora'      => $accion === 'reabrir' ? null : (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-            ':comentario' => $comentario !== null && trim($comentario) !== '' ? trim($comentario) : null,
-            ':id'         => $id,
-        ]);
-        return $stmt->rowCount() > 0;
+        if ($stmt->rowCount() === 0) {
+            return false;
+        }
+
+        $ev = $this->pdo->prepare('INSERT INTO ticket_eventos (anomalia_id, fecha, estado, observacion) VALUES (:id, :f, :e, :o)');
+        $ev->execute([':id' => $id, ':f' => $ahora, ':e' => $nuevoEstado, ':o' => $obs]);
+        return true;
+    }
+
+    /** Historial de un ticket, del más viejo al más nuevo. */
+    public function eventosTicket(int $id): array
+    {
+        $stmt = $this->pdo->prepare('SELECT fecha, estado, observacion FROM ticket_eventos WHERE anomalia_id = :id ORDER BY id ASC');
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /** Cuántas anomalías esperan revisión (el número de la campanita). Solo equipos activos. */

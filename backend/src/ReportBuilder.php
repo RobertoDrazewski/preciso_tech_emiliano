@@ -33,7 +33,12 @@ class ReportBuilder
             }
         }
 
-        $litrosAnomalos = array_sum(array_column($anomalias, 'litros_perdidos'));
+        // Solo los tipos que son pérdida real (ver Storage::TIPOS_MERMA): el
+        // ralentí y el consumo anómalo no son combustible perdido.
+        $litrosAnomalos = array_sum(array_map(
+            fn($a) => in_array($a['tipo'], Storage::TIPOS_MERMA, true) ? (float) $a['litros_perdidos'] : 0.0,
+            $anomalias
+        ));
 
         // ⚠️ Para el GRÁFICO (no para el cálculo de consumo, que ya tiene su
         // propio filtro de rebote más preciso — ver calcularConsumoReal):

@@ -270,7 +270,7 @@ local, no vuelve a consultar la API externa.
 
 ---
 
-## Revisión de anomalías (campanita)
+## Revisión de anomalías (campanita) — reemplazado por el sistema de tickets, ver abajo
 
 Arriba a la derecha, en todas las pantallas, hay una campanita con la
 cantidad de anomalías **por revisar**. Desde ahí (o desde la columna
@@ -309,6 +309,49 @@ Cada vez que el backend arranca, corre `scripts/sincronizar_equipos.php`
 agosto, que pisaba nombres y clientes buenos y reactivaba equipos dados de
 baja: de ahí salía el "Sin cliente asignado". Además, una carga que no trae
 cliente o estado ya no borra lo que se sabía del equipo.
+
+## Sistema de tickets (29/09/2026)
+
+Reemplaza a la vieja "Por revisar". Cada anomalía es un ticket con este ciclo:
+
+| Estado | Qué significa |
+|---|---|
+| **Por notificar** | Recién detectada, nadie la vio. Es el número de la campanita. |
+| **Notificada** | El operador la corroboró y avisó a operaciones para que llamen el móvil a revisión. |
+| **Informada** | Operaciones ya lo revisó: ticket cerrado. |
+| **Rechazada** | Falsa alarma. No se borra, queda en el historial. |
+
+Al lado de cada anomalía hay un campo de **observación del operador**, que se
+guarda solo, se puede cambiar cuando se quiera y queda en el **historial** del
+ticket (cada cambio de estado u observación con su fecha, tabla
+`ticket_eventos`). La pantalla **Tickets** muestra con barras cuántos hay en
+cada estado, con pestañas para filtrar y búsqueda por patente, ticket u
+observación. Reprocesar anomalías **no borra** tickets ya trabajados.
+
+## Umbrales ajustables desde la pantalla
+
+En "Anomalías por tipo", el botón de ajustes al lado de cada tipo abre sus
+umbrales con una explicación de cada uno. Se guardan en la tabla `parametros`
+y pisan los de `config.php`; el servidor valida que estén dentro de un rango
+razonable, y cada uno se puede volver al valor original. El catálogo está en
+`config/parametros_catalogo.php`. Los cambios valen para lo que se detecte de
+ahí en adelante; para recalcular lo anterior, reprocesar.
+
+## Qué cuenta como merma
+
+Solo lo que es pérdida real o posible robo: descarga detenido, caída
+instantánea, corte de alimentación con faltante, carga no coincide y
+desconexión (`Storage::TIPOS_MERMA`). El ralentí y el consumo anómalo se
+muestran, pero no suman como merma: son combustible gastado de más, no perdido.
+
+## Medición de cargas
+
+Como lo hace el propio sensor (explicado por TTM): **estabilidad inicial contra
+estabilidad final**. Se toma la mediana de la meseta estable antes de la carga
+y la de la meseta estable después, y se compara contra lo informado en los
+eventos `CARGA`. Mientras no esté confirmado si varios eventos `CARGA` seguidos
+se suman o si el último es el total, se aceptan las dos interpretaciones y solo
+se avisa si lo medido no coincide con ninguna.
 
 ## Estructura del proyecto
 

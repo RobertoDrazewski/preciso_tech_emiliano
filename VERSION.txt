@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-09-25 FINAL v2
+Versión: 2026-09-29 v3 (tickets)
 Desarrollado por Puma Code
 
 Incluye:
@@ -16,5 +16,10 @@ Incluye:
 - Informe con gráficos a la izquierda y mapa a la derecha; PDF igual
 - Reprocesado de anomalías resistente a cortes de conexión
 - v2: cortes de alimentación solo si falta combustible; eventos CARGA seguidos agrupados en una sola carga
+
+- v3: sistema de tickets (por notificar / notificada / informada / rechazada)
+  con observación del operador e historial; umbrales ajustables desde la
+  pantalla; cargas medidas por estabilidad inicial vs final; mermas solo con
+  pérdidas reales; consumo anómalo con piso de 10 L y 4 desvíos; ralentí 30 min
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

@@ -1,10 +1,10 @@
 /**
  * Campanita de notificaciones (arriba a la derecha, en todas las pantallas).
  *
- * Muestra cuántas anomalías esperan revisión. Al tocarla se abre la lista
- * de las últimas, y desde ahí mismo se pueden VALIDAR ("pasó de verdad") o
- * DESCARTAR ("falsa alarma"). Qué hace cada una está explicado en
- * Storage::revisarAnomalia() del backend.
+ * Muestra cuántos tickets están "Por notificar". Al tocarla se abre la
+ * lista de los últimos, y desde ahí mismo se pueden NOTIFICAR (avisar a
+ * operaciones para que revisen el móvil) o RECHAZAR (falsa alarma). El
+ * ciclo completo se maneja en la pantalla de Tickets.
  *
  * Cada vez que se valida o descarta algo, aviso con el evento
  * "preciso:revision" para que la pantalla que esté abierta (por ejemplo
@@ -25,7 +25,7 @@
   const corto = (t, n = 140) => (t && t.length > n ? t.slice(0, n - 1) + '…' : t || '');
 
   $raiz.innerHTML = `
-    <button class="campana-boton" type="button" title="Anomalías por revisar">
+    <button class="campana-boton" type="button" title="Tickets por notificar">
       <i class="fa-solid fa-bell"></i><span class="campana-numero" hidden></span>
     </button>
     <div class="campana-panel" hidden></div>`;
@@ -57,35 +57,42 @@
         <span class="tag ${esc(a.tipo)}">${esc(String(a.tipo).replace(/_/g, ' '))}</span>
         <div class="ci-detalle">${esc(corto(a.detalle))}</div>
         <div class="rev-botones">
-          <button class="rev-btn validar" data-accion="validar"><i class="fa-solid fa-check"></i> Validar</button>
-          <button class="rev-btn descartar" data-accion="descartar"><i class="fa-solid fa-xmark"></i> Descartar</button>
+          <button class="rev-btn validar" data-accion="notificar"><i class="fa-solid fa-paper-plane"></i> Notificar</button>
+          <button class="rev-btn descartar" data-accion="rechazar"><i class="fa-solid fa-ban"></i> Rechazar</button>
         </div>
       </div>`).join('');
     $panel.innerHTML = `
       <header>
-        <span><i class="fa-solid fa-bell"></i> Por revisar (${data.pendientes || 0})</span>
-        <a href="anomalias.html?revision=pendiente">Ver todas →</a>
+        <span><i class="fa-solid fa-bell"></i> Por notificar (${data.pendientes || 0})</span>
+        <a href="tickets.html">Ver tickets →</a>
       </header>
-      ${items || '<div class="campana-vacia">No hay anomalías por revisar. 👍</div>'}`;
+      ${items || '<div class="campana-vacia">No hay tickets por notificar. 👍</div>'}`;
   }
 
-  async function revisar(id, accion) {
-    let comentario = null;
-    if (accion === 'descartar') {
-      comentario = prompt('¿Por qué es una falsa alarma? (opcional)');
-      if (comentario === null) return; // tocó Cancelar
+  /**
+   * Cambia el estado de un ticket. Si no viene observación (por ejemplo,
+   * desde la campanita) y la acción es notificar o rechazar, la pido: es lo
+   * que después ve operaciones y queda en el historial.
+   */
+  async function revisar(id, accion, observacion) {
+    if (observacion === undefined && (accion === 'notificar' || accion === 'rechazar')) {
+      const pregunta = accion === 'notificar'
+        ? 'Observación para operaciones (qué corroboraste, qué hay que revisar):'
+        : '¿Por qué es una falsa alarma?';
+      observacion = prompt(pregunta, '');
+      if (observacion === null) return; // tocó Cancelar
     }
     try {
       const resp = await fetch(`${API()}/revision.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, accion, comentario }),
+        body: JSON.stringify({ id, accion, observacion }),
       });
       if (!resp.ok) throw new Error((await resp.json()).error || 'Error');
       await cargar();
       window.dispatchEvent(new CustomEvent('preciso:revision', { detail: { id, accion } }));
     } catch (e) {
-      alert('No se pudo guardar la revisión: ' + e.message);
+      alert('No se pudo guardar el ticket: ' + e.message);
     }
   }
 

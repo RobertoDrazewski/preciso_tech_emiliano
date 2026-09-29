@@ -24,7 +24,7 @@
   <nav>
     <a href="index.html"><i class="fa-solid fa-gauge-high"></i><span>Panel de flota</span></a>
     <a href="anomalias.html" class="activo"><i class="fa-solid fa-triangle-exclamation"></i><span>Anomalías</span></a>
-    <a href="anomalias.html?revision=pendiente"><i class="fa-solid fa-bell"></i><span>Por revisar</span></a>
+    <a href="tickets.html"><i class="fa-solid fa-ticket"></i><span>Tickets</span></a>
   </nav>
   <div class="sidebar-pie">Desarrollado por Puma Code</div>
 </aside>
@@ -76,13 +76,14 @@
         </select>
       </div>
       <div class="filtro-campo">
-        <label for="filtroRevision">Revisión</label>
+        <label for="filtroRevision">Ticket</label>
         <select id="filtroRevision">
-          <option value="activas">Activas (sin descartadas)</option>
-          <option value="pendiente">Por revisar</option>
-          <option value="validada">Validadas</option>
-          <option value="descartada">Descartadas</option>
-          <option value="todas">Todas</option>
+          <option value="activas">Activos (sin rechazados)</option>
+          <option value="pendiente">Por notificar</option>
+          <option value="notificada">Notificadas</option>
+          <option value="informada">Informadas</option>
+          <option value="rechazada">Rechazadas</option>
+          <option value="todas">Todos</option>
         </select>
       </div>
       <div class="filtro-campo filtro-boton">
@@ -117,11 +118,20 @@
   <p class="footer-note">Preciso · Módulo de informes y detección de anomalías — desarrollado por Puma Code</p>
 </div>
 
+  <!-- Ajustes de umbrales por tipo de anomalía (lo arma anomalias.js) -->
+  <div id="modalParametros" class="modal-fondo" hidden>
+    <div class="modal-caja">
+      <div class="modal-cab"><span id="modalTitulo">Umbrales</span><button type="button" id="modalCerrar" class="modal-x">&times;</button></div>
+      <div id="modalCuerpo"></div>
+      <p class="modal-nota">Los cambios valen para lo que se detecte de ahora en adelante. Para recalcular lo anterior, hay que reprocesar.</p>
+    </div>
+  </div>
 </main>
 
 <script src="assets/js/config.php"></script>
 <script src="assets/js/gauge.js"></script>
 <script src="assets/js/campana.js"></script>
+<script src="assets/js/tickets-ui.js"></script>
 <script src="assets/js/anomalias.js"></script>
 </body>
 </html>

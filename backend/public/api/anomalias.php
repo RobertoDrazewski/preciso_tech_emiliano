@@ -8,7 +8,7 @@
  *   cliente  = nombre de la flota/cliente, o "__sin_cliente__"
  *   tipo     = uno de los tipos de anomalía
  *   dias     = ventana hacia atrás (1 a 90, default 7)
- *   revision = activas (default: pendientes + validadas) | pendiente | validada | descartada | todas
+ *   revision = activas (default: todo menos rechazadas) | pendiente | notificada | informada | rechazada | todas
  *
  * Además de la lista, devuelve los números para los indicadores de aguja
  * (stats). Los números de revisión (pendientes/validadas/descartadas) se
@@ -30,8 +30,8 @@ $dias     = isset($_GET['dias']) && is_numeric($_GET['dias']) ? max(1, min(90, (
 if ($tipo !== null && $tipo !== '' && !in_array($tipo, $tiposValidos, true)) {
     jsonError('tipo tiene que ser uno de: ' . implode(', ', $tiposValidos));
 }
-if (!in_array($revision, ['activas', 'pendiente', 'validada', 'descartada', 'todas'], true)) {
-    jsonError('revision tiene que ser activas, pendiente, validada, descartada o todas');
+if (!in_array($revision, ['activas', 'pendiente', 'notificada', 'informada', 'rechazada', 'todas'], true)) {
+    jsonError('revision tiene que ser activas, pendiente, notificada, informada, rechazada o todas');
 }
 
 try {
@@ -43,27 +43,32 @@ try {
     // consulta tengo la lista Y los contadores de revisión.
     $todas = $storage->anomaliasFlota($desde, $hasta, $equipo, $tipo, $cliente);
 
-    $conteoRevision = ['pendiente' => 0, 'validada' => 0, 'descartada' => 0];
-    $litrosValidados = 0.0;
+    // Contadores del ciclo de tickets, sobre TODO lo filtrado.
+    $conteoRevision = ['pendiente' => 0, 'notificada' => 0, 'informada' => 0, 'rechazada' => 0];
+    $litrosConfirmados = 0.0;
     foreach ($todas as $a) {
         $estado = $a['estado_revision'] ?? 'pendiente';
         $conteoRevision[$estado] = ($conteoRevision[$estado] ?? 0) + 1;
-        if ($estado === 'validada') {
-            $litrosValidados += (float) $a['litros_perdidos'];
+        if (in_array($estado, ['notificada', 'informada'], true) && in_array($a['tipo'], Storage::TIPOS_MERMA, true)) {
+            $litrosConfirmados += (float) $a['litros_perdidos'];
         }
     }
 
     $mostrar = array_values(array_filter($todas, function ($a) use ($revision) {
         $estado = $a['estado_revision'] ?? 'pendiente';
         if ($revision === 'todas') return true;
-        if ($revision === 'activas') return $estado !== 'descartada';
+        if ($revision === 'activas') return $estado !== 'rechazada';
         return $estado === $revision;
     }));
 
     // Los indicadores (total, litros, vehículos) se calculan sobre lo que
     // se muestra: por defecto, SIN las descartadas (una falsa alarma no es
     // una merma).
-    $litros = array_sum(array_map(fn($a) => (float) $a['litros_perdidos'], $mostrar));
+    // Mermas: solo los tipos que son pérdida real (ver Storage::TIPOS_MERMA).
+    $litros = array_sum(array_map(
+        fn($a) => in_array($a['tipo'], Storage::TIPOS_MERMA, true) ? (float) $a['litros_perdidos'] : 0.0,
+        $mostrar
+    ));
     $vehiculos = count(array_unique(array_column($mostrar, 'equipo')));
 
     jsonOk([
@@ -73,9 +78,10 @@ try {
             'equipos_afectados'       => $vehiculos,
             'flota_activa'            => count($storage->listarEquipos(true)),
             'pendientes'              => $conteoRevision['pendiente'],
-            'validadas'               => $conteoRevision['validada'],
-            'descartadas'             => $conteoRevision['descartada'],
-            'litros_validados'        => round($litrosValidados, 1),
+            'notificadas'             => $conteoRevision['notificada'],
+            'informadas'              => $conteoRevision['informada'],
+            'rechazadas'              => $conteoRevision['rechazada'],
+            'litros_confirmados'      => round($litrosConfirmados, 1),
         ],
         'anomalias' => $mostrar,
         'simulado'  => $config['api']['simulate'] ?? false,

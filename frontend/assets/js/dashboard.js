@@ -92,8 +92,8 @@ async function renderStats(equipos) {
     gauge({ enlace: 'anomalias.html?dias=30', titulo: 'Anomalías 30 días', icono: 'fa-triangle-exclamation', color: '#f59f00',
       valor: numeroAR(anomalias30), sub: `${numeroAR(anomaliasFull)} de clientes FULL`,
       pct: anomalias30 ? anomaliasFull / anomalias30 : 0 }) +
-    gauge({ enlace: 'anomalias.html?revision=pendiente', titulo: 'Por revisar', icono: 'fa-bell', color: '#1c7ed6',
-      valor: numeroAR(pendientes), sub: 'esperando validar o descartar',
+    gauge({ enlace: 'tickets.html', titulo: 'Por notificar', icono: 'fa-inbox', color: '#1c7ed6',
+      valor: numeroAR(pendientes), sub: 'tickets que nadie vio todavía',
       pct: anomalias30 ? Math.min(1, pendientes / anomalias30) : 0 });
   animarAgujas($stats);
 }
