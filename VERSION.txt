@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-09-30 v3.3 (tickets)
+Versión: 2026-09-30 v3.4 (tickets)
 Desarrollado por Puma Code
 
 Incluye:
@@ -29,5 +29,8 @@ Incluye:
 
 - v3.3: cargas medidas con mesetas robustas a picos y espuma (corrige el sesgo
   de "entró más"); tanques estacionarios sin desconexión por caída rápida
+
+- v3.4: carga no coincide avisa solo cuando entró MENOS de lo informado (lo
+  que cuesta plata); "entró más" activable desde los umbrales
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

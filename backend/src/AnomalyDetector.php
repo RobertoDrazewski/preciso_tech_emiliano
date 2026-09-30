@@ -395,6 +395,11 @@ class AnomalyDetector
             if (abs($diferencia) < $minLitros || abs($diferencia) < $informada * $minPct) {
                 continue; // coincide razonablemente
             }
+            // "Entró más de lo informado": por defecto no se avisa (ver
+            // 'carga_avisar_si_entro_mas' en config).
+            if ($diferencia > 0 && empty($this->cfg['carga_avisar_si_entro_mas'])) {
+                continue;
+            }
 
             $merma = $diferencia < 0 ? abs($diferencia) : 0.0;
             $partes = count($grupo) > 1 ? sprintf(' (suma de %d cargas seguidas)', count($grupo)) : '';

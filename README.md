@@ -355,6 +355,11 @@ eventos `CARGA`. Cuando vienen varios eventos `CARGA` seguidos, **se suman**
 (confirmado por TTM): por ejemplo, el chofer carga el tanque 1, corta, y pasa
 al tanque 2 — son dos cargas, y el nivel medido es el total de los tanques.
 
+Por defecto solo se avisa cuando **entró menos** de lo informado (se pagó combustible
+que no está en el tanque). El aviso cuando entró más está desactivado
+(`carga_avisar_si_entro_mas`): reprocesando 30 días, el 80% de las diferencias eran
+"entró más", un desbalance sistemático a calibrar con TTM. Se activa desde los umbrales.
+
 ## Estructura del proyecto
 
 ```

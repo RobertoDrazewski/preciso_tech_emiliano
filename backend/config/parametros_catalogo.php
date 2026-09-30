@@ -63,6 +63,8 @@ return [
          'ayuda' => 'Cuántos litros de diferencia entre lo informado y lo medido para avisar.'],
         ['clave' => 'carga_diferencia_min_porcentaje', 'nombre' => 'Diferencia mínima', 'unidad' => '0 a 1 (0,15 = 15%)', 'min' => 0.01, 'max' => 1,
          'ayuda' => 'Además, qué porcentaje de la carga tiene que ser la diferencia.'],
+        ['clave' => 'carga_avisar_si_entro_mas', 'nombre' => 'Avisar también cuando entró MÁS', 'unidad' => '0 = no, 1 = sí', 'min' => 0, 'max' => 1,
+         'ayuda' => 'Por defecto solo avisa cuando entró MENOS de lo informado (lo que cuesta plata). En 1 avisa también cuando entró más.'],
         ['clave' => 'carga_tolerancia_meseta_litros', 'nombre' => 'Tolerancia de estabilidad', 'unidad' => 'L', 'min' => 0.5, 'max' => 20,
          'ayuda' => 'Cuánto puede oscilar el nivel y seguir considerándose "estable" antes y después de la carga.'],
     ],

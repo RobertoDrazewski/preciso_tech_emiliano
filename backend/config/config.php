@@ -206,6 +206,13 @@ return [
         // (así no salta por 3 L en una carga chica ni por 10 L en una de 400).
         'carga_diferencia_min_litros'    => 10.0,
         'carga_diferencia_min_porcentaje' => 0.15,
+        // ¿Avisar también cuando entró MÁS de lo informado? En 0 (no) desde
+        // el 30/09/2026: reprocesando 30 días, el 80% de las diferencias eran
+        // "entró más", un desbalance que apunta a algo sistemático de cómo se
+        // informa la carga, a calibrar con TTM. El caso que cuesta plata es
+        // "entró MENOS" (se pagó combustible que no está en el tanque), y ese
+        // se avisa siempre. Se puede activar desde la pantalla.
+        'carga_avisar_si_entro_mas' => 0,
 
         'detenido_velocidad_max_kmh' => 1.0,
         'detenido_distancia_max_metros' => 200,
