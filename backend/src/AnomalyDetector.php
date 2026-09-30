@@ -107,6 +107,12 @@ class AnomalyDetector
             // sale del tanque, es el sensor que se desconectó o se
             // reinició (punto 5 de Emiliano: "desconexión de algún
             // tanque"). Va con 0 L de merma porque no se perdió nada real.
+            // En tanques fijos / de stock y otros estacionarios, una caída muy
+            // rápida es un despacho con bomba de alto caudal, no una
+            // desconexión: el top de "desconexiones" eran tanques de stock.
+            if ($tasaPorMinuto > $tasaMaxima && $esEstacionario) {
+                continue;
+            }
             if ($tasaPorMinuto > $tasaMaxima) {
                 $anomalias[] = $this->construir(
                     $equipo, $c['fecha'], 'desconexion_sensor',
@@ -366,10 +372,23 @@ class AnomalyDetector
             if (count($previas) === 0 || count($posteriores) === 0) {
                 continue; // no tengo cómo medir, no invento
             }
-            $minimo = min($previas);
-            $maximo = max($posteriores);
-            $antes = $this->mediana(array_filter($previas, fn($v) => $v <= $minimo + $tolerancia));
-            $despues = $this->mediana(array_filter($posteriores, fn($v) => $v >= $maximo - $tolerancia));
+            // La referencia de cada meseta NO es el mínimo ni el máximo sueltos:
+            // un pico de ruido hacia abajo antes de la carga, o la espuma que
+            // marca de más justo después, se volvían la referencia y las dos
+            // cosas agrandaban lo medido (reprocesando 30 días, el 87% de las
+            // "cargas no coincide" daban "entró MÁS": un sesgo, no la realidad).
+            // Ahora uso el percentil 20 de antes y el 80 de después, y la meseta
+            // son las lecturas cercanas a esa referencia. Con menos de 2
+            // lecturas en alguna meseta, no hay estabilidad: no mido.
+            $refAntes = $this->percentil($previas, 0.20);
+            $refDespues = $this->percentil($posteriores, 0.80);
+            $mesetaAntes = array_filter($previas, fn($v) => abs($v - $refAntes) <= $tolerancia);
+            $mesetaDespues = array_filter($posteriores, fn($v) => abs($v - $refDespues) <= $tolerancia);
+            if (count($mesetaAntes) < 2 || count($mesetaDespues) < 2) {
+                continue;
+            }
+            $antes = $this->mediana($mesetaAntes);
+            $despues = $this->mediana($mesetaDespues);
 
             $medida = $despues - $antes;
             $diferencia = $medida - $informada;
@@ -950,6 +969,21 @@ class AnomalyDetector
             }
         }
         return false;
+    }
+
+    /** Percentil de una lista (0.20 = el valor que deja al 20% por debajo). Robusto a picos sueltos. */
+    private function percentil(array $valores, float $p): float
+    {
+        $v = array_values($valores);
+        sort($v);
+        $n = count($v);
+        if ($n === 0) {
+            return 0.0;
+        }
+        $pos = ($n - 1) * $p;
+        $bajo = (int) floor($pos);
+        $alto = (int) ceil($pos);
+        return $v[$bajo] + ($v[$alto] - $v[$bajo]) * ($pos - $bajo);
     }
 
     /** Mediana de una lista de números (la uso para las mesetas de las cargas). */

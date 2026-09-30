@@ -348,7 +348,9 @@ muestran, pero no suman como merma: son combustible gastado de más, no perdido.
 
 Como lo hace el propio sensor (explicado por TTM): **estabilidad inicial contra
 estabilidad final**. Se toma la mediana de la meseta estable antes de la carga
-y la de la meseta estable después, y se compara contra lo informado en los
+y la de la meseta estable después (la referencia de cada meseta es un percentil,
+no el mínimo o máximo sueltos, para que un pico de ruido o la espuma después de
+cargar no la muevan; se exigen al menos 2 lecturas por meseta), y se compara contra lo informado en los
 eventos `CARGA`. Cuando vienen varios eventos `CARGA` seguidos, **se suman**
 (confirmado por TTM): por ejemplo, el chofer carga el tanque 1, corta, y pasa
 al tanque 2 — son dos cargas, y el nivel medido es el total de los tanques.

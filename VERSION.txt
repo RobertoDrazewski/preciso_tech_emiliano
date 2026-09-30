@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-09-30 v3.2 (tickets)
+Versión: 2026-09-30 v3.3 (tickets)
 Desarrollado por Puma Code
 
 Incluye:
@@ -26,5 +26,8 @@ Incluye:
 
 - v3.2: ralentí cortado en huecos sin datos (no más ralentís de días), motor no
   se asume prendido después de un hueco, hora de la carga en el detalle
+
+- v3.3: cargas medidas con mesetas robustas a picos y espuma (corrige el sesgo
+  de "entró más"); tanques estacionarios sin desconexión por caída rápida
 
 Para confirmar que tenés esta versión:  cat VERSION.txt
