@@ -21,7 +21,7 @@
   let abierta = false;
 
   const esc = (t) => { const d = document.createElement('div'); d.textContent = t ?? ''; return d.innerHTML; };
-  const fecha = (iso) => new Date(iso).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const fecha = (iso) => new Date(iso).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   const corto = (t, n = 140) => (t && t.length > n ? t.slice(0, n - 1) + '…' : t || '');
 
   $raiz.innerHTML = `
@@ -90,7 +90,7 @@
       });
       if (!resp.ok) throw new Error((await resp.json()).error || 'Error');
       await cargar();
-      window.dispatchEvent(new CustomEvent('preciso:revision', { detail: { id, accion } }));
+      window.dispatchEvent(new CustomEvent('preciso:revision', { detail: { id, accion, observacion } }));
     } catch (e) {
       alert('No se pudo guardar el ticket: ' + e.message);
     }

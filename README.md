@@ -360,6 +360,26 @@ que no está en el tanque). El aviso cuando entró más está desactivado
 (`carga_avisar_si_entro_mas`): reprocesando 30 días, el 80% de las diferencias eran
 "entró más", un desbalance sistemático a calibrar con TTM. Se activa desde los umbrales.
 
+## Novedades v3.5 (02/10/2026)
+
+- **Velocidad**: el servidor atiende varios pedidos a la vez
+  (`PHP_CLI_SERVER_WORKERS`), el informe lee de la base y solo le pide a la
+  API lo que falta, las migraciones corren una sola vez por versión, hay
+  índices en las tablas de anomalías y tickets, y las acciones de un ticket
+  actualizan solo esa fila.
+- **Horas en UTC-3**: todas las fechas se muestran en hora argentina (la de
+  TTM), sin importar la zona horaria de la computadora. `APP_TIMEZONE`
+  inválida o ausente ya no deja el servidor en UTC. `API_TIMEZONE` permite
+  indicar otra zona para la API si hiciera falta; `scripts/diagnostico_hora.php`
+  lo verifica.
+- **Notificar al cliente**: arma un PDF de la anomalía y lo manda por mail.
+  En **modo prueba** (por defecto) llega a `NOTIFICAR_CLIENTE_EMAIL_PRUEBA`,
+  no al cliente. Requiere SMTP configurado. El correo del cliente se toma de
+  la API de equipos (`email_cliente`, `email`, `mail`, `correo`, …).
+- **Recalcular por tipo**: botón en la ventana de umbrales. Corre en segundo
+  plano por tandas (`/api/recalcular.php`), con barra de avance en cualquier
+  pantalla y aviso al terminar. No toca tickets trabajados.
+
 ## Estructura del proyecto
 
 ```

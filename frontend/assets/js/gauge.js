@@ -1,4 +1,25 @@
 /**
+ * Zona horaria de TODAS las fechas que se muestran: UTC-3, la de la
+ * plataforma de TTM (confirmado por Emiliano, 02/10/2026). Antes se usaba la
+ * zona de la computadora que abría la página: si estaba configurada en otro
+ * país, todas las horas salían corridas respecto de las de TTM.
+ * Argentina no tiene horario de verano, así que UTC-3 es fijo.
+ */
+const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
+const DESFASE_AR_MS = 3 * 3600 * 1000;
+
+/** Año, mes, día, hora y minuto de una fecha, vistos en hora argentina. */
+function partesAR(fecha) {
+  const d = new Date(new Date(fecha).getTime() - DESFASE_AR_MS);
+  return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), h: d.getUTCHours(), mi: d.getUTCMinutes() };
+}
+
+/** Arma una fecha a partir de día y hora argentinos. */
+function fechaAR(y, m, d, h = 0, mi = 0) {
+  return new Date(Date.UTC(y, m - 1, d, h, mi) + DESFASE_AR_MS);
+}
+
+/**
  * Indicador KPI con barra horizontal (compacto).
  *
  * Primero lo hice de aguja, pero a Emiliano no le gustó: ocupaba mucho y

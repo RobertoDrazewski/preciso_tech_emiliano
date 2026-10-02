@@ -274,7 +274,12 @@ class DataNormalizer
             return (new DateTimeImmutable())->setTimestamp($ts);
         }
         try {
-            return new DateTimeImmutable((string) $raw);
+            // La fecha de la API se interpreta en la zona horaria de la API
+            // (API_TIMEZONE) y se pasa a la de la aplicación. Así, si TTM manda
+            // la hora del equipo en UTC, las anomalías muestran la misma hora
+            // que la plataforma de TTM (ver scripts/diagnostico_hora.php).
+            $zonaApi = new DateTimeZone(Env::get('API_TIMEZONE', '') ?: date_default_timezone_get());
+            return (new DateTimeImmutable((string) $raw, $zonaApi))->setTimezone(new DateTimeZone(date_default_timezone_get()));
         } catch (Exception $e) {
             return null;
         }

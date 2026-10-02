@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-09-30 v3.4 (tickets)
+Versión: 2026-10-02 v3.5 (tickets)
 Desarrollado por Puma Code
 
 Incluye:
@@ -32,5 +32,10 @@ Incluye:
 
 - v3.4: carga no coincide avisa solo cuando entró MENOS de lo informado (lo
   que cuesta plata); "entró más" activable desde los umbrales
+
+- v3.5: velocidad (servidor con varios procesos, informe desde la base, índices,
+  migraciones una sola vez, acciones sin recargar); horas fijas en UTC-3;
+  "Notificar al cliente" con PDF por mail (modo prueba); recalcular anomalías
+  por tipo desde la ventana de umbrales, en segundo plano con barra de avance
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

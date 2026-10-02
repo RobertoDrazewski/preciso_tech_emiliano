@@ -9,13 +9,29 @@
  */
 let TICKETS = [];
 let ESTADO_ACTIVO = 'pendiente';
+let ULTIMOS_STATS = {};
+
+/** Recuenta los estados con lo que hay en memoria (después de una acción). */
+function statsLocales() {
+  const c = { pendiente: 0, notificada: 0, informada: 0, rechazada: 0 };
+  TICKETS.forEach(a => { c[a.estado_revision || 'pendiente']++; });
+  return { ...ULTIMOS_STATS, pendientes: c.pendiente, notificadas: c.notificada, informadas: c.informada, rechazadas: c.rechazada };
+}
 
 async function initTickets() {
   await cargarFlotas();
   document.getElementById('tkDias').addEventListener('change', cargarTickets);
   document.getElementById('tkCliente').addEventListener('change', cargarTickets);
   document.getElementById('tkBuscar').addEventListener('input', pintarTabla);
-  window.addEventListener('preciso:revision', cargarTickets);
+  // Al validar/rechazar/etc. actualizo en memoria y redibujo (sin volver a
+  // pedir toda la lista al servidor: eso era lo que tardaba segundos).
+  window.addEventListener('preciso:revision', (ev) => {
+    if (!aplicarAccionLocal(ev.detail || {})) { cargarTickets(); return; }
+    const st = statsLocales();
+    pintarIndicadores(st);
+    pintarPestanas(st);
+    pintarTabla();
+  });
   const desdeUrl = new URLSearchParams(location.search).get('estado');
   if (desdeUrl && ESTADOS_TICKET[desdeUrl]) ESTADO_ACTIVO = desdeUrl;
   cargarTickets();
@@ -40,6 +56,8 @@ async function cargarTickets() {
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Error');
     TICKETS = data.anomalias;
+    registrarAnomalias(TICKETS);
+    ULTIMOS_STATS = data.stats;
     document.getElementById('tkLoading').classList.add('hidden');
     document.getElementById('tkContenido').classList.remove('hidden');
     pintarIndicadores(data.stats);
@@ -92,7 +110,7 @@ function pintarTabla() {
     $t.innerHTML = '<div class="empty-state">No hay tickets en este estado. 👍</div>';
     return;
   }
-  const fecha = iso => new Date(iso).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const fecha = iso => new Date(iso).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   $t.innerHTML = `
     <table class="anomalias tk-tabla">
       <tr><th>Ticket</th><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th style="min-width:220px">Observación del operador</th><th>Acciones</th></tr>
@@ -124,7 +142,7 @@ async function verHistorial(id) {
     const r = await fetch(`${window.PRECISO_CONFIG.API_BASE}/revision.php?historial=${id}`);
     const { eventos } = await r.json();
     $l.innerHTML = eventos.length === 0 ? '<div>Sin movimientos todavía.</div>' : eventos.map(e => `
-      <div class="tk-evento"><b>${new Date(e.fecha).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</b>
+      <div class="tk-evento"><b>${new Date(e.fecha).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</b>
         ${e.estado ? (ESTADOS_TICKET[e.estado]?.label || e.estado) : 'Observación editada'}${e.observacion ? ` — ${escTicket(e.observacion)}` : ''}</div>`).join('');
   } catch (e) {
     $l.textContent = 'No se pudo cargar el historial.';

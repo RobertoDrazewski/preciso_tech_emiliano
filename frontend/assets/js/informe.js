@@ -263,29 +263,21 @@ function renderAnomalias(r) {
 function linkGraficoTTM(equipoNombre, fechaISO) {
   if (!equipoNombre || !fechaISO) return null;
 
-  const fecha = new Date(fechaISO);
-  const desde = new Date(fecha);
-  desde.setDate(desde.getDate() - 1);
-  desde.setHours(0, 0, 0, 0);
-  const hasta = new Date(fecha);
-  hasta.setDate(hasta.getDate() + 1);
-  hasta.setHours(23, 59, 0, 0);
-
-  // Nunca pedir una fecha en el futuro: si la anomalía es de hoy, "un día
-  // después" cae mañana, y el reportes.php de TTM con una fecha futura no
-  // muestra nada (así dejó de andar el link con las anomalías del día).
-  // Tope: hoy a las 23:59, igual que el link de ejemplo de Emiliano.
-  const finDeHoy = new Date();
-  finDeHoy.setHours(23, 59, 0, 0);
-  if (hasta > finDeHoy) {
-    hasta.setTime(finDeHoy.getTime());
-  }
+  // Todo en hora argentina (UTC-3), la de la plataforma de TTM, sin importar
+  // la zona horaria de la computadora. Ventana: desde el día anterior a las
+  // 0:00 hasta el día siguiente a las 23:59, pero nunca en el futuro (si la
+  // anomalía es de hoy, hasta hoy a las 23:59: con fechas futuras TTM no
+  // muestra nada).
+  const p = partesAR(fechaISO);
+  const hoy = partesAR(new Date());
+  const desde = partesAR(fechaAR(p.y, p.m, p.d - 1));
+  let hasta = partesAR(fechaAR(p.y, p.m, p.d + 1));
+  if (fechaAR(hasta.y, hasta.m, hasta.d) > fechaAR(hoy.y, hoy.m, hoy.d)) hasta = hoy;
 
   const pad = (n) => String(n).padStart(2, '0');
-  const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${d.getHours()}:${pad(d.getMinutes())}`;
-
+  const dia = (x) => `${x.y}-${pad(x.m)}-${pad(x.d)}`;
   const params = new URLSearchParams({
-    date_range: `${fmt(desde)} / ${fmt(hasta)}`,
+    date_range: `${dia(desde)} 0:00 / ${dia(hasta)} 23:59`,
     equipo: equipoNombre,
   });
   return `https://ttm.com.ar/dev/Preciso/reportes.php?${params.toString()}`;
@@ -308,15 +300,15 @@ function renderUbicacion(lat, lng) {
 }
 
 function formatNum(n) {
-  return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return Number(n).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 function formatearFecha(iso) {
   const d = new Date(iso);
-  return d.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 function formatearFechaCorta(iso) {
   const d = new Date(iso);
-  return d.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -379,7 +371,7 @@ async function generarPDF() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(107, 114, 128);
-    doc.text(`Equipo ${ULTIMO_INFORME.equipo.id} · Período: ${formatearFecha(ULTIMO_INFORME.desde)} — ${formatearFecha(ULTIMO_INFORME.hasta)} · Generado: ${new Date().toLocaleString('es-AR')}`, M, y + 5);
+    doc.text(`Equipo ${ULTIMO_INFORME.equipo.id} · Período: ${formatearFecha(ULTIMO_INFORME.desde)} — ${formatearFecha(ULTIMO_INFORME.hasta)} · Generado: ${new Date().toLocaleString('es-AR', { timeZone: ZONA_HORARIA })}`, M, y + 5);
     y += 11;
     if (ULTIMO_INFORME.simulado) {
       doc.setTextColor(150, 100, 20);

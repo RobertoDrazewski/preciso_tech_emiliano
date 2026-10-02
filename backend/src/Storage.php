@@ -24,6 +24,9 @@ class Storage
      * Lo uso en un solo lugar para que la pantalla, el informe y el PDF
      * digan lo mismo.
      */
+    /** Subir este número cuando se agregue una migración (columna, índice, tabla). */
+    private const ESQUEMA_VERSION = 'v3.5';
+
     public const TIPOS_MERMA = ['descarga_detenido', 'caida_instantanea', 'corte_alimentacion', 'carga_no_coincide', 'desconexion_sensor'];
 
     private PDO $pdo;
@@ -47,10 +50,41 @@ class Storage
             $this->pdo->exec($schema);
         }
 
-        $this->migrarTablaEquipos();
-        $this->migrarTablaEstado();
-        $this->migrarTablasTickets();
-        $this->migrarColumnasNuevas();
+        // Las migraciones se corren UNA vez por versión del esquema, no en
+        // cada pedido (antes cada clic revisaba todas las tablas y hasta
+        // actualizaba la tabla de anomalías entera: parte de los 5-7 segundos
+        // que tardaba "Rechazar").
+        try {
+            $yaMigrado = $this->getEstado('esquema_version') === self::ESQUEMA_VERSION;
+        } catch (Throwable $e) {
+            $yaMigrado = false;
+        }
+        if (!$yaMigrado) {
+            $this->migrarTablaEquipos();
+            $this->migrarTablaEstado();
+            $this->migrarTablasTickets();
+            $this->migrarColumnasNuevas();
+            $this->crearIndices();
+            $this->setEstado('esquema_version', self::ESQUEMA_VERSION);
+        }
+    }
+
+    /**
+     * Índices para que las consultas de anomalías y tickets no recorran la
+     * tabla entera (con miles de anomalías se notaba en cada pantalla).
+     */
+    private function crearIndices(): void
+    {
+        $indices = [
+            'CREATE INDEX IF NOT EXISTS idx_anomalias_fecha ON anomalias (fecha)',
+            'CREATE INDEX IF NOT EXISTS idx_anomalias_equipo_tipo ON anomalias (equipo, tipo)',
+            'CREATE INDEX IF NOT EXISTS idx_anomalias_estado ON anomalias (estado_revision)',
+            'CREATE INDEX IF NOT EXISTS idx_ticket_eventos_anomalia ON ticket_eventos (anomalia_id)',
+            'CREATE INDEX IF NOT EXISTS idx_equipos_activo ON equipos (activo)',
+        ];
+        foreach ($indices as $sql) {
+            $this->pdo->exec($sql);
+        }
     }
 
     private function conectarSqlite(string $dbPath): void
@@ -152,6 +186,8 @@ class Storage
             'estado_revision'     => "TEXT NOT NULL DEFAULT 'pendiente'",
             'revisada_en'         => 'TEXT',
             'comentario_revision' => 'TEXT',
+            // Cuándo se le mandó el PDF al cliente (botón "Notificar al cliente").
+            'cliente_notificado_en' => 'TEXT',
         ];
         foreach ($nuevasAnomalias as $columna => $tipo) {
             if (!in_array($columna, $columnasAnomalias, true)) {
@@ -170,6 +206,8 @@ class Storage
             'capacidad_litros'  => $tipoReal,
             'diagnostico'       => 'TEXT',
             'servicio'          => 'TEXT',
+            // Correo del cliente para "Notificar al cliente" (viene de la API de equipos).
+            'email_cliente'     => 'TEXT',
         ];
         foreach ($nuevasEquipos as $columna => $tipo) {
             if (!in_array($columna, $columnasEquipos, true)) {
@@ -476,7 +514,7 @@ class Storage
 
     public function equipoPorId(string $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio FROM equipos WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, email_cliente FROM equipos WHERE id = :id LIMIT 1');
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -639,6 +677,16 @@ class Storage
         $rows = $this->lecturasEnRango($equipo, $desde, $hasta);
 
         return array_map(function (array $r) {
+            // Lecturas guardadas ANTES del arreglo del sensor desconectado
+            // (23/09/2026) tienen combustible = 0 con todos los tanques vacíos:
+            // es el sensor sin dato, no un tanque vacío. Las limpio al leerlas,
+            // así los gráficos y el recálculo de lo viejo no ven ceros falsos.
+            if ($r['combustible_litros'] !== null && (float) $r['combustible_litros'] == 0.0
+                && empty($r['tanque1_litros']) && empty($r['tanque2_litros'])
+                && empty($r['tanque3_litros']) && empty($r['tanque4_litros'])) {
+                $r['combustible_litros'] = null;
+                $r['temp_tanque'] = null;
+            }
             return [
                 'equipo'             => $r['equipo'],
                 'fecha'              => new DateTimeImmutable($r['fecha']),
@@ -888,6 +936,70 @@ class Storage
         $ev = $this->pdo->prepare('INSERT INTO ticket_eventos (anomalia_id, fecha, estado, observacion) VALUES (:id, :f, :e, :o)');
         $ev->execute([':id' => $id, ':f' => $ahora, ':e' => $nuevoEstado, ':o' => $obs]);
         return true;
+    }
+
+    /** Fecha de la última lectura guardada de un equipo (o null si no hay ninguna). */
+    public function ultimaLecturaDe(string $equipo): ?DateTimeImmutable
+    {
+        $stmt = $this->pdo->prepare('SELECT MAX(fecha) AS f FROM lecturas WHERE equipo = :e');
+        $stmt->execute([':e' => $equipo]);
+        $f = $stmt->fetch(PDO::FETCH_ASSOC)['f'] ?? null;
+        return $f ? new DateTimeImmutable($f) : null;
+    }
+
+    /** Fecha de la primera lectura guardada de un equipo desde cierta fecha. */
+    public function primeraLecturaDesde(string $equipo, DateTimeInterface $desde): ?DateTimeImmutable
+    {
+        $stmt = $this->pdo->prepare('SELECT MIN(fecha) AS f FROM lecturas WHERE equipo = :e AND fecha >= :d');
+        $stmt->execute([':e' => $equipo, ':d' => $desde->format(DateTimeInterface::ATOM)]);
+        $f = $stmt->fetch(PDO::FETCH_ASSOC)['f'] ?? null;
+        return $f ? new DateTimeImmutable($f) : null;
+    }
+
+    /** Una anomalía con los datos de su equipo (para armar el PDF y el mail al cliente). */
+    public function anomaliaPorId(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT a.*, e.nombre AS equipo_nombre, e.cliente AS equipo_cliente, e.email_cliente
+            FROM anomalias a LEFT JOIN equipos e ON e.id = a.equipo
+            WHERE a.id = :id
+        ');
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /** Deja constancia de que se le mandó el PDF al cliente, en la anomalía y en su historial. */
+    public function marcarClienteNotificado(int $id, string $detalle): void
+    {
+        $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $stmt = $this->pdo->prepare('UPDATE anomalias SET cliente_notificado_en = :a WHERE id = :id');
+        $stmt->execute([':a' => $ahora, ':id' => $id]);
+        $ev = $this->pdo->prepare('INSERT INTO ticket_eventos (anomalia_id, fecha, estado, observacion) VALUES (:id, :f, NULL, :o)');
+        $ev->execute([':id' => $id, ':f' => $ahora, ':o' => $detalle]);
+    }
+
+    /** Guarda los correos de los clientes que trae la API de equipos. */
+    public function actualizarEmailsClientes(array $emailsPorEquipo): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE equipos SET email_cliente = :e WHERE id = :id');
+        foreach ($emailsPorEquipo as $id => $email) {
+            $stmt->execute([':e' => $email, ':id' => (string) $id]);
+        }
+    }
+
+    /**
+     * Para recalcular un tipo: borra las anomalías de ese tipo de un equipo
+     * que NADIE trabajó (por notificar). Las notificadas, informadas o
+     * rechazadas son trabajo del operador y no se tocan.
+     */
+    public function borrarPendientesDeTipo(string $equipo, string $tipo, DateTimeInterface $desde): int
+    {
+        $stmt = $this->pdo->prepare("
+            DELETE FROM anomalias
+            WHERE equipo = :equipo AND tipo = :tipo AND fecha >= :desde AND estado_revision = 'pendiente'
+        ");
+        $stmt->execute([':equipo' => $equipo, ':tipo' => $tipo, ':desde' => $desde->format(DateTimeInterface::ATOM)]);
+        return $stmt->rowCount();
     }
 
     /** Historial de un ticket, del más viejo al más nuevo. */

@@ -34,6 +34,18 @@ try {
     $storage = new Storage($config['db']);
     $n = $storage->upsertEquiposMasivo($equipos);
 
+    // Correos de los clientes (para "Notificar al cliente"), si la API los trae.
+    $emails = [];
+    foreach ($equipos as $eq) {
+        if (!empty($eq['email_cliente'])) {
+            $emails[$eq['id']] = $eq['email_cliente'];
+        }
+    }
+    $storage->actualizarEmailsClientes($emails);
+    echo count($emails) > 0
+        ? "Correos de cliente encontrados en la API: " . count($emails) . " equipos.\n"
+        : "La API de equipos no trajo correos de cliente (revisar con TTM el nombre del campo).\n";
+
     $activos = count(array_filter($equipos, fn($e) => ($e['estado_raw'] ?? '') === 'ACTIVO'));
     $inactivos = $n - $activos;
 

@@ -615,3 +615,30 @@ table.anomalias th { color: #6b7280; }
 .param-estado { font-size: 12px; color: #a33; margin-top: 4px; }
 @media (max-width: 800px) { .tk-filtros { grid-template-columns: 1fr; } }
 .tk-filtros input[type="text"] { width: 100%; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 6px; font-family: var(--font); font-size: 14px; background: #fff; }
+
+/* =====================================================================
+   NOTIFICAR AL CLIENTE Y RECÁLCULO EN SEGUNDO PLANO (02/10/2026)
+   ===================================================================== */
+.tk-btn.cliente { color: #6b4ea0; border-color: #d6cbe9; }
+.tk-btn.cliente:hover { background: #6b4ea0; border-color: #6b4ea0; color: #fff; }
+.tk-btn:disabled { opacity: .6; cursor: wait; }
+.tk-cliente-ok { font-size: 11px; color: #6b4ea0; margin-bottom: 4px; }
+
+.recalc-caja { border-top: 1px solid var(--color-border); margin-top: 6px; padding-top: 12px; }
+.recalc-titulo { font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+.recalc-caja p { font-size: 12px; color: #6b7280; margin: 0 0 10px; }
+.recalc-estado { font-size: 12px; color: #3b5a8c; margin-top: 8px; min-height: 16px; }
+
+.trabajo-widget { position: fixed; right: 20px; bottom: 20px; z-index: 300; width: 330px; background: #fff;
+  border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.15); padding: 12px 14px; font-size: 13px; }
+.trabajo-widget[hidden] { display: none; }
+.tw-cab { margin-bottom: 8px; }
+.tw-cab i { color: var(--color-accent); margin-right: 4px; }
+.tw-barra { height: 7px; background: #eef0f3; border-radius: 4px; overflow: hidden; }
+.tw-barra span { display: block; height: 100%; background: var(--color-accent); transition: width .4s; }
+.tw-pie { font-size: 11.5px; color: #6b7280; margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.tw-cancelar { background: none; border: 0; color: #8a4a4a; cursor: pointer; font-size: 11.5px; font-family: var(--font); }
+.trabajo-toast { position: fixed; right: 20px; bottom: 20px; z-index: 310; max-width: 420px; background: #1f2329; color: #fff;
+  border-radius: 10px; padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.trabajo-toast i { color: #7fd29a; font-size: 18px; margin-top: 1px; }
+.trabajo-toast button { background: none; border: 0; color: #bbb; font-size: 20px; cursor: pointer; line-height: 1; }

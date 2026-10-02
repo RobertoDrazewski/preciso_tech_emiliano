@@ -16,4 +16,6 @@ WORKDIR /app
 COPY . .
 
 ENV PORT=3000
+# Varios procesos atendiendo a la vez (sin esto, un pedido por vez).
+ENV PHP_CLI_SERVER_WORKERS=4
 CMD php -S 0.0.0.0:${PORT}

@@ -29,6 +29,10 @@ COPY . .
 # Railway inyecta $PORT en runtime; en local (docker run manual de arriba) no
 # está seteada, así que usamos 8000 como default.
 ENV PORT=8000
+# Varios procesos atendiendo a la vez (02/10/2026). Sin esto, el servidor de
+# PHP atiende UN pedido por vez: si alguien abría un informe mensual, un clic
+# en "Rechazar" quedaba esperando 5-7 segundos a que terminara.
+ENV PHP_CLI_SERVER_WORKERS=6
 
 # Formato exec + sh -c para que la variable de entorno $PORT se expanda bien.
 # Antes de levantar el servidor, importa/actualiza la flota (data/equipos_flota.json)

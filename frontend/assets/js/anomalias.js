@@ -9,7 +9,17 @@ async function init() {
   document.getElementById('filtroCliente').addEventListener('change', cargarAnomalias);
   document.getElementById('filtroRevision').addEventListener('change', cargarAnomalias);
   // Cuando se valida o descarta (acá o desde la campanita), recargo todo.
-  window.addEventListener('preciso:revision', cargarAnomalias);
+  // Al validar/rechazar/etc. actualizo solo esa fila (sin recargar todo).
+  window.addEventListener('preciso:recalculo-terminado', cargarAnomalias);
+  window.addEventListener('preciso:revision', (ev) => {
+    const a = aplicarAccionLocal(ev.detail || {});
+    const $fila = a && document.querySelector(`#tablaAnomalias tr[data-id="${a.id}"]`);
+    if (!$fila) { cargarAnomalias(); return; }
+    const $celdas = $fila.querySelectorAll('td');
+    const $ticket = $celdas[$celdas.length - 1];
+    $ticket.innerHTML = `${renderEstadoTicket(a)}<div class="rev-botones">${renderAccionesTicket(a)}</div>`;
+    engancharTickets($ticket);
+  });
   document.getElementById('filtroTipo').addEventListener('change', cargarAnomalias);
   document.getElementById('filtroDias').addEventListener('change', cargarAnomalias);
   document.getElementById('btnFiltrar').addEventListener('click', cargarAnomalias);
@@ -213,6 +223,7 @@ function renderResultados(data) {
     `${data.total} anomalía(s) — ${filtroTexto}, últimos ${document.getElementById('filtroDias').value} día(s)`;
 
   renderPorFlota(data.anomalias, Boolean(cliente || equipoSeleccionado));
+  registrarAnomalias(data.anomalias);
 
   // ---- Indicadores de aguja ----
   // Todos muestran una proporción (de 0 a 100%), así la aguja siempre
@@ -363,29 +374,21 @@ function engancharClicksTarjetas($contenedor) {
 function linkGraficoTTM(equipoNombre, fechaISO) {
   if (!equipoNombre || !fechaISO) return null;
 
-  const fecha = new Date(fechaISO);
-  const desde = new Date(fecha);
-  desde.setDate(desde.getDate() - 1);
-  desde.setHours(0, 0, 0, 0);
-  const hasta = new Date(fecha);
-  hasta.setDate(hasta.getDate() + 1);
-  hasta.setHours(23, 59, 0, 0);
-
-  // Nunca pedir una fecha en el futuro: si la anomalía es de hoy, "un día
-  // después" cae mañana, y el reportes.php de TTM con una fecha futura no
-  // muestra nada (así dejó de andar el link con las anomalías del día).
-  // Tope: hoy a las 23:59, igual que el link de ejemplo de Emiliano.
-  const finDeHoy = new Date();
-  finDeHoy.setHours(23, 59, 0, 0);
-  if (hasta > finDeHoy) {
-    hasta.setTime(finDeHoy.getTime());
-  }
+  // Todo en hora argentina (UTC-3), la de la plataforma de TTM, sin importar
+  // la zona horaria de la computadora. Ventana: desde el día anterior a las
+  // 0:00 hasta el día siguiente a las 23:59, pero nunca en el futuro (si la
+  // anomalía es de hoy, hasta hoy a las 23:59: con fechas futuras TTM no
+  // muestra nada).
+  const p = partesAR(fechaISO);
+  const hoy = partesAR(new Date());
+  const desde = partesAR(fechaAR(p.y, p.m, p.d - 1));
+  let hasta = partesAR(fechaAR(p.y, p.m, p.d + 1));
+  if (fechaAR(hasta.y, hasta.m, hasta.d) > fechaAR(hoy.y, hoy.m, hoy.d)) hasta = hoy;
 
   const pad = (n) => String(n).padStart(2, '0');
-  const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${d.getHours()}:${pad(d.getMinutes())}`;
-
+  const dia = (x) => `${x.y}-${pad(x.m)}-${pad(x.d)}`;
   const params = new URLSearchParams({
-    date_range: `${fmt(desde)} / ${fmt(hasta)}`,
+    date_range: `${dia(desde)} 0:00 / ${dia(hasta)} 23:59`,
     equipo: equipoNombre,
   });
   return `https://ttm.com.ar/dev/Preciso/reportes.php?${params.toString()}`;
@@ -464,7 +467,7 @@ function renderUbicacion(lat, lng) {
 
 function formatearFechaCorta(iso) {
   const d = new Date(iso);
-  return d.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 function escapeHtml(str) {
@@ -512,7 +515,25 @@ async function abrirParametros(tipo, nombre) {
       </div>
       <div class="param-ayuda">${escapeHtml(p.ayuda)} Rango permitido: ${p.min} a ${p.max}.</div>
       <div class="param-estado"></div>
-    </div>`).join('');
+    </div>`).join('') + `
+    <div class="recalc-caja">
+      <div class="recalc-titulo"><i class="fa-solid fa-rotate"></i> Aplicar los umbrales a lo que ya pasó</div>
+      <p>Los cambios valen solo para lo que se detecte de ahora en adelante. Para aplicarlos también a las anomalías
+        de este tipo de los últimos 30 días, recalculá: se quitan las que ya no cumplen y se agregan las nuevas.
+        Los tickets ya notificados, informados o rechazados <b>no se tocan</b>.</p>
+      <button type="button" class="btn" id="btnRecalcular"><i class="fa-solid fa-rotate"></i> Recalcular ${escapeHtml(nombre)}</button>
+      <div class="recalc-estado" id="recalcEstado"></div>
+    </div>`;
+
+  document.getElementById('btnRecalcular').addEventListener('click', async () => {
+    if (!confirm(`¿Recalcular las anomalías de "${nombre}" de los últimos 30 días con los umbrales actuales?\n\nPuede tardar unos minutos. Podés cerrar esta ventana y seguir trabajando: te aviso cuando termine.`)) return;
+    try {
+      await window.iniciarRecalculo(tipo, 30);
+      document.getElementById('recalcEstado').textContent = 'Recalculando… podés cerrar esta ventana, el avance se ve abajo a la derecha.';
+    } catch (e) {
+      document.getElementById('recalcEstado').textContent = e.message;
+    }
+  });
 
   const enviar = async (clave, cuerpo, $estado) => {
     try {

@@ -17,9 +17,11 @@ class ApiClient
     private int $timeout;
     private int $retries;
     private bool $insecureSslTesting;
+    private string $timezone;
 
     public function __construct(array $config)
     {
+        $this->timezone = $config['timezone'] ?? date_default_timezone_get();
         $this->baseUrl = rtrim($config['base_url'], '?&');
         $this->token   = $config['token'] ?? '';
         $this->timeout = $config['timeout'] ?? 20;
@@ -36,10 +38,14 @@ class ApiClient
      */
     public function getFullData(string $equipoId, DateTimeInterface $from, DateTimeInterface $to): array
     {
+        // El rango se manda en la zona horaria de la API (API_TIMEZONE). Si la
+        // API trabaja en UTC y le mandábamos hora de Mendoza, cada consulta
+        // pedía datos de 3 horas antes de lo que creíamos.
+        $zonaApi = new DateTimeZone($this->timezone);
         $dateRange = sprintf(
             '%s / %s',
-            $from->format('Y-m-d H:i'),
-            $to->format('Y-m-d H:i')
+            DateTimeImmutable::createFromInterface($from)->setTimezone($zonaApi)->format('Y-m-d H:i'),
+            DateTimeImmutable::createFromInterface($to)->setTimezone($zonaApi)->format('Y-m-d H:i')
         );
 
         $params = [

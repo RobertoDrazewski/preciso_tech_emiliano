@@ -4,7 +4,16 @@ require_once __DIR__ . '/../src/Env.php';
 
 Env::load(__DIR__ . '/../.env');
 
-date_default_timezone_set(Env::get('APP_TIMEZONE', 'America/Argentina/Mendoza'));
+// Zona horaria de la aplicación: UTC-3, la misma que usa la plataforma de TTM
+// (confirmado por Emiliano, 02/10/2026). Si APP_TIMEZONE falta o viene con un
+// valor inválido (ya pasó una vez en el servicio del cron), PHP quedaba en UTC
+// y todas las horas se guardaban corridas 3 horas. Ahora, ante cualquier valor
+// inválido, se usa Mendoza.
+$zonaApp = trim((string) Env::get('APP_TIMEZONE', ''));
+if (!in_array($zonaApp, timezone_identifiers_list(), true)) {
+    $zonaApp = 'America/Argentina/Mendoza';
+}
+date_default_timezone_set($zonaApp);
 
 return [
 
@@ -34,6 +43,15 @@ return [
         // arregla el certificado del lado del servidor. Sacar esta bandera
         // (o dejarla en false) antes de ir a producción.
         'insecure_ssl_testing' => filter_var(Env::get('API_INSECURE_SSL_TESTING', 'false'), FILTER_VALIDATE_BOOLEAN),
+
+        // En qué zona horaria vienen las fechas de la API de TTM ("fecha_reporte")
+        // y en cuál espera el date_range de las consultas. Si no se configura,
+        // se asume la misma de la aplicación (APP_TIMEZONE). Si la API manda la
+        // hora del equipo en UTC (muy común en equipos GPS), poner "UTC": así
+        // las horas de las anomalías coinciden con las de la plataforma de TTM.
+        // scripts/diagnostico_hora.php dice cuál corresponde.
+        // Emiliano confirmó que TTM trabaja en UTC-3: por defecto, la de la aplicación.
+        'timezone' => Env::get('API_TIMEZONE', '') ?: date_default_timezone_get(),
 
         // API de EQUIPOS (flota completa con datos administrativos: cliente,
         // estado, capacidad de tanque, etc.) — confirmada por Emiliano el
@@ -65,6 +83,16 @@ return [
         'from'      => Env::get('SMTP_FROM', ''),
         'from_name' => Env::get('SMTP_FROM_NAME', 'Preciso - Alertas de Combustible'),
         'to'        => array_filter(array_map('trim', explode(',', Env::get('ALERT_EMAILS', '')))),
+    ],
+
+    // --- Notificación al cliente (botón "Notificar al cliente") ---
+    // MODO PRUEBA activado por defecto: el mail con el PDF NO le llega al
+    // cliente, le llega a NOTIFICAR_CLIENTE_EMAIL_PRUEBA (por ejemplo, el
+    // correo de Roberto), con una línea que dice a quién le habría llegado.
+    // Para mandarle de verdad al cliente: NOTIFICAR_CLIENTE_MODO_PRUEBA="false".
+    'notificacion_cliente' => [
+        'modo_prueba'  => filter_var(Env::get('NOTIFICAR_CLIENTE_MODO_PRUEBA', 'true'), FILTER_VALIDATE_BOOLEAN),
+        'email_prueba' => trim(Env::get('NOTIFICAR_CLIENTE_EMAIL_PRUEBA', '')),
     ],
 
     // --- Umbrales de detección de anomalías ---

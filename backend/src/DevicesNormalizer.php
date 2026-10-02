@@ -42,6 +42,11 @@ class DevicesNormalizer
                 'capacidad_litros'  => $capacidad > 0 ? $capacidad : null,
                 'diagnostico'       => $this->limpiar($d['diagnostico'] ?? null),
                 'servicio'          => $this->limpiar($d['servicio'] ?? null),
+                // Correo del cliente para "Notificar al cliente". Emiliano dice
+                // que viene en la API; como todavía no sabemos el nombre exacto
+                // del campo, pruebo los más comunes. Puede traer varios
+                // separados por coma o punto y coma.
+                'email_cliente'     => $this->primerCampo($d, ['email_cliente', 'mail_cliente', 'email', 'mail', 'emails', 'mails', 'correo', 'correos', 'email_notificaciones']),
                 // lat/lng no se guardan en la tabla equipos (esa tabla es
                 // datos administrativos, no telemetría) — se devuelven acá
                 // igual para que sincronizar_equipos.php los pueda usar al
@@ -61,5 +66,16 @@ class DevicesNormalizer
         }
         $valor = trim($valor);
         return $valor === '' ? null : $valor;
+    }
+
+    /** Devuelve el primer campo con dato de una lista de nombres posibles. */
+    private function primerCampo(array $d, array $nombres): ?string
+    {
+        foreach ($nombres as $n) {
+            if (isset($d[$n]) && is_scalar($d[$n]) && trim((string) $d[$n]) !== '') {
+                return trim((string) $d[$n]);
+            }
+        }
+        return null;
     }
 }
