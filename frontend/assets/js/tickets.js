@@ -25,13 +25,17 @@ async function initTickets() {
   document.getElementById('tkBuscar').addEventListener('input', pintarTabla);
   // Al validar/rechazar/etc. actualizo en memoria y redibujo (sin volver a
   // pedir toda la lista al servidor: eso era lo que tardaba segundos).
+  // (14/10/2026) Ya no redibujo la tabla entera (hasta 5000 filas): solo la
+  // fila tocada. Si el servidor devuelve error, recargo todo.
   window.addEventListener('preciso:revision', (ev) => {
-    if (!aplicarAccionLocal(ev.detail || {})) { cargarTickets(); return; }
+    const a = aplicarAccionLocal(ev.detail || {});
+    if (!a) { cargarTickets(); return; }
     const st = statsLocales();
     pintarIndicadores(st);
     pintarPestanas(st);
-    pintarTabla();
+    actualizarFila(a);
   });
+  window.addEventListener('preciso:revision-error', cargarTickets);
   const desdeUrl = new URLSearchParams(location.search).get('estado');
   if (desdeUrl && ESTADOS_TICKET[desdeUrl]) ESTADO_ACTIVO = desdeUrl;
   cargarTickets();
@@ -130,6 +134,25 @@ function pintarTabla() {
     </table>`;
   engancharTickets($t);
   $t.querySelectorAll('.tk-historial').forEach(b => b.addEventListener('click', () => verHistorial(b.dataset.id)));
+}
+
+/** Actualiza una sola fila después de una acción (o la saca si ya no corresponde a la pestaña). */
+function actualizarFila(a) {
+  const $fila = document.querySelector(`#tkTabla tr[data-id="${a.id}"]`);
+  if (!$fila) return;
+  const estado = a.estado_revision || 'pendiente';
+  if (ESTADO_ACTIVO !== 'todas' && estado !== ESTADO_ACTIVO) {
+    $fila.remove();
+    if (!document.querySelector('#tkTabla tr[data-id]')) {
+      document.getElementById('tkTabla').innerHTML = '<div class="empty-state">No hay tickets en este estado. 👍</div>';
+    }
+    return;
+  }
+  const $c = $fila.children;
+  $c[0].innerHTML = renderEstadoTicket(a);
+  const $acciones = $c[$c.length - 1].querySelector('.rev-botones');
+  $acciones.innerHTML = renderAccionesTicket(a);
+  engancharTickets($acciones);
 }
 
 /** Muestra (o esconde) el historial de un ticket: cada cambio de estado u observación con su fecha. */

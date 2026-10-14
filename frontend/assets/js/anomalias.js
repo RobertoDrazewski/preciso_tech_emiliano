@@ -11,6 +11,7 @@ async function init() {
   // Cuando se valida o descarta (acá o desde la campanita), recargo todo.
   // Al validar/rechazar/etc. actualizo solo esa fila (sin recargar todo).
   window.addEventListener('preciso:recalculo-terminado', cargarAnomalias);
+  window.addEventListener('preciso:revision-error', cargarAnomalias);
   window.addEventListener('preciso:revision', (ev) => {
     const a = aplicarAccionLocal(ev.detail || {});
     const $fila = a && document.querySelector(`#tablaAnomalias tr[data-id="${a.id}"]`);

@@ -7,7 +7,11 @@
  */
 
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
+// En la consola (scripts, cron) muestro los errores; en el servidor web no:
+// un warning de PHP en la respuesta puede mostrar rutas o datos internos.
+// Igual quedan en el log.
+ini_set('display_errors', PHP_SAPI === 'cli' ? '1' : '0');
+ini_set('log_errors', '1');
 
 define('BASE_PATH', __DIR__);
 
@@ -21,6 +25,8 @@ require_once BASE_PATH . '/src/Storage.php';
 require_once BASE_PATH . '/src/AnomalyDetector.php';
 require_once BASE_PATH . '/src/ReportBuilder.php';
 require_once BASE_PATH . '/src/SmtpMailer.php';
+require_once BASE_PATH . '/src/Auth.php';
+require_once BASE_PATH . '/src/SincronizadorFlota.php';
 
 $config = require BASE_PATH . '/config/config.php';
 $fieldMap = require BASE_PATH . '/config/field_map.php';

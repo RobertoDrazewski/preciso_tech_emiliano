@@ -26,7 +26,9 @@
 require_once __DIR__ . '/_bootstrap_api.php';
 
 const CLAVE_JOB = 'recalculo_job';
-const EQUIPOS_POR_TANDA = 5;
+// De a 2 (antes 5): cada tanda ocupa el servidor menos tiempo, así los clics
+// del operador (Rechazar, Notificar) no quedan esperando detrás del recálculo.
+const EQUIPOS_POR_TANDA = 2;
 const TIPOS_RECALCULABLES = ['descarga_detenido', 'caida_instantanea', 'consumo_anomalo', 'ralenti', 'variacion_temperatura',
                              'desconexion_sensor', 'corte_alimentacion', 'carga_no_coincide'];
 

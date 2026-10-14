@@ -92,7 +92,17 @@ return [
     // Para mandarle de verdad al cliente: NOTIFICAR_CLIENTE_MODO_PRUEBA="false".
     'notificacion_cliente' => [
         'modo_prueba'  => filter_var(Env::get('NOTIFICAR_CLIENTE_MODO_PRUEBA', 'true'), FILTER_VALIDATE_BOOLEAN),
-        'email_prueba' => trim(Env::get('NOTIFICAR_CLIENTE_EMAIL_PRUEBA', '')),
+        // Si no se configuró, las pruebas llegan al primer correo de ALERT_EMAILS.
+        'email_prueba' => trim(Env::get('NOTIFICAR_CLIENTE_EMAIL_PRUEBA', '')) ?: trim(explode(',', (string) Env::get('ALERT_EMAILS', ''))[0]),
+    ],
+
+    // --- Mail de alertas del cron (14/10/2026) ---
+    // Antes salía un mail por CADA anomalía nueva (cientos por día). Ahora
+    // sale un resumen cada tantas horas, solo con las pérdidas de combustible
+    // de cierto tamaño. Todo lo demás está en el panel.
+    'alertas' => [
+        'cada_horas'     => (float) Env::get('ALERTAS_CADA_HORAS', 4),
+        'litros_minimos' => (float) Env::get('ALERTAS_LITROS_MINIMOS', 30),
     ],
 
     // --- Umbrales de detección de anomalías ---

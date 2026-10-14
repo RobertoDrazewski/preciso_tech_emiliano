@@ -38,9 +38,7 @@
       const resp = await fetch(`${API()}/revision.php?limite=15`);
       const data = await resp.json();
       if (!resp.ok) return;
-      const n = data.pendientes || 0;
-      $numero.hidden = n === 0;
-      $numero.textContent = n > 99 ? '99+' : n;
+      pintarNumero(data.pendientes || 0);
       if (abierta) pintarPanel(data);
     } catch (e) {
       // Si falla, la campanita queda como estaba: no rompe la pantalla.
@@ -82,17 +80,42 @@
       observacion = prompt(pregunta, '');
       if (observacion === null) return; // tocó Cancelar
     }
+    // Al instante: la pantalla se actualiza YA y el guardado sigue de fondo
+    // (14/10/2026). Antes cada clic esperaba dos idas y vueltas al servidor
+    // y recién después se redibujaba: de ahí los segundos de espera.
+    ajustarNumeroLocal(id, accion);
+    window.dispatchEvent(new CustomEvent('preciso:revision', { detail: { id, accion, observacion } }));
     try {
       const resp = await fetch(`${API()}/revision.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, accion, observacion }),
       });
-      if (!resp.ok) throw new Error((await resp.json()).error || 'Error');
-      await cargar();
-      window.dispatchEvent(new CustomEvent('preciso:revision', { detail: { id, accion, observacion } }));
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || 'Error');
+      if (typeof data.pendientes === 'number') pintarNumero(data.pendientes);
     } catch (e) {
-      alert('No se pudo guardar el ticket: ' + e.message);
+      alert('No se pudo guardar el ticket: ' + e.message + '. Recargo la lista.');
+      window.dispatchEvent(new CustomEvent('preciso:revision-error', { detail: { id, accion } }));
+      cargar();
+    }
+  }
+
+  let numeroActual = 0;
+  function pintarNumero(n) {
+    numeroActual = Math.max(0, n);
+    $numero.hidden = numeroActual === 0;
+    $numero.textContent = numeroActual > 99 ? '99+' : numeroActual;
+  }
+
+  /** Ajusta el número de la campanita y saca el ticket del desplegable, sin esperar al servidor. */
+  function ajustarNumeroLocal(id, accion) {
+    const $item = $panel.querySelector(`.campana-item[data-id="${id}"]`);
+    if ($item && accion !== 'observacion' && accion !== 'cliente') $item.remove();
+    if (accion === 'notificar' || accion === 'rechazar') {
+      // Solo baja si el ticket estaba "por notificar" (desde la campanita
+      // siempre; desde otras pantallas lo confirma la respuesta del servidor).
+      if ($item) pintarNumero(numeroActual - 1);
     }
   }
 

@@ -42,12 +42,18 @@ try {
     $cfgNotif = $config['notificacion_cliente'];
     $modoPrueba = $cfgNotif['modo_prueba'];
 
+    // La API de equipos dice si el cliente quiere recibir avisos (SI/NO).
+    $noQuiereAvisos = strtoupper(trim((string) ($a['cliente_acepta_avisos'] ?? ''))) === 'NO';
+
     if ($modoPrueba) {
         if (!filter_var($cfgNotif['email_prueba'], FILTER_VALIDATE_EMAIL)) {
             jsonError('Estamos en modo prueba pero falta configurar NOTIFICAR_CLIENTE_EMAIL_PRUEBA (el correo donde llegan las pruebas).');
         }
         $destinatarios = [$cfgNotif['email_prueba']];
     } else {
+        if ($noQuiereAvisos) {
+            jsonError('Este cliente tiene las notificaciones desactivadas en TTM (notificaciones = NO). No se le envió nada.');
+        }
         if (!$reales) {
             jsonError('Este cliente no tiene correo cargado en la API de equipos de TTM.');
         }
@@ -61,7 +67,9 @@ try {
 
     $avisoPrueba = $modoPrueba
         ? '<p style="background:#fff3cd;padding:10px;border-radius:6px;"><b>MODO PRUEBA.</b> Este correo habría llegado a: <b>'
-          . ($reales ? $esc(implode(', ', $reales)) : 'el cliente no tiene correo cargado en la API') . '</b>.</p>'
+          . ($reales ? $esc(implode(', ', $reales)) : 'el cliente no tiene correo cargado en la API') . '</b>.'
+          . ($noQuiereAvisos ? ' <b>Ojo: este cliente tiene las notificaciones desactivadas en TTM, en modo real NO se le enviaría.</b>' : '')
+          . '</p>'
         : '';
     $html = $avisoPrueba . '
         <p>Estimado cliente:</p>

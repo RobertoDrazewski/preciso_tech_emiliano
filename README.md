@@ -488,6 +488,11 @@ servicio de PostgreSQL separado, no en el mismo contenedor del backend.
 | `ALERT_EMAILS` | Destinatarios de las alertas, separados por coma |
 | `FRONTEND_ORIGIN` | Origen permitido para CORS — el dominio del frontend en producción |
 | `APP_TIMEZONE` | Zona horaria de la aplicación |
+| `PANEL_USUARIO` / `PANEL_CLAVE` | Usuario y clave para entrar al panel (v3.6). Sin `PANEL_CLAVE`, el panel queda abierto |
+| `PANEL_SECRETO` | Opcional: texto largo al azar para firmar las sesiones |
+| `NOTIFICAR_CLIENTE_MODO_PRUEBA` | `"true"` (por defecto): el PDF de "Notificar al cliente" no le llega al cliente |
+| `NOTIFICAR_CLIENTE_EMAIL_PRUEBA` | Dónde llegan las pruebas (si está vacío, al primer correo de `ALERT_EMAILS`) |
+| `ALERTAS_CADA_HORAS` / `ALERTAS_LITROS_MINIMOS` | Resumen de alertas por mail: cada cuántas horas y desde cuántos litros (4 h y 30 L por defecto) |
 
 Ver `backend/.env.example` para la plantilla completa.
 

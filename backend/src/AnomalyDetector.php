@@ -79,6 +79,12 @@ class AnomalyDetector
 
         $confirmadas = $this->caidasConfirmadas($lecturas, $ahora);
 
+        // Descargas LENTAS con el vehículo parado (14/10/2026): sumo las caídas
+        // seguidas en un solo evento. Comparando solo lectura contra lectura,
+        // un robo de 120 L en una hora (10 L cada 5 minutos) no aparecía,
+        // porque cada paso quedaba debajo del mínimo.
+        $tramos = $esEstacionario ? [] : $this->tramosDescargaDetenido($lecturas, $ahora);
+
         // Historial de tasas (L/min) SOLO de caídas ya confirmadas como
         // reales (sin rebotes de pendiente), para que el z-score no se
         // "acostumbre" a ruido de sensor y pierda sensibilidad.
@@ -97,7 +103,25 @@ class AnomalyDetector
         $usarZScore = count($tasas) >= $this->cfg['min_history_points'] && $desvio > 0;
 
         $anomalias = [];
+        foreach ($tramos as $t) {
+            $anomalias[] = $this->construir(
+                $equipo, $t['fin'], 'descarga_detenido',
+                sprintf(
+                    'Vehículo detenido perdió %.1f L de forma sostenida entre %s y %s (%s, %.1f L/min promedio, en %d bajadas seguidas), sin recuperarse.',
+                    $t['litros'], $this->horaCorta($t['inicio'], $t['fin']), $this->horaCorta($t['fin'], $t['inicio']),
+                    $this->textoDuracion($t['minutos']), $t['litros'] / max(1, $t['minutos']), $t['pasos']
+                ),
+                $t['litros'], null, $t['lat'], $t['lng']
+            );
+        }
         foreach ($confirmadas as $c) {
+            // Si esta caída es parte de una descarga lenta ya reportada, no la
+            // repito suelta.
+            foreach ($tramos as $t) {
+                if ($c['fecha'] > $t['inicio'] && $c['fecha'] <= $t['fin']) {
+                    continue 2;
+                }
+            }
             $tasaPorMinuto = $c['litros_perdidos'] / $c['minutos'];
             $notaVariacion = $c['variacion_detectada']
                 ? ' El dispositivo también marcó una variación en ese momento (campo "variacion"), lo que corrobora el evento.'
@@ -205,6 +229,11 @@ class AnomalyDetector
         // pérdida de combustible, es un aviso de que ese sensor no es
         // confiable. Ver deteccionTemperaturaNivel() más abajo.
         foreach ($this->deteccionTemperaturaNivel($lecturas) as $a) {
+            // Es un aviso sobre el sensor, no un evento: si ya se avisó en la
+            // última semana (en cualquier estado), no lo repito cada día.
+            if ($this->storage->existeAnomaliaDeTipoDesde($equipo, 'variacion_temperatura', $a['fecha']->modify('-7 days'), $a['fecha'])) {
+                continue;
+            }
             $anomalias[] = $a;
         }
 
@@ -594,9 +623,10 @@ class AnomalyDetector
         $coefDilatacion = $this->cfg['temp_coef_dilatacion'] ?? 0.00083;
 
         // 1. Solo quieto, con los dos datos válidos.
+        $velMax = $this->cfg['detenido_velocidad_max_kmh'] ?? 1.0;
         $puntos = [];
         foreach ($lecturas as $l) {
-            if ((float) $l['velocidad'] !== 0.0) {
+            if ((float) $l['velocidad'] > $velMax) {
                 continue;
             }
             if (($l['temp_tanque'] ?? null) === null || $l['combustible_litros'] === null) {
@@ -717,6 +747,7 @@ class AnomalyDetector
         $combustibleInicio = null;
         $combustibleUltimo = null;
         $maxHueco = $this->cfg['max_gap_minutos'] ?? 30;
+        $velMaxRalenti = $this->cfg['detenido_velocidad_max_kmh'] ?? 1.0;
         $anterior = null;
 
         foreach ($lecturas as $l) {
@@ -737,7 +768,10 @@ class AnomalyDetector
             }
             $anterior = $l;
 
-            $enRalenti = $l['motor_encendido'] === true && (float) $l['velocidad'] === 0.0;
+            // Detenido = velocidad hasta el umbral de "detenido" (1 km/h), no
+            // exactamente 0: el GPS de un camión parado marca 0,1-0,3 km/h todo
+            // el tiempo, y con eso cada ralentí se cortaba en pedacitos.
+            $enRalenti = $l['motor_encendido'] === true && (float) $l['velocidad'] <= $velMaxRalenti;
 
             if ($enRalenti) {
                 if ($inicioBloque === null) {
@@ -926,6 +960,140 @@ class AnomalyDetector
     }
 
     /**
+     * Descargas lentas con el vehículo detenido (14/10/2026).
+     *
+     * Recorro las lecturas con combustible y armo "tramos de bajada": una
+     * serie de lecturas seguidas, con el vehículo quieto, en la que el nivel
+     * va bajando. El tramo se corta si:
+     *   - el vehículo se movió, o hubo un hueco sin datos, o un corte de
+     *     alimentación (eso lo analiza deteccionCortesAlimentacion);
+     *   - el nivel volvió a subir más de 'carga_tolerancia_meseta_litros'
+     *     (ruido normal del sensor, 3 L);
+     *   - pasaron más de 15 minutos sin que siga bajando (una pérdida de 1 L
+     *     cada tanto por el frío de la noche no arma un tramo).
+     * Lo reporto si en total perdió al menos 'stopped_drop_liters_threshold'
+     * en DOS o más bajadas (una sola bajada grande ya la agarra la regla
+     * lectura contra lectura), a un ritmo físicamente posible, y si después
+     * del tramo el nivel no se recuperó (misma ventana y fracción que las
+     * demás caídas). Solo tramos ya cerrados y con la ventana vencida, así el
+     * cron no reporta el mismo tramo dos veces con distinto final.
+     */
+    private function tramosDescargaDetenido(array $lecturas, DateTimeInterface $ahora): array
+    {
+        $umbral = (float) ($this->cfg['stopped_drop_liters_threshold'] ?? 15.0);
+        $tolerancia = (float) ($this->cfg['carga_tolerancia_meseta_litros'] ?? 3.0);
+        $maxHueco = (float) ($this->cfg['max_gap_minutos'] ?? 30);
+        $tasaMaxima = (float) ($this->cfg['tasa_maxima_fisica_lpm'] ?? 150.0);
+        $ventanaMin = (int) ($this->cfg['recovery_window_minutes'] ?? 20);
+        $fraccion = (float) ($this->cfg['recovery_min_fraction'] ?? 0.7);
+        $maxSinBajar = 15 * 60;
+
+        $con = array_values(array_filter($lecturas, fn($l) => $l['combustible_litros'] !== null));
+        $cortes = [];
+        foreach ($lecturas as $l) {
+            if (in_array($l['evento'] ?? null, ['POWOFF', 'POWON'], true)) {
+                $cortes[] = $l['fecha'];
+            }
+        }
+
+        $tramos = [];
+        $t = null; // tramo en curso
+        $cerrar = function () use (&$t, &$tramos, $umbral) {
+            if ($t !== null && $t['pasos'] >= 2 && ($t['inicioNivel'] - $t['minNivel']) >= $umbral) {
+                $tramos[] = $t;
+            }
+            $t = null;
+        };
+
+        $n = count($con);
+        for ($i = 1; $i < $n; $i++) {
+            $prev = $con[$i - 1];
+            $cur = $con[$i];
+            $seg = $cur['fecha']->getTimestamp() - $prev['fecha']->getTimestamp();
+            $cruzaCorte = false;
+            foreach ($cortes as $f) {
+                if ($f > $prev['fecha'] && $f <= $cur['fecha']) {
+                    $cruzaCorte = true;
+                    break;
+                }
+            }
+            // Con el motor prendido el nivel baja por consumo (eso es ralentí, otra
+            // regla): acá solo cuento con el motor apagado.
+            $valido = $seg > 0 && $seg / 60 <= $maxHueco && !$cruzaCorte && $this->estabaDetenido($prev, $cur)
+                && empty($prev['motor_encendido']) && empty($cur['motor_encendido']);
+            if (!$valido) {
+                $cerrar();
+                continue;
+            }
+            $delta = $prev['combustible_litros'] - $cur['combustible_litros']; // > 0 = bajó
+            if ($delta > 0 && $delta / ($seg / 60) > $tasaMaxima) {
+                // Salto imposible para una bomba: es el sensor (desconexión),
+                // lo informa la regla de siempre. No lo mezclo en un tramo.
+                $cerrar();
+                continue;
+            }
+            if ($t === null) {
+                if ($delta >= 1.0) {
+                    $t = [
+                        'inicio' => $prev['fecha'], 'inicioNivel' => $prev['combustible_litros'],
+                        'fin' => $cur['fecha'], 'minNivel' => $cur['combustible_litros'],
+                        'ultimaBajada' => $cur['fecha'], 'pasos' => 1,
+                        'lat' => $cur['lat'], 'lng' => $cur['lng'],
+                    ];
+                }
+                continue;
+            }
+            if ($cur['combustible_litros'] > $t['minNivel'] + $tolerancia) {
+                $cerrar(); // volvió a subir: se terminó (o era ruido)
+                continue;
+            }
+            if ($cur['combustible_litros'] < $t['minNivel'] - 0.5) {
+                $t['minNivel'] = $cur['combustible_litros'];
+                $t['fin'] = $cur['fecha'];
+                $t['ultimaBajada'] = $cur['fecha'];
+                $t['pasos']++;
+                $t['lat'] = $cur['lat'] ?? $t['lat'];
+                $t['lng'] = $cur['lng'] ?? $t['lng'];
+            } elseif ($cur['fecha']->getTimestamp() - $t['ultimaBajada']->getTimestamp() > $maxSinBajar) {
+                $cerrar(); // dejó de bajar: el tramo terminó en la última bajada
+            }
+        }
+        // Un tramo que sigue abierto al final de los datos todavía no terminó:
+        // lo veo en la próxima corrida.
+
+        $out = [];
+        foreach ($tramos as $tr) {
+            $litros = $tr['inicioNivel'] - $tr['minNivel'];
+            $minutos = ($tr['fin']->getTimestamp() - $tr['inicio']->getTimestamp()) / 60;
+            if ($minutos <= 0 || $litros / $minutos > $tasaMaxima) {
+                continue;
+            }
+            $finVentana = $tr['fin']->modify("+{$ventanaMin} minutes");
+            if ($finVentana > $ahora) {
+                continue; // todavía no sé si se recupera
+            }
+            $mejor = $tr['minNivel'];
+            foreach ($con as $l) {
+                if ($l['fecha'] > $tr['fin'] && $l['fecha'] <= $finVentana) {
+                    $mejor = max($mejor, $l['combustible_litros']);
+                }
+            }
+            if (($mejor - $tr['minNivel']) / $litros >= $fraccion) {
+                continue; // se recuperó: pendiente o ruido
+            }
+            $out[] = ['inicio' => $tr['inicio'], 'fin' => $tr['fin'], 'litros' => $litros, 'minutos' => $minutos,
+                      'pasos' => $tr['pasos'], 'lat' => $tr['lat'], 'lng' => $tr['lng']];
+        }
+        return $out;
+    }
+
+    /** "14:05", o "13/10 23:50" si el otro extremo es de otro día. */
+    private function horaCorta(DateTimeInterface $f, DateTimeInterface $otra): string
+    {
+        return $f->format('Y-m-d') === $otra->format('Y-m-d') ? $f->format('H:i') : $f->format('d/m H:i');
+    }
+
+    /**
      * ¿El vehículo estaba realmente quieto entre estas dos lecturas?
      *
      * Antes usaba solo el campo "movimiento" de la API, pero no es
@@ -967,9 +1135,9 @@ class AnomalyDetector
         if (!$info) {
             return false;
         }
-        $texto = strtolower(($info['tipo'] ?? '') . ' ' . ($info['nombre'] ?? ''));
+        $texto = mb_strtolower(($info['tipo'] ?? '') . ' ' . ($info['nombre'] ?? ''), 'UTF-8');
         foreach ($this->cfg['palabras_equipo_estacionario'] ?? [] as $palabra) {
-            if ($palabra !== '' && strpos($texto, strtolower($palabra)) !== false) {
+            if ($palabra !== '' && strpos($texto, mb_strtolower($palabra, 'UTF-8')) !== false) {
                 return true;
             }
         }

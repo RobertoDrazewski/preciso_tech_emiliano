@@ -25,7 +25,7 @@ class Storage
      * digan lo mismo.
      */
     /** Subir este número cuando se agregue una migración (columna, índice, tabla). */
-    private const ESQUEMA_VERSION = 'v3.5';
+    private const ESQUEMA_VERSION = 'v3.6';
 
     public const TIPOS_MERMA = ['descarga_detenido', 'caida_instantanea', 'corte_alimentacion', 'carga_no_coincide', 'desconexion_sensor'];
 
@@ -81,6 +81,7 @@ class Storage
             'CREATE INDEX IF NOT EXISTS idx_anomalias_estado ON anomalias (estado_revision)',
             'CREATE INDEX IF NOT EXISTS idx_ticket_eventos_anomalia ON ticket_eventos (anomalia_id)',
             'CREATE INDEX IF NOT EXISTS idx_equipos_activo ON equipos (activo)',
+            'CREATE INDEX IF NOT EXISTS idx_anomalias_alertado ON anomalias (alertado)',
         ];
         foreach ($indices as $sql) {
             $this->pdo->exec($sql);
@@ -208,6 +209,8 @@ class Storage
             'servicio'          => 'TEXT',
             // Correo del cliente para "Notificar al cliente" (viene de la API de equipos).
             'email_cliente'     => 'TEXT',
+            // SI/NO de la API de equipos: si el cliente quiere recibir avisos.
+            'notificaciones'    => 'TEXT',
         ];
         foreach ($nuevasEquipos as $columna => $tipo) {
             if (!in_array($columna, $columnasEquipos, true)) {
@@ -426,7 +429,7 @@ class Storage
             return 0;
         }
 
-        $campos = ['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros', 'diagnostico', 'servicio'];
+        $campos = ['cliente', 'estado_raw', 'tipo', 'marca', 'modelo', 'capacidad_litros', 'diagnostico', 'servicio', 'notificaciones'];
         $ahora = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 
         $this->pdo->beginTransaction();
@@ -437,7 +440,7 @@ class Storage
                 $estadoRaw = $eq['estado_raw'] ?? null;
                 $activo = $estadoRaw === null ? 1 : ($estadoRaw === 'ACTIVO' ? 1 : 0);
 
-                $filas[] = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                $filas[] = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
                 $valores[] = (string) $eq['id'];
                 $valores[] = (string) $eq['nombre'];
                 $valores[] = $activo;
@@ -449,7 +452,7 @@ class Storage
             }
 
             $sql = '
-                INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, creado_en, actualizado_en)
+                INSERT INTO equipos (id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, notificaciones, creado_en, actualizado_en)
                 VALUES ' . implode(', ', $filas) . '
                 ON CONFLICT(id) DO UPDATE SET
                 nombre = excluded.nombre,
@@ -467,6 +470,7 @@ class Storage
                 capacidad_litros = COALESCE(excluded.capacidad_litros, equipos.capacidad_litros),
                 diagnostico = CASE WHEN excluded.estado_raw IS NULL THEN equipos.diagnostico ELSE excluded.diagnostico END,
                 servicio = COALESCE(excluded.servicio, equipos.servicio),
+                notificaciones = COALESCE(excluded.notificaciones, equipos.notificaciones),
                 actualizado_en = excluded.actualizado_en
             ';
             $stmt = $this->pdo->prepare($sql);
@@ -514,7 +518,7 @@ class Storage
 
     public function equipoPorId(string $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, email_cliente FROM equipos WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, nombre, activo, cliente, estado_raw, tipo, marca, modelo, capacidad_litros, diagnostico, servicio, email_cliente, notificaciones FROM equipos WHERE id = :id LIMIT 1');
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -819,6 +823,109 @@ class Storage
     }
 
     /**
+     * ¿Ya hay alguna anomalía de este tipo para el equipo entre esas fechas
+     * (en cualquier estado, también rechazada)? Para avisos que describen un
+     * estado y no un instante (agua según TTM, sensor afectado por la
+     * temperatura): si el operador ya lo vio, no se lo repito todos los días.
+     */
+    public function existeAnomaliaDeTipoDesde(string $equipo, string $tipo, DateTimeInterface $desde, ?DateTimeInterface $antesDe = null): bool
+    {
+        $sql = 'SELECT id FROM anomalias WHERE equipo = :equipo AND tipo = :tipo AND fecha >= :desde';
+        $params = [':equipo' => $equipo, ':tipo' => $tipo, ':desde' => $desde->format(DateTimeInterface::ATOM)];
+        if ($antesDe !== null) {
+            $sql .= ' AND fecha < :antes';
+            $params[':antes'] = $antesDe->format(DateTimeInterface::ATOM);
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+        return $stmt->fetch() !== false;
+    }
+
+    /**
+     * Anomalías todavía no incluidas en ningún mail de alerta, de equipos
+     * activos, con el nombre del equipo. Para el resumen de alertas del cron.
+     */
+    public function anomaliasSinAlertar(int $limite = 5000): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT a.*, e.nombre AS equipo_nombre, e.cliente AS equipo_cliente
+            FROM anomalias a JOIN equipos e ON e.id = a.equipo AND e.activo = 1
+            WHERE a.alertado = 0
+            ORDER BY a.fecha DESC
+            LIMIT :limite
+        ');
+        $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Marca como ya alertadas TODAS las anomalías pendientes de alerta. */
+    public function marcarTodasAlertadas(): int
+    {
+        return $this->pdo->exec('UPDATE anomalias SET alertado = 1 WHERE alertado = 0') ?: 0;
+    }
+
+    /**
+     * Pasa a hora de la aplicación (UTC-3) las fechas que hayan quedado
+     * guardadas con otra zona (por ejemplo "+00:00", cuando el cron arrancó
+     * con APP_TIMEZONE inválido). Las fechas se guardan como texto, así que
+     * "12:00-03:00" y "15:00+00:00" (el mismo instante) eran para la base
+     * dos lecturas distintas: quedaban duplicadas y los filtros por fecha
+     * comparaban mal. Si la versión corregida ya existe, la repetida se borra.
+     *
+     * Devuelve [corregidas, borradas_por_duplicadas]. $soloContar = true no
+     * cambia nada, solo cuenta.
+     */
+    public function normalizarFechas(string $tabla, bool $soloContar = false): array
+    {
+        if (!in_array($tabla, ['lecturas', 'anomalias'], true)) {
+            throw new InvalidArgumentException('Tabla no válida');
+        }
+        $zona = new DateTimeZone(date_default_timezone_get());
+        $sufijo = (new DateTimeImmutable('now', $zona))->format('P'); // "-03:00"
+        $sel = $this->pdo->prepare("SELECT id, equipo, fecha FROM {$tabla} WHERE fecha NOT LIKE :suf ORDER BY id LIMIT 2000");
+        if ($soloContar) {
+            $c = $this->pdo->prepare("SELECT COUNT(*) AS c FROM {$tabla} WHERE fecha NOT LIKE :suf");
+            $c->execute([':suf' => '%' . $sufijo]);
+            return [(int) $c->fetch(PDO::FETCH_ASSOC)['c'], 0];
+        }
+        $upd = $this->pdo->prepare("UPDATE {$tabla} SET fecha = :f WHERE id = :id");
+        $del = $this->pdo->prepare("DELETE FROM {$tabla} WHERE id = :id");
+        $existe = $this->pdo->prepare('SELECT id FROM lecturas WHERE equipo = :e AND fecha = :f LIMIT 1');
+        $corregidas = 0;
+        $borradas = 0;
+        while (true) {
+            $sel->execute([':suf' => '%' . $sufijo]);
+            $filas = $sel->fetchAll(PDO::FETCH_ASSOC);
+            if (!$filas) {
+                break;
+            }
+            $this->pdo->beginTransaction();
+            foreach ($filas as $f) {
+                try {
+                    $nueva = (new DateTimeImmutable($f['fecha']))->setTimezone($zona)->format(DateTimeInterface::ATOM);
+                } catch (Exception $e) {
+                    $del->execute([':id' => $f['id']]); // fecha ilegible: no sirve para nada
+                    $borradas++;
+                    continue;
+                }
+                if ($tabla === 'lecturas') {
+                    $existe->execute([':e' => $f['equipo'], ':f' => $nueva]);
+                    if ($existe->fetch() !== false) {
+                        $del->execute([':id' => $f['id']]);
+                        $borradas++;
+                        continue;
+                    }
+                }
+                $upd->execute([':f' => $nueva, ':id' => $f['id']]);
+                $corregidas++;
+            }
+            $this->pdo->commit();
+        }
+        return [$corregidas, $borradas];
+    }
+
+    /**
      * Para señales que no tienen un instante puntual (como diagnostico=AGUA
      * de la API de equipos, que es un estado ACTUAL, no una lectura con
      * fecha) — evita crear una anomalía nueva en cada sincronización
@@ -960,7 +1067,7 @@ class Storage
     public function anomaliaPorId(int $id): ?array
     {
         $stmt = $this->pdo->prepare('
-            SELECT a.*, e.nombre AS equipo_nombre, e.cliente AS equipo_cliente, e.email_cliente
+            SELECT a.*, e.nombre AS equipo_nombre, e.cliente AS equipo_cliente, e.email_cliente, e.notificaciones AS cliente_acepta_avisos
             FROM anomalias a LEFT JOIN equipos e ON e.id = a.equipo
             WHERE a.id = :id
         ');

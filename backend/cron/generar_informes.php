@@ -24,7 +24,9 @@ $hasta = new DateTimeImmutable('today'); // medianoche de hoy
 $desde = $hasta->modify('-1 day');       // medianoche de ayer -> informe del día completo de ayer
 
 $equipos = $storage->listarEquipos();
-$anomaliasDelDia = $storage->anomaliasFlota($desde, $hasta, null, null, 2000);
+// Ojo: antes el 2000 caía en el parámetro "cliente" (filtraba por un cliente
+// llamado "2000") y el resumen diario salía siempre vacío. Con nombre, no pasa.
+$anomaliasDelDia = $storage->anomaliasFlota($desde, $hasta, limite: 2000);
 
 // Agrupamos las anomalías por equipo para el resumen.
 $anomaliasPorEquipo = [];
@@ -53,7 +55,7 @@ function construirResumenDiario(DateTimeImmutable $fecha, array $anomaliasPorEqu
 {
     $filas = '';
     foreach ($anomaliasPorEquipo as $equipoId => $anomalias) {
-        $nombre = $nombresPorEquipo[$equipoId] ?? $equipoId;
+        $nombre = htmlspecialchars((string) ($nombresPorEquipo[$equipoId] ?? $equipoId), ENT_QUOTES, 'UTF-8');
         $litrosTotal = array_sum(array_column($anomalias, 'litros_perdidos'));
         $filas .= "<tr>
             <td style='padding:8px; border-bottom:1px solid #e5e9f0;'>{$nombre}</td>

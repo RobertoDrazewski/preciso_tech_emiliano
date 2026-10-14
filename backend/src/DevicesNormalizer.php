@@ -42,6 +42,8 @@ class DevicesNormalizer
                 'capacidad_litros'  => $capacidad > 0 ? $capacidad : null,
                 'diagnostico'       => $this->limpiar($d['diagnostico'] ?? null),
                 'servicio'          => $this->limpiar($d['servicio'] ?? null),
+                // SI/NO: si el cliente quiere recibir avisos ("Notificar al cliente" lo respeta).
+                'notificaciones'    => $this->limpiar(isset($d['notificaciones']) ? strtoupper((string) $d['notificaciones']) : null),
                 // Correo del cliente para "Notificar al cliente". Emiliano dice
                 // que viene en la API; como todavía no sabemos el nombre exacto
                 // del campo, pruebo los más comunes. Puede traer varios

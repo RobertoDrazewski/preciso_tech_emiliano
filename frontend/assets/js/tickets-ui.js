@@ -70,7 +70,7 @@ function engancharTickets($root) {
     // Si el operador escribe y toca un botón directo, el botón ya manda la
     // observación: marco que hay una acción en curso para que el guardado
     // automático no la registre dos veces en el historial.
-    btn.addEventListener('mousedown', () => { $root.dataset.accionEnCurso = btn.dataset.id; });
+    btn.addEventListener('mousedown', () => { window.__accionEnCurso = btn.dataset.id; });
     btn.addEventListener('click', (ev) => {
       ev.stopPropagation();
       const id = Number(btn.dataset.id);
@@ -87,7 +87,7 @@ function engancharTickets($root) {
     $t.addEventListener('click', ev => ev.stopPropagation());
     $t.addEventListener('blur', async () => {
       if ($t.value === original) return;
-      if ($root.dataset.accionEnCurso === $t.dataset.id) { delete $root.dataset.accionEnCurso; return; }
+      if (window.__accionEnCurso === $t.dataset.id) { window.__accionEnCurso = null; return; }
       const $estado = $root.querySelector(`.tk-obs-estado[data-id="${$t.dataset.id}"]`);
       try {
         const r = await fetch(`${window.PRECISO_CONFIG.API_BASE}/revision.php`, {

@@ -78,7 +78,8 @@
         }
         if (!e.activo) { if (e.terminado) avisarFin(e); return; }
         pintar(e);
-        await new Promise(r => setTimeout(r, e.ocupado ? 4000 : 150));
+        // Pausa entre tandas (antes 150 ms): deja lugar a los clics del operador.
+        await new Promise(r => setTimeout(r, e.ocupado ? 4000 : 1200));
       }
     } finally {
       corriendo = false;

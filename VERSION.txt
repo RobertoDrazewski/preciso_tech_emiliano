@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-10-02 v3.5 (tickets)
+Versión: 2026-10-14 v3.6 (entrega)
 Desarrollado por Puma Code
 
 Incluye:
@@ -37,5 +37,16 @@ Incluye:
   migraciones una sola vez, acciones sin recargar); horas fijas en UTC-3;
   "Notificar al cliente" con PDF por mail (modo prueba); recalcular anomalías
   por tipo desde la ventana de umbrales, en segundo plano con barra de avance
+
+- v3.6: ingreso con usuario y clave (PANEL_USUARIO / PANEL_CLAVE); Rechazar y
+  Notificar instantáneos (se guarda de fondo, se actualiza solo la fila);
+  descargas lentas con el vehículo detenido (se suman las bajadas seguidas);
+  ralentí y temperatura con tolerancia del GPS (hasta 1 km/h); resumen de
+  alertas por mail cada 4 h en vez de un mail por anomalía; resumen diario
+  arreglado (salía siempre vacío); el cron pide desde la última lectura y
+  sincroniza la flota una vez por día; "Notificar al cliente" respeta
+  notificaciones=NO; aviso de temperatura sin repetirse todos los días;
+  scripts/revisar_fechas.php para fechas con otra zona horaria; recálculo
+  más liviano; sin errores de PHP en las respuestas
 
 Para confirmar que tenés esta versión:  cat VERSION.txt
