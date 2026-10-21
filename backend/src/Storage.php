@@ -273,6 +273,21 @@ class Storage
         }
     }
 
+    /**
+     * Acceso directo a la conexión, SOLO para los scripts de mantenimiento
+     * (exportar / importar datos). El resto del sistema usa los métodos de
+     * esta clase.
+     */
+    public function pdo(): PDO
+    {
+        return $this->pdo;
+    }
+
+    public function driver(): string
+    {
+        return $this->driver;
+    }
+
     /** Umbrales guardados desde la pantalla (clave => número). */
     public function parametrosGuardados(): array
     {
@@ -1088,10 +1103,15 @@ class Storage
     /** Guarda los correos de los clientes que trae la API de equipos. */
     public function actualizarEmailsClientes(array $emailsPorEquipo): void
     {
+        // Reemplazo completo: si un cliente dejó de tener correo (o se sacó
+        // del archivo), no queda el viejo guardado.
+        $this->pdo->beginTransaction();
+        $this->pdo->exec('UPDATE equipos SET email_cliente = NULL WHERE email_cliente IS NOT NULL');
         $stmt = $this->pdo->prepare('UPDATE equipos SET email_cliente = :e WHERE id = :id');
         foreach ($emailsPorEquipo as $id => $email) {
             $stmt->execute([':e' => $email, ':id' => (string) $id]);
         }
+        $this->pdo->commit();
     }
 
     /**

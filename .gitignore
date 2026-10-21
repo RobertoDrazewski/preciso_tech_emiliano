@@ -1,7 +1,10 @@
 backend/.env
+.env
 backend/storage/*.sqlite
 backend/storage/*.sqlite-journal
 backend/storage/*.sqlite-shm
 backend/storage/*.sqlite-wal
+backend/storage/exportacion/
+backend/data/emails_clientes.json
 *.log
 .DS_Store

@@ -1,0 +1,5 @@
+{
+  "_comentario": "Copiar este archivo como emails_clientes.json (misma carpeta) y completar. La clave es el nombre del cliente EXACTAMENTE como figura en TTM (campo 'cliente' de get_devices.php; no importan mayúsculas). El valor, uno o varios correos separados por coma. Se usa solo para los equipos a los que la API de equipos no les manda correo. Después correr: php scripts/sincronizar_equipos.php",
+  "Transporte Ejemplo S.A.": "flota@ejemplo.com.ar",
+  "Otro Cliente SRL": "jefe.flota@otrocliente.com, administracion@otrocliente.com"
+}

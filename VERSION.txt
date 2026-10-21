@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-10-14 v3.6 (entrega)
+Versión: 2026-10-21 v3.7 (entrega final)
 Desarrollado por Puma Code
 
 Incluye:
@@ -48,5 +48,12 @@ Incluye:
   notificaciones=NO; aviso de temperatura sin repetirse todos los días;
   scripts/revisar_fechas.php para fechas con otra zona horaria; recálculo
   más liviano; sin errores de PHP en las respuestas
+
+- v3.7 (entrega final): docker-compose.yml para instalar todo (Postgres,
+  backend, frontend y cron) con un comando; cron/programador.php para correr
+  el cron sin crontab; scripts/exportar_datos.php e importar_datos.php para
+  mudar anomalías, tickets e historial entre instalaciones; correo del
+  cliente con nombre de campo configurable (DEVICES_CAMPO_EMAIL) o desde
+  data/emails_clientes.json; el resumen diario no se repite si se reinicia
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

@@ -20,7 +20,7 @@ class SincronizadorFlota
         $client = new DevicesApiClient($config['api']);
         $crudos = $client->getDevices();
 
-        $equipos = (new DevicesNormalizer())->normalize($crudos);
+        $equipos = (new DevicesNormalizer($config['api']['devices_campo_email'] ?? ''))->normalize($crudos);
         $log[] = 'Recibidos ' . count($equipos) . ' equipos de la API.';
 
         $n = $storage->upsertEquiposMasivo($equipos);
@@ -32,10 +32,26 @@ class SincronizadorFlota
                 $emails[$eq['id']] = $eq['email_cliente'];
             }
         }
+        // Alternativa mientras la API no traiga los correos: el archivo
+        // data/emails_clientes.json, con el correo de cada CLIENTE (por
+        // nombre, igual que en TTM). Se usa solo para los equipos a los que
+        // la API no les mandó correo: si la API lo trae, manda la API.
+        $porCliente = self::emailsDesdeArchivo(BASE_PATH . '/data/emails_clientes.json');
+        $desdeArchivo = 0;
+        if ($porCliente) {
+            foreach ($equipos as $eq) {
+                $cliente = mb_strtolower(trim((string) ($eq['cliente'] ?? '')), 'UTF-8');
+                if (empty($emails[$eq['id']]) && $cliente !== '' && isset($porCliente[$cliente])) {
+                    $emails[$eq['id']] = $porCliente[$cliente];
+                    $desdeArchivo++;
+                }
+            }
+        }
+
         $storage->actualizarEmailsClientes($emails);
         $log[] = count($emails) > 0
-            ? 'Correos de cliente encontrados en la API: ' . count($emails) . ' equipos.'
-            : 'La API de equipos no trajo correos de cliente (revisar con TTM el nombre del campo).';
+            ? 'Correos de cliente: ' . count($emails) . ' equipos (' . (count($emails) - $desdeArchivo) . ' desde la API, ' . $desdeArchivo . ' desde data/emails_clientes.json).'
+            : 'Sin correos de cliente: la API de equipos no los trae y no hay data/emails_clientes.json (ver DEVICES_CAMPO_EMAIL).';
 
         $activos = count(array_filter($equipos, fn($e) => ($e['estado_raw'] ?? '') === 'ACTIVO'));
         $log[] = "Listo: {$n} equipos sincronizados ({$activos} activos, " . ($n - $activos) . ' inactivos/suspendidos).';
@@ -75,5 +91,34 @@ class SincronizadorFlota
 
         $storage->setEstado('ultima_sync_equipos', (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
         return $log;
+    }
+
+    /**
+     * Lee data/emails_clientes.json: { "Nombre del cliente": "a@x.com, b@x.com", ... }
+     * Devuelve [nombre en minúsculas => correos]. Si el archivo no está o
+     * está mal armado, devuelve [] (y lo aviso en el log, sin cortar nada).
+     */
+    public static function emailsDesdeArchivo(string $ruta): array
+    {
+        if (!is_file($ruta)) {
+            return [];
+        }
+        $datos = json_decode((string) file_get_contents($ruta), true);
+        if (!is_array($datos)) {
+            error_log("[SincronizadorFlota] {$ruta} no es un JSON válido, lo ignoro.");
+            return [];
+        }
+        $out = [];
+        foreach ($datos as $cliente => $correos) {
+            if (str_starts_with((string) $cliente, '_')) {
+                continue; // claves que empiezan con "_" son comentarios
+            }
+            $lista = is_array($correos) ? $correos : preg_split('/[\s,;]+/', (string) $correos);
+            $validos = array_values(array_filter(array_map('trim', $lista), fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL)));
+            if ($validos) {
+                $out[mb_strtolower(trim((string) $cliente), 'UTF-8')] = implode(', ', $validos);
+            }
+        }
+        return $out;
     }
 }

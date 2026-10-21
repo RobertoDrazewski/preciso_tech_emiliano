@@ -18,6 +18,21 @@
  */
 class DevicesNormalizer
 {
+    /** Nombres de campo que pruebo para el correo del cliente, en este orden. */
+    private const CAMPOS_EMAIL_COMUNES = ['email_cliente', 'mail_cliente', 'email', 'mail', 'emails', 'mails', 'correo', 'correos', 'email_notificaciones'];
+
+    private array $camposEmail;
+
+    /**
+     * @param string $campoEmail nombre exacto del campo del correo en la API
+     *   (config api.devices_campo_email / variable DEVICES_CAMPO_EMAIL). Si
+     *   viene vacío, pruebo los nombres comunes.
+     */
+    public function __construct(string $campoEmail = '')
+    {
+        $this->camposEmail = $campoEmail !== '' ? [$campoEmail] : self::CAMPOS_EMAIL_COMUNES;
+    }
+
     public function normalize(array $rawDevices): array
     {
         $out = [];
@@ -48,7 +63,7 @@ class DevicesNormalizer
                 // que viene en la API; como todavía no sabemos el nombre exacto
                 // del campo, pruebo los más comunes. Puede traer varios
                 // separados por coma o punto y coma.
-                'email_cliente'     => $this->primerCampo($d, ['email_cliente', 'mail_cliente', 'email', 'mail', 'emails', 'mails', 'correo', 'correos', 'email_notificaciones']),
+                'email_cliente'     => $this->primerCampo($d, $this->camposEmail),
                 // lat/lng no se guardan en la tabla equipos (esa tabla es
                 // datos administrativos, no telemetría) — se devuelven acá
                 // igual para que sincronizar_equipos.php los pueda usar al

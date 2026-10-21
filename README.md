@@ -473,6 +473,33 @@ servicio de PostgreSQL separado, no en el mismo contenedor del backend.
 
 ---
 
+## Instalación en un servidor propio
+
+La forma más simple es con Docker (instala Postgres, backend, frontend y cron):
+
+```bash
+git clone https://github.com/RobertoDrazewski/preciso_tech_emiliano.git
+cd preciso_tech_emiliano
+cp docker.env.example .env                 # clave de la base y URL pública del backend
+cp backend/.env.example backend/.env       # token de TTM, SMTP, usuario y clave del panel
+docker compose up -d --build
+```
+
+Sin Docker: PHP 8.3 (pdo_pgsql o pdo_sqlite, curl, mbstring), Postgres o
+SQLite, el backend servido desde `backend/public`, el frontend desde
+`frontend/` y dos líneas de crontab (ver `backend/README.md`). El paso a paso
+completo, con la importación de los datos y la activación de los correos a
+clientes, está en el manual de integración que acompaña la entrega.
+
+Mudar datos de una instalación a otra:
+
+```bash
+php scripts/exportar_datos.php --lecturas=8      # en la instalación vieja
+php scripts/importar_datos.php <archivo.jsonl.gz> # en la nueva, ANTES de arrancar el cron
+```
+
+---
+
 ## Variables de entorno
 
 | Variable | Descripción |
@@ -492,6 +519,8 @@ servicio de PostgreSQL separado, no en el mismo contenedor del backend.
 | `PANEL_SECRETO` | Opcional: texto largo al azar para firmar las sesiones |
 | `NOTIFICAR_CLIENTE_MODO_PRUEBA` | `"true"` (por defecto): el PDF de "Notificar al cliente" no le llega al cliente |
 | `NOTIFICAR_CLIENTE_EMAIL_PRUEBA` | Dónde llegan las pruebas (si está vacío, al primer correo de `ALERT_EMAILS`) |
+| `DEVICES_CAMPO_EMAIL` | Nombre del campo de `get_devices.php` con el correo del cliente (vacío = prueba los nombres comunes) |
+| `CRON_MINUTOS` / `CRON_HORA_RESUMEN` | Solo para `cron/programador.php`: cada cuántos minutos detecta y a qué hora sale el resumen diario |
 | `ALERTAS_CADA_HORAS` / `ALERTAS_LITROS_MINIMOS` | Resumen de alertas por mail: cada cuántas horas y desde cuántos litros (4 h y 30 L por defecto) |
 
 Ver `backend/.env.example` para la plantilla completa.
@@ -514,28 +543,31 @@ Todos los endpoints están en `backend/public/api/` y devuelven JSON.
 
 ## Estado actual y próximos pasos
 
-**En producción, funcionando:**
-- Conexión a las dos APIs reales de TTM (telemetría y flota).
-- Detección automática de los 9 tipos de anomalía sobre la flota completa.
-- Proceso automático (cron) corriendo cada 5 minutos con alertas por email.
-- Panel con filtros por cliente, servicio y presencia de anomalías.
-- Exportación de informes a PDF.
-- Base de datos PostgreSQL persistente.
+**Entregado (v3.7, 21/10/2026):**
+- Conexión a las dos APIs reales de TTM (telemetría y flota), con token.
+- Detección automática de los 9 tipos de anomalía sobre la flota completa,
+  incluida la descarga lenta con el vehículo detenido.
+- Cron cada 5 minutos, sincronización diaria de la flota, resumen de alertas
+  cada 4 horas y resumen diario por mail.
+- Sistema de tickets con observación del operador e historial.
+- Ingreso con usuario y clave.
+- Informes y avisos de anomalía en PDF; "Notificar al cliente" (en modo prueba).
+- Instalación propia con Docker o con PHP + crontab, y exportación /
+  importación de datos entre instalaciones.
 
-**Pendiente:**
-- Confirmar con TTM el nombre exacto del campo de agua en combustible en el
-  JSON de telemetría (hoy se valida por alias candidatos; la señal de la
-  API de flota ya está confirmada y en uso).
-- Autenticación en la API propia (hoy abierta al `FRONTEND_ORIGIN` configurado).
-- Paleta de colores / identidad visual definitiva.
+**Pendiente (del lado de TTM):**
+- Correo de los clientes en la API de equipos (`get_devices.php`). Apenas
+  esté: `DEVICES_CAMPO_EMAIL` con el nombre del campo y
+  `NOTIFICAR_CLIENTE_MODO_PRUEBA="false"`. Mientras tanto se puede usar
+  `backend/data/emails_clientes.json`.
+- Definir si los equipos de frío y los tanques entran en las reglas de
+  descarga (hoy están excluidos por las falsas alarmas).
+- Calibrar con TTM el caso "entró más de lo informado" en las cargas.
+
+**Ideas a futuro:**
 - Alertas por WhatsApp, si se define como canal adicional.
-- **Modelo de machine learning entrenado**: una vez acumuladas varias
-  semanas de historial real de la flota completa (el cron ya está
-  alimentando esa base desde que está en producción), evaluar sumar un
-  modelo no supervisado (tipo Isolation Forest) como capa adicional sobre
-  el motor estadístico actual — no como reemplazo. El objetivo sería
-  capturar patrones más sutiles que combinan varias señales a la vez, algo
-  que las reglas fijas no cubren por diseño.
+- Un modelo no supervisado (tipo Isolation Forest) como capa adicional sobre
+  el motor estadístico actual, una vez que haya varias semanas de historial.
 
 ---
 

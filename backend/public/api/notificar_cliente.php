@@ -55,7 +55,7 @@ try {
             jsonError('Este cliente tiene las notificaciones desactivadas en TTM (notificaciones = NO). No se le envió nada.');
         }
         if (!$reales) {
-            jsonError('Este cliente no tiene correo cargado en la API de equipos de TTM.');
+            jsonError('Este cliente no tiene correo cargado (ni en la API de equipos de TTM ni en data/emails_clientes.json).');
         }
         $destinatarios = $reales;
     }

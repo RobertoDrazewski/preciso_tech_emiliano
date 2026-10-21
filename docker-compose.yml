@@ -1,0 +1,76 @@
+# Preciso — módulo de anomalías: todo el sistema en un solo comando.
+#
+#   1. cp docker.env.example .env           (y completar DB_PASSWORD, API_BASE)
+#   2. cp backend/.env.example backend/.env (y completar token de TTM, SMTP, clave del panel)
+#   3. docker compose up -d --build
+#
+# Levanta cuatro servicios:
+#   db        Postgres 16, con los datos en el volumen "preciso_db" (sobrevive a
+#             reinicios y a "docker compose down"; se borra solo con "down -v").
+#   backend   la API (PHP 8.3). Al arrancar crea las tablas si no existen y
+#             sincroniza la flota con la API de equipos de TTM.
+#   cron      la detección automática: cada 5 minutos procesa un lote de
+#             equipos y una vez por día manda el resumen (cron/programador.php).
+#   frontend  las pantallas (index, anomalías, tickets, informe).
+#
+# La base de datos la crea Postgres sola. Si prefieren usar un Postgres que ya
+# tengan, borren el servicio "db" y pongan su DATABASE_URL en backend/.env
+# (y saquen las líneas DATABASE_URL de "backend" y "cron" de acá abajo).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: preciso
+      POSTGRES_USER: preciso
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en el archivo .env de la raíz}
+      TZ: America/Argentina/Mendoza
+    volumes:
+      - preciso_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U preciso -d preciso"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://preciso:${DB_PASSWORD}@db:5432/preciso
+      PORT: 8000
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  cron:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://preciso:${DB_PASSWORD}@db:5432/preciso
+      CRON_MINUTOS: ${CRON_MINUTOS:-5}
+      CRON_HORA_RESUMEN: ${CRON_HORA_RESUMEN:-6}
+    command: ["php", "cron/programador.php"]
+    depends_on:
+      backend:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      # URL PÚBLICA del backend, tal como la ve el navegador del operador.
+      API_BASE: ${API_BASE:-http://localhost:8000/api}
+      PORT: 3000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+
+volumes:
+  preciso_db:

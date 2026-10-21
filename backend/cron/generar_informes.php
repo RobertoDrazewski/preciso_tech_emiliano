@@ -23,6 +23,14 @@ $mailer = new SmtpMailer($config['smtp']);
 $hasta = new DateTimeImmutable('today'); // medianoche de hoy
 $desde = $hasta->modify('-1 day');       // medianoche de ayer -> informe del día completo de ayer
 
+// Una sola vez por día: si ya salió el resumen de ayer (por ejemplo, porque
+// el programador o el contenedor se reiniciaron), no lo repito. Para
+// forzarlo: php cron/generar_informes.php --forzar
+if (!in_array('--forzar', $argv ?? [], true) && $storage->getEstado('resumen_diario_de') === $desde->format('Y-m-d')) {
+    echo "[" . date('Y-m-d H:i:s') . "] El resumen del " . $desde->format('d/m/Y') . " ya se procesó. Nada que hacer.\n";
+    exit(0);
+}
+
 $equipos = $storage->listarEquipos();
 // Ojo: antes el 2000 caía en el parámetro "cliente" (filtraba por un cliente
 // llamado "2000") y el resumen diario salía siempre vacío. Con nombre, no pasa.
@@ -46,9 +54,14 @@ if (!empty($config['smtp']['to']) && !empty($anomaliasPorEquipo)) {
 
     $html = construirResumenDiario($desde, $anomaliasPorEquipo, $nombresPorEquipo, count($equipos));
     $ok = $mailer->send('Resumen diario de anomalías — ' . $desde->format('d/m/Y'), $html);
-    echo "[" . date('Y-m-d H:i:s') . "] Resumen diario " . ($ok ? 'enviado.' : 'FALLÓ al enviarse.') . "\n";
+    echo "[" . date('Y-m-d H:i:s') . "] Resumen diario " . ($ok ? 'enviado.' : 'FALLÓ al enviarse: ' . $mailer->ultimoError) . "\n";
+    if (!$ok) {
+        exit(1); // sin marcar: se reintenta en la próxima corrida
+    }
+    $storage->setEstado('resumen_diario_de', $desde->format('Y-m-d'));
 } else {
     echo "[" . date('Y-m-d H:i:s') . "] Sin anomalías ayer (o sin destinatarios configurados) — no se manda mail.\n";
+    $storage->setEstado('resumen_diario_de', $desde->format('Y-m-d'));
 }
 
 function construirResumenDiario(DateTimeImmutable $fecha, array $anomaliasPorEquipo, array $nombresPorEquipo, int $totalEquipos): string

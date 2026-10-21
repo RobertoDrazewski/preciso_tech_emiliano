@@ -57,6 +57,13 @@ return [
         // estado, capacidad de tanque, etc.) — confirmada por Emiliano el
         // 26/08/2026. Endpoint DISTINTO al de telemetría de arriba.
         'devices_url' => Env::get('DEVICES_API_URL', 'https://ttm.com.ar/testing/api/get_devices.php'),
+
+        // Nombre del campo de get_devices.php que trae el correo del cliente
+        // (para "Notificar al cliente"). Al 21/10/2026 la API todavía no lo
+        // manda. Cuando TTM lo agregue, poner acá su nombre exacto (por
+        // ejemplo DEVICES_CAMPO_EMAIL="email_cliente"). Si se deja vacío,
+        // pruebo los nombres más comunes (ver DevicesNormalizer).
+        'devices_campo_email' => trim((string) Env::get('DEVICES_CAMPO_EMAIL', '')),
     ],
 
     // --- Base local ---
