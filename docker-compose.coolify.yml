@@ -1,0 +1,99 @@
+# Preciso — módulo de anomalías: versión para desplegar en Coolify (host de PRUEBA).
+#
+# Diferencias con docker-compose.yml:
+#   - No usa backend/.env (en Coolify las variables se cargan en el panel).
+#   - No publica puertos al host ("expose"): el acceso entra por el proxy de Coolify.
+#   - Por defecto corre en MODO SIMULADOR y SIN mails, para que la prueba
+#     no toque datos reales ni escriba a nadie.
+#
+# En Coolify: Build Pack = Docker Compose, "Docker Compose Location" =
+# /docker-compose.coolify.yml. Dominios (pestaña de cada servicio):
+#   frontend -> https://preciso-test.puma-code.com   (puerto 3000)
+#   backend  -> https://preciso-api.puma-code.com    (puerto 8000)
+#
+# Variables OBLIGATORIAS en el panel: DB_PASSWORD, API_BASE, PANEL_CLAVE.
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql://preciso:${DB_PASSWORD:?Falta DB_PASSWORD}@db:5432/preciso
+  APP_TIMEZONE: America/Argentina/Mendoza
+  # --- API de TTM ---
+  API_BASE_URL: ${API_BASE_URL:-https://ttm.com.ar/testing/api/get_full_data.php}
+  DEVICES_API_URL: ${DEVICES_API_URL:-https://ttm.com.ar/testing/api/get_devices.php}
+  API_TOKEN: ${API_TOKEN:-}
+  API_SIMULATE: ${API_SIMULATE:-true}
+  API_INSECURE_SSL_TESTING: ${API_INSECURE_SSL_TESTING:-false}
+  API_TIMEZONE: ${API_TIMEZONE:-}
+  DEVICES_CAMPO_EMAIL: ${DEVICES_CAMPO_EMAIL:-}
+  # --- Mails (vacío = no se manda nada) ---
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASS: ${SMTP_PASS:-}
+  SMTP_FROM: ${SMTP_FROM:-}
+  SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Preciso - Alertas de Combustible}
+  ALERT_EMAILS: ${ALERT_EMAILS:-}
+  NOTIFICAR_CLIENTE_MODO_PRUEBA: "true"
+  NOTIFICAR_CLIENTE_EMAIL_PRUEBA: ${NOTIFICAR_CLIENTE_EMAIL_PRUEBA:-}
+  ALERTAS_CADA_HORAS: ${ALERTAS_CADA_HORAS:-4}
+  ALERTAS_LITROS_MINIMOS: ${ALERTAS_LITROS_MINIMOS:-30}
+  # --- Panel ---
+  PANEL_USUARIO: ${PANEL_USUARIO:-admin}
+  PANEL_CLAVE: ${PANEL_CLAVE:?Falta PANEL_CLAVE}
+  PANEL_SECRETO: ${PANEL_SECRETO:-}
+  FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-*}
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: preciso
+      POSTGRES_USER: preciso
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD}
+      TZ: America/Argentina/Mendoza
+    volumes:
+      - preciso_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U preciso -d preciso"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      PORT: "8000"
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  cron:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      CRON_MINUTOS: ${CRON_MINUTOS:-5}
+      CRON_HORA_RESUMEN: ${CRON_HORA_RESUMEN:-6}
+    command: ["php", "cron/programador.php"]
+    depends_on:
+      backend:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      # URL PÚBLICA del backend tal como la ve el navegador (con /api al final).
+      API_BASE: ${API_BASE:?Falta API_BASE}
+      PORT: "3000"
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+
+volumes:
+  preciso_db:
