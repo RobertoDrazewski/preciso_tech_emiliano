@@ -65,8 +65,16 @@ class SincronizadorFlota
 
         // Diagnóstico "AGUA" que trae la API de equipos: es un estado actual,
         // no una lectura con fecha, así que no lo repito si ya hay uno reciente.
+        // Desactivado por defecto desde el 18/11/2026: el "diagnóstico" de la
+        // API de equipos es el estado que carga el equipo técnico de TTM (con
+        // su propio proceso PENDIENTE/RESUELTO), no lo que pasa ahora en la
+        // unidad. En las pruebas marcaba agua en unidades que en ese momento
+        // no tenían (caso AG944KW). El agua se toma de la telemetría (ver
+        // AnomalyDetector::diasConAgua). Para volver a usarlo:
+        // AGUA_DESDE_DIAGNOSTICO_TTM="true".
+        $usarDiagnostico = filter_var(Env::get('AGUA_DESDE_DIAGNOSTICO_TTM', 'false'), FILTER_VALIDATE_BOOLEAN);
         $nuevasAgua = 0;
-        foreach ($equipos as $eq) {
+        foreach ($usarDiagnostico ? $equipos : [] as $eq) {
             if (($eq['diagnostico'] ?? null) !== 'AGUA') {
                 continue;
             }

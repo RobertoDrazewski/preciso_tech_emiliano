@@ -42,6 +42,9 @@ class AnomalyDetector
     private array $cfg;
     private Storage $storage;
 
+    /** Bajadas descartadas por temperatura en la última corrida (para el aviso de sensor). */
+    private array $bajadasTermicas = [];
+
     public function __construct(array $anomalyConfig, Storage $storage)
     {
         // Los umbrales que el usuario cambió desde la pantalla (tabla
@@ -71,6 +74,18 @@ class AnomalyDetector
         // 3.612 registros en una semana real), así que el "motor encendido"
         // estaba casi siempre en falso y el ralentí no andaba.
         $lecturas = $this->aplicarEstadoIgnicion($lecturas);
+
+        // Tanque desconectado (18/11/2026, casos AB177UD y AE553QC de las
+        // pruebas de TTM): si UN tanque deja de reportar mientras los otros
+        // siguen, el nivel total cae lo que tenía ese tanque y parecía una
+        // descarga. Esas lecturas quedan sin nivel total (no se usan para
+        // detectar pérdidas) y la desconexión se avisa aparte.
+        [$lecturas, $episodiosTanque] = $this->marcarDesconexionesDeTanque($lecturas);
+
+        // Días con agua en el combustible: ese día, para esa unidad, solo se
+        // avisa el agua (ver 'agua_reportes_minimos_dia').
+        $diasConAgua = $this->diasConAgua($lecturas);
+        $this->bajadasTermicas = [];
 
         // ¿Es un equipo que no se mueve nunca (tanque fijo, pozo, máquina)?
         // A esos no les aplican las reglas pensadas para vehículos — ver
@@ -112,7 +127,7 @@ class AnomalyDetector
                     $this->textoDuracion($t['minutos']), $t['litros'] / max(1, $t['minutos']), $t['pasos']
                 ),
                 $t['litros'], null, $t['lat'], $t['lng']
-            );
+            ) + ['desde' => $t['inicio']];
         }
         foreach ($confirmadas as $c) {
             // Si esta caída es parte de una descarga lenta ya reportada, no la
@@ -121,6 +136,11 @@ class AnomalyDetector
                 if ($c['fecha'] > $t['inicio'] && $c['fecha'] <= $t['fin']) {
                     continue 2;
                 }
+            }
+            // Detenido y sin pérdida NETA: el nivel solo volvió a donde estaba
+            // antes (temperatura, sensor que se acomoda). No es una pérdida.
+            if ($c['detenido'] && $c['sin_perdida_neta']) {
+                continue;
             }
             $tasaPorMinuto = $c['litros_perdidos'] / $c['minutos'];
             $notaVariacion = $c['variacion_detectada']
@@ -160,7 +180,7 @@ class AnomalyDetector
                         $c['litros_perdidos'], $c['fecha_inicio']->format('H:i'), $c['fecha']->format('H:i'), $tasaPorMinuto, $notaVariacion
                     ),
                     $c['litros_perdidos'], null, $c['lat'], $c['lng']
-                );
+                ) + ['desde' => $c['fecha_inicio']];
                 continue;
             }
 
@@ -174,7 +194,7 @@ class AnomalyDetector
                         $c['litros_perdidos'], $this->textoDuracion($c['minutos']), $tasaPorMinuto, $notaVariacion
                     ),
                     $c['litros_perdidos'], null, $c['lat'], $c['lng']
-                );
+                ) + ['desde' => $c['fecha_inicio']];
                 continue;
             }
 
@@ -188,7 +208,7 @@ class AnomalyDetector
                             $c['litros_perdidos'], $c['minutos'], $tasaPorMinuto, $z, $notaVariacion
                         ),
                         $c['litros_perdidos'], $z, $c['lat'], $c['lng']
-                    );
+                    ) + ['desde' => $c['fecha_inicio']];
                 }
             }
         }
@@ -199,7 +219,12 @@ class AnomalyDetector
         // en el momento en que el sensor PASA a detectar agua (no en cada
         // lectura mientras sigue en 1), para no generar una anomalía por
         // cada lectura de un mismo evento sostenido.
-        foreach ($this->deteccionAgua($lecturas) as $a) {
+        foreach ($this->deteccionAgua($diasConAgua) as $a) {
+            $anomalias[] = $a;
+        }
+
+        // Desconexión de un tanque (ver marcarDesconexionesDeTanque).
+        foreach ($this->avisosDesconexionTanque($equipo, $episodiosTanque, $ahora) as $a) {
             $anomalias[] = $a;
         }
 
@@ -228,13 +253,26 @@ class AnomalyDetector
         // mucho más de lo que explica la dilatación del gasoil. No es una
         // pérdida de combustible, es un aviso de que ese sensor no es
         // confiable. Ver deteccionTemperaturaNivel() más abajo.
-        foreach ($this->deteccionTemperaturaNivel($lecturas) as $a) {
+        $avisosTemperatura = $this->deteccionTemperaturaNivel($lecturas);
+        if (!$avisosTemperatura && $this->bajadasTermicas) {
+            $avisosTemperatura[] = $this->avisoBajadasTermicas($equipo);
+        }
+        foreach ($avisosTemperatura as $a) {
             // Es un aviso sobre el sensor, no un evento: si ya se avisó en la
             // última semana (en cualquier estado), no lo repito cada día.
             if ($this->storage->existeAnomaliaDeTipoDesde($equipo, 'variacion_temperatura', $a['fecha']->modify('-7 days'), $a['fecha'])) {
                 continue;
             }
             $anomalias[] = $a;
+        }
+
+        // Días con agua: para esa unidad, ese día solo queda el aviso de agua
+        // (y los cortes de alimentación, que no dependen del sensor de nivel).
+        if ($diasConAgua) {
+            $anomalias = array_values(array_filter($anomalias, fn($a) =>
+                in_array($a['tipo'], ['agua_combustible', 'corte_alimentacion'], true)
+                || !isset($diasConAgua[$a['fecha']->format('Y-m-d')])
+            ));
         }
 
         // ⚠️ Chequeo de sentido físico: si sabemos la capacidad del tanque
@@ -699,25 +737,23 @@ class AnomalyDetector
      * "sin agua" a "agua detectada". Confirmado por Emiliano (14/08/2026):
      * es un campo booleano (0 o 1) que manda el propio dispositivo.
      */
-    private function deteccionAgua(array $lecturas): array
+    private function deteccionAgua(array $diasConAgua): array
     {
+        // Un solo aviso por día con agua, en la primera lectura con agua de
+        // ese día (antes era uno por cada vez que el sensor pasaba a 1, y
+        // con agua el sensor prende y apaga todo el tiempo).
         $anomalias = [];
-        $wifAnterior = null;
-
-        foreach ($lecturas as $l) {
-            if ($l['wif'] === null) {
-                continue; // sin dato de este sensor en esta lectura
-            }
-            if ($l['wif'] === true && $wifAnterior !== true) {
-                $anomalias[] = $this->construir(
-                    $l['equipo'], $l['fecha'], 'agua_combustible',
-                    'El sensor del dispositivo detectó agua en el combustible.',
-                    0.0, null, $l['lat'], $l['lng']
-                );
-            }
-            $wifAnterior = $l['wif'];
+        foreach ($diasConAgua as $dia => $d) {
+            $l = $d['primera'];
+            $anomalias[] = $this->construir(
+                $l['equipo'], $l['fecha'], 'agua_combustible',
+                sprintf(
+                    'El sensor de la unidad detectó agua en el combustible (%d reportes de agua el %s). Con agua los sensores de nivel marcan cargas, descargas y saltos falsos: ese día no se toman las demás anomalías de esta unidad.',
+                    $d['reportes'], $l['fecha']->format('d/m')
+                ),
+                0.0, null, $l['lat'], $l['lng']
+            );
         }
-
         return $anomalias;
     }
 
@@ -906,7 +942,11 @@ class AnomalyDetector
                 continue;
             }
 
-            $finVentana = $cur['fecha']->modify("+{$ventanaMin} minutes");
+            // Detenido: espero más para confirmar (ver
+            // 'recuperacion_detenido_minutos'); andando, la ventana corta.
+            $detenido = $this->estabaDetenido($prev, $cur);
+            $ventanaEsta = $detenido ? (int) ($this->cfg['recuperacion_detenido_minutos'] ?? $ventanaMin) : $ventanaMin;
+            $finVentana = $cur['fecha']->modify("+{$ventanaEsta} minutes");
             if ($finVentana > $ahora) {
                 // Todavía no pasó suficiente tiempo real para saber si esto
                 // se recupera solo o no. La dejamos pendiente para la
@@ -926,6 +966,11 @@ class AnomalyDetector
             $variacionDetectada = ($cur['variacion'] !== null && $cur['variacion'] != 0.0);
             foreach ($lecturas as $l) {
                 if ($l['fecha'] > $cur['fecha'] && $l['fecha'] <= $finVentana) {
+                    // Una carga no es "recuperación": si después del robo
+                    // cargaron, la subida no tiene que tapar la pérdida.
+                    if (($l['evento'] ?? null) === 'CARGA') {
+                        break;
+                    }
                     if ($l['combustible_litros'] !== null) {
                         $mejorNivelPosterior = max($mejorNivelPosterior, $l['combustible_litros']);
                     }
@@ -944,12 +989,31 @@ class AnomalyDetector
                 continue;
             }
 
+            // Pérdida NETA con el vehículo detenido: contra el nivel más bajo
+            // que tuvo antes en el mismo lugar (ver nivelBaseDetenido).
+            $sinPerdidaNeta = false;
+            if ($detenido) {
+                $base = $this->nivelBaseDetenido($lecturasConCombustible, $i - 1);
+                $neto = $base - $cur['combustible_litros'];
+                if ($neto < (float) $this->cfg['stopped_drop_liters_threshold']) {
+                    $sinPerdidaNeta = true;
+                    // Solo la registro si habría salido como descarga (las
+                    // bajaditas de ruido de 2-3 L no me dicen nada).
+                    if ($litrosPerdidos >= (float) $this->cfg['stopped_drop_liters_threshold']) {
+                        $this->registrarBajadaTermica($prev, $cur);
+                    }
+                }
+                // Si hay pérdida neta, informo el salto completo: en un paso
+                // de pocos minutos la temperatura no explica nada.
+            }
+
             $confirmadas[] = [
                 'fecha_inicio'         => $prev['fecha'],
                 'fecha'                => $cur['fecha'],
                 'litros_perdidos'      => $litrosPerdidos,
                 'minutos'              => $minutos,
-                'detenido'             => $this->estabaDetenido($prev, $cur),
+                'detenido'             => $detenido,
+                'sin_perdida_neta'     => $sinPerdidaNeta,
                 'variacion_detectada'  => $variacionDetectada,
                 'lat'                  => $cur['lat'],
                 'lng'                  => $cur['lng'],
@@ -984,8 +1048,10 @@ class AnomalyDetector
         $tolerancia = (float) ($this->cfg['carga_tolerancia_meseta_litros'] ?? 3.0);
         $maxHueco = (float) ($this->cfg['max_gap_minutos'] ?? 30);
         $tasaMaxima = (float) ($this->cfg['tasa_maxima_fisica_lpm'] ?? 150.0);
-        $ventanaMin = (int) ($this->cfg['recovery_window_minutes'] ?? 20);
+        // Los tramos son siempre con el vehículo detenido: espera larga.
+        $ventanaMin = (int) ($this->cfg['recuperacion_detenido_minutos'] ?? ($this->cfg['recovery_window_minutes'] ?? 20));
         $fraccion = (float) ($this->cfg['recovery_min_fraction'] ?? 0.7);
+        $tasaMinima = (float) ($this->cfg['descarga_lenta_tasa_minima_lpm'] ?? 1.0);
         $maxSinBajar = 15 * 60;
 
         $con = array_values(array_filter($lecturas, fn($l) => $l['combustible_litros'] !== null));
@@ -1035,6 +1101,7 @@ class AnomalyDetector
             if ($t === null) {
                 if ($delta >= 1.0) {
                     $t = [
+                        'idx' => $i - 1,
                         'inicio' => $prev['fecha'], 'inicioNivel' => $prev['combustible_litros'],
                         'fin' => $cur['fecha'], 'minNivel' => $cur['combustible_litros'],
                         'ultimaBajada' => $cur['fecha'], 'pasos' => 1,
@@ -1072,17 +1139,294 @@ class AnomalyDetector
             if ($finVentana > $ahora) {
                 continue; // todavía no sé si se recupera
             }
+            // Bajada lenta y sostenida por debajo de la velocidad mínima: es
+            // la contracción por temperatura de la noche, no un robo (casos
+            // HLZX21, AA830SM, AE175DV, PLFJ79 de las pruebas: 0,2-0,5 L/min).
+            if ($litros / $minutos < $tasaMinima) {
+                $this->registrarBajadaTermica($con[$tr['idx']], ['fecha' => $tr['fin'], 'combustible_litros' => $tr['minNivel'], 'temp_tanque' => $this->tempCerca($con, $tr['fin'])]);
+                continue;
+            }
             $mejor = $tr['minNivel'];
-            foreach ($con as $l) {
+            foreach ($lecturas as $l) {
                 if ($l['fecha'] > $tr['fin'] && $l['fecha'] <= $finVentana) {
-                    $mejor = max($mejor, $l['combustible_litros']);
+                    if (($l['evento'] ?? null) === 'CARGA') {
+                        break; // una carga no es recuperación
+                    }
+                    if ($l['combustible_litros'] !== null) {
+                        $mejor = max($mejor, $l['combustible_litros']);
+                    }
                 }
             }
             if (($mejor - $tr['minNivel']) / $litros >= $fraccion) {
                 continue; // se recuperó: pendiente o ruido
             }
+            // Pérdida neta contra el nivel de antes en el mismo lugar.
+            $neto = $this->nivelBaseDetenido($con, $tr['idx']) - $tr['minNivel'];
+            if ($neto < $umbral) {
+                $this->registrarBajadaTermica($con[$tr['idx']], ['fecha' => $tr['fin'], 'combustible_litros' => $tr['minNivel'], 'temp_tanque' => $this->tempCerca($con, $tr['fin'])]);
+                continue;
+            }
+            $litros = min($litros, $neto);
             $out[] = ['inicio' => $tr['inicio'], 'fin' => $tr['fin'], 'litros' => $litros, 'minutos' => $minutos,
                       'pasos' => $tr['pasos'], 'lat' => $tr['lat'], 'lng' => $tr['lng']];
+        }
+        return $out;
+    }
+
+    /**
+     * Nivel de referencia para una bajada con el vehículo detenido: el
+     * nivel más bajo que tuvo en las horas anteriores ('linea_base_horas')
+     * sin moverse del lugar y sin cargas en el medio. Con 5 lecturas o más
+     * uso el percentil 5 (un pozo suelto del sensor no lo arrastra).
+     *
+     * Para qué: con calor el nivel "sube" y con frío "baja" aunque nadie
+     * toque nada (casos de las pruebas de TTM del 7 al 10/11). Si la bajada
+     * de la noche solo devuelve el nivel a donde estaba a la mañana, la
+     * pérdida neta es cero y no se avisa. Un robo, en cambio, deja el nivel
+     * por debajo de lo que tenía antes.
+     *
+     * @param array $con lecturas con nivel, ordenadas
+     * @param int   $idx índice (en $con) de la lectura donde empieza la bajada
+     */
+    private function nivelBaseDetenido(array $con, int $idx): float
+    {
+        $horas = (float) ($this->cfg['linea_base_horas'] ?? 24);
+        $limite = $con[$idx]['fecha']->getTimestamp() - $horas * 3600;
+        $valores = [$con[$idx]['combustible_litros']];
+        for ($j = $idx; $j > 0; $j--) {
+            $a = $con[$j - 1];
+            $b = $con[$j];
+            if ($a['fecha']->getTimestamp() < $limite) {
+                break;
+            }
+            if (($a['evento'] ?? null) === 'CARGA' || ($b['evento'] ?? null) === 'CARGA') {
+                break; // antes de una carga el nivel era otro: no comparo contra eso
+            }
+            if ($b['fecha']->getTimestamp() - $a['fecha']->getTimestamp() > 3 * 3600 || !$this->estabaDetenido($a, $b)) {
+                break; // se movió o hubo un hueco largo: termina "el mismo lugar"
+            }
+            $valores[] = $a['combustible_litros'];
+        }
+        return count($valores) >= 5 ? $this->percentil($valores, 0.05) : min($valores);
+    }
+
+    /** Guarda una bajada descartada por ser temperatura / nivel que se acomoda. */
+    private function registrarBajadaTermica(array $antes, array $despues): void
+    {
+        $this->bajadasTermicas[] = [
+            'desde'      => $antes['fecha'],
+            'hasta'      => $despues['fecha'],
+            'litros'     => $antes['combustible_litros'] - $despues['combustible_litros'],
+            'temp_antes' => $antes['temp_tanque'] ?? null,
+            'temp_despues' => $despues['temp_tanque'] ?? null,
+            'lat'        => $antes['lat'] ?? null,
+            'lng'        => $antes['lng'] ?? null,
+        ];
+    }
+
+    /** Temperatura de la lectura con nivel más cercana a ese momento (o null). */
+    private function tempCerca(array $con, DateTimeInterface $fecha): ?float
+    {
+        $mejor = null;
+        $dist = PHP_INT_MAX;
+        foreach ($con as $l) {
+            $d = abs($l['fecha']->getTimestamp() - $fecha->getTimestamp());
+            if ($d < $dist && ($l['temp_tanque'] ?? null) !== null) {
+                $dist = $d;
+                $mejor = (float) $l['temp_tanque'];
+            }
+        }
+        return $dist <= 1800 ? $mejor : null;
+    }
+
+    /**
+     * Aviso de "variación por temperatura" armado con las bajadas que se
+     * descartaron como descarga (el nivel volvió a donde estaba, o bajó
+     * lento de noche). Así el operador ve lo que realmente pasa con ese
+     * sensor en lugar de una descarga falsa. Se avisa como mucho una vez
+     * por semana por equipo (lo controla analizar()).
+     */
+    private function avisoBajadasTermicas(string $equipo): array
+    {
+        $b = $this->bajadasTermicas[0];
+        $mayor = max(array_column($this->bajadasTermicas, 'litros'));
+        $conTemp = '';
+        if ($b['temp_antes'] !== null && $b['temp_despues'] !== null) {
+            $conTemp = sprintf(' La temperatura del tanque pasó de %.0f °C a %.0f °C en ese lapso.', $b['temp_antes'], $b['temp_despues']);
+        }
+        return $this->construir(
+            $equipo, $b['hasta'], 'variacion_temperatura',
+            sprintf(
+                'Con el vehículo detenido el nivel bajó hasta %.0f L entre %s y %s, pero solo volvió al nivel que ya tenía antes (sube con el calor y baja con el frío).%s No se toma como descarga: es la temperatura o el sensor, no combustible que salió. Si se repite, conviene revisar la calibración del sensor.',
+                $mayor, $this->horaCorta($b['desde'], $b['hasta']), $this->horaCorta($b['hasta'], $b['desde']), $conTemp
+            ),
+            0.0, null, $b['lat'], $b['lng']
+        );
+    }
+
+    /**
+     * Tanque desconectado (18/11/2026). El nivel total que manda TTM es la
+     * suma de los tanques; si uno deja de reportar (manda 0) mientras el
+     * vehículo sigue, el total cae lo que tenía ese tanque y después vuelve.
+     * Eso parecía una descarga (casos AB177UD: 139 L "perdidos"; AE553QC).
+     *
+     * Un tanque cuenta como "presente" si tuvo dato dentro de las horas de
+     * 'desconexion_tanque_ventana_horas' antes o después de la lectura. A las
+     * lecturas donde falta un tanque presente les saco el nivel total (no se
+     * usan para detectar pérdidas) y armo los episodios de desconexión.
+     *
+     * @return array{0: array, 1: array} [lecturas corregidas, episodios]
+     */
+    private function marcarDesconexionesDeTanque(array $lecturas): array
+    {
+        $ventana = (float) ($this->cfg['desconexion_tanque_ventana_horas'] ?? 12) * 3600;
+        $conDato = [1 => [], 2 => [], 3 => [], 4 => []];
+        foreach ($lecturas as $l) {
+            foreach ($l['tanques'] ?? [] as $k => $v) {
+                if ($v !== null && $v > 0 && isset($conDato[$k])) {
+                    $conDato[$k][] = $l['fecha']->getTimestamp();
+                }
+            }
+        }
+        if (!array_filter($conDato)) {
+            return [$lecturas, []]; // este equipo no manda niveles por tanque
+        }
+
+        $episodios = [];
+        $abiertos = [];
+        $ultimoValor = [];
+        foreach ($lecturas as $i => $l) {
+            if ($l['combustible_litros'] === null) {
+                continue;
+            }
+            $ts = $l['fecha']->getTimestamp();
+            $faltan = [];
+            foreach ([1, 2, 3, 4] as $k) {
+                $v = $l['tanques'][$k] ?? null;
+                if ($v !== null && $v > 0) {
+                    continue;
+                }
+                if ($this->hayDatoCerca($conDato[$k], $ts, $ventana)) {
+                    $faltan[] = $k;
+                }
+            }
+            foreach ($abiertos as $k => $ep) {
+                if (!in_array($k, $faltan, true)) {
+                    $ep['cerrado'] = true;
+                    $ep['nivel_despues'] = $l['tanques'][$k] ?? null;
+                    $episodios[] = $ep;
+                    unset($abiertos[$k]);
+                }
+            }
+            if ($faltan) {
+                $lecturas[$i]['combustible_litros'] = null;
+                foreach ($faltan as $k) {
+                    $abiertos[$k] ??= [
+                        'tanque' => $k, 'inicio' => $l['fecha'], 'fin' => $l['fecha'],
+                        'nivel_antes' => $ultimoValor[$k] ?? null, 'nivel_despues' => null,
+                        'lat' => $l['lat'], 'lng' => $l['lng'], 'cerrado' => false,
+                    ];
+                    $abiertos[$k]['fin'] = $l['fecha'];
+                }
+            }
+            foreach ($l['tanques'] ?? [] as $k => $v) {
+                if ($v !== null && $v > 0) {
+                    $ultimoValor[$k] = $v;
+                }
+            }
+        }
+        foreach ($abiertos as $ep) {
+            $episodios[] = $ep;
+        }
+        return [$lecturas, $episodios];
+    }
+
+    /** ¿Hay algún instante de $tiempos (ordenados) a menos de $ventana segundos de $ts? */
+    private function hayDatoCerca(array $tiempos, int $ts, float $ventana): bool
+    {
+        $lo = 0;
+        $hi = count($tiempos) - 1;
+        while ($lo <= $hi) {
+            $mid = intdiv($lo + $hi, 2);
+            if (abs($tiempos[$mid] - $ts) <= $ventana) {
+                return true;
+            }
+            if ($tiempos[$mid] < $ts) {
+                $lo = $mid + 1;
+            } else {
+                $hi = $mid - 1;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Un aviso de "desconexión de sensor" por día y por equipo, con el
+     * primer episodio de ese día (el que ya terminó, o el que lleva más de
+     * una hora sin reportar). El resto de los episodios del día se cuentan
+     * en el texto. No tiene litros: no se perdió combustible.
+     */
+    private function avisosDesconexionTanque(string $equipo, array $episodios, DateTimeInterface $ahora): array
+    {
+        $porDia = [];
+        foreach ($episodios as $ep) {
+            $duracion = $ep['fin']->getTimestamp() - $ep['inicio']->getTimestamp();
+            $vigente = !$ep['cerrado'] && ($ahora->getTimestamp() - $ep['inicio']->getTimestamp()) >= 3600;
+            if (!$ep['cerrado'] && !$vigente) {
+                continue; // recién empieza: lo veo en la próxima corrida
+            }
+            if ($ep['cerrado'] && $duracion < 15 * 60) {
+                // Un 0 suelto de una o dos lecturas: la lectura igual queda
+                // afuera de la detección, pero no vale un ticket.
+                continue;
+            }
+            $porDia[$ep['inicio']->format('Y-m-d')][] = $ep + ['duracion' => $duracion];
+        }
+        $out = [];
+        foreach ($porDia as $lista) {
+            $ep = $lista[0];
+            $texto = sprintf(
+                'El tanque %d dejó de reportar nivel (lectura en 0) %s %s%s.',
+                $ep['tanque'],
+                $ep['cerrado'] ? 'entre' : 'desde',
+                $this->horaCorta($ep['inicio'], $ep['fin']),
+                $ep['cerrado'] ? ' y ' . $this->horaCorta($ep['fin'], $ep['inicio']) : ' y sigue sin reportar'
+            );
+            if ($ep['nivel_antes'] !== null && $ep['nivel_despues'] !== null) {
+                $texto .= sprintf(' Antes tenía %.0f L y al volver %.0f L.', $ep['nivel_antes'], $ep['nivel_despues']);
+            }
+            if (count($lista) > 1) {
+                $texto .= sprintf(' Ese día se desconectó %d veces en total.', count($lista));
+            }
+            $texto .= ' Mientras no reporta, el nivel total no es confiable y no se usa para detectar pérdidas. No es combustible perdido: revisar la conexión del sensor.';
+            $out[] = $this->construir($equipo, $ep['inicio'], 'desconexion_sensor', $texto, 0.0, null, $ep['lat'], $ep['lng']);
+        }
+        return $out;
+    }
+
+    /**
+     * Días con agua en el combustible: los que tienen al menos
+     * 'agua_reportes_minimos_dia' lecturas con el sensor de agua activo.
+     *
+     * @return array<string, array{reportes:int, primera:array}> por fecha Y-m-d
+     */
+    private function diasConAgua(array $lecturas): array
+    {
+        $minimo = max(1, (int) ($this->cfg['agua_reportes_minimos_dia'] ?? 3));
+        $conteo = [];
+        $primera = [];
+        foreach ($lecturas as $l) {
+            if (($l['wif'] ?? null) === true) {
+                $dia = $l['fecha']->format('Y-m-d');
+                $conteo[$dia] = ($conteo[$dia] ?? 0) + 1;
+                $primera[$dia] ??= $l;
+            }
+        }
+        $out = [];
+        foreach ($conteo as $dia => $n) {
+            if ($n >= $minimo) {
+                $out[$dia] = ['reportes' => $n, 'primera' => $primera[$dia]];
+            }
         }
         return $out;
     }

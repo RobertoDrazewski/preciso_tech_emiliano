@@ -28,6 +28,9 @@ class DataNormalizer
     // no este techo genérico) — bajarlo no les afecta.
     private const TECHO_GENERICO = 1500.0;
 
+    /** Nada que vaya en un vehículo o tanque de esta flota pasa de esto. */
+    private const TECHO_ABSOLUTO = 30000.0;
+
     public function __construct(array $fieldMap)
     {
         $this->fieldMap = $fieldMap;
@@ -91,7 +94,22 @@ class DataNormalizer
 
             $litros = $this->extractFloat($rec, 'combustible_litros');
             if ($litros !== null && ($litros < 0 || $litros > $techo)) {
-                $litros = null; // valor imposible — se descarta como si no hubiera venido, no se inventa un número corregido
+                // Por encima del techo estimado. Antes lo descartaba siempre,
+                // pero el techo sale del historial del propio equipo (lo que
+                // solía tener cargado), y una carga más grande de lo habitual
+                // quedaba afuera días enteros: el gráfico del total hacía una
+                // línea recta mientras los tanques mostraban el nivel real
+                // (caso de las pruebas de TTM, 24 al 30/10). Si el total
+                // coincide con la suma de los tanques, es real y lo dejo.
+                $sumaTanques = 0.0;
+                foreach ([1, 2, 3, 4] as $k) {
+                    $t = $this->extractTanque($rec, 'tanque' . $k . '_litros');
+                    $sumaTanques += $t ?? 0.0;
+                }
+                $coincide = $litros >= 0 && $sumaTanques > 0 && abs($litros - $sumaTanques) <= max(10.0, 0.05 * $litros);
+                if (!$coincide || $litros > self::TECHO_ABSOLUTO) {
+                    $litros = null; // valor imposible — se descarta como si no hubiera venido, no se inventa un número corregido
+                }
             }
             $odometro = $this->extractFloat($rec, 'odometro_km');
 
@@ -175,8 +193,18 @@ class DataNormalizer
                 ? $velocidad > 0
                 : (bool) (is_numeric($motorRaw) ? (int) $motorRaw : filter_var($motorRaw, FILTER_VALIDATE_BOOLEAN));
 
+            // Agua en el combustible. Puede venir como campo propio (0/1) o
+            // como un evento de agua. El nombre exacto del campo se puede
+            // fijar con AGUA_CAMPO en el .env si TTM usa otro.
             $wifRaw = $this->extract($rec, 'wif');
-            $wif = $wifRaw === null ? null : (bool) ((int) $wifRaw);
+            $campoAgua = trim((string) Env::get('AGUA_CAMPO', ''));
+            if ($wifRaw === null && $campoAgua !== '' && array_key_exists($campoAgua, $rec) && $rec[$campoAgua] !== null && $rec[$campoAgua] !== '') {
+                $wifRaw = $rec[$campoAgua];
+            }
+            $wif = $this->aBooleano($wifRaw);
+            if (is_string($evento) && preg_match('/AGUA|WIF|WATER/i', $evento)) {
+                $wif = true;
+            }
 
             $out[] = [
                 'equipo'             => (string) $equipo,
@@ -222,6 +250,40 @@ class DataNormalizer
             if (array_key_exists($alias, $rec) && $rec[$alias] !== null && $rec[$alias] !== '') {
                 return $rec[$alias];
             }
+        }
+        // Mismo nombre con otras mayúsculas ("Wif", "WIF", "wif").
+        $minus = array_change_key_case($rec, CASE_LOWER);
+        foreach ($aliases as $alias) {
+            $k = strtolower($alias);
+            if (array_key_exists($k, $minus) && $minus[$k] !== null && $minus[$k] !== '') {
+                return $minus[$k];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * WIF (water in fuel) es booleano, pero según el equipo puede venir como
+     * 1/0, true/false o "1"/"0". (bool)(int)"true" daba falso, así que lo
+     * interpreto a mano. Cualquier otra cosa: sin dato.
+     */
+    private function aBooleano($v): ?bool
+    {
+        if ($v === null || $v === '') {
+            return null;
+        }
+        if (is_bool($v)) {
+            return $v;
+        }
+        if (is_numeric($v)) {
+            return (float) $v != 0.0;
+        }
+        $t = strtolower(trim((string) $v));
+        if (in_array($t, ['true', 'si', 'sí', 'yes', 'on'], true)) {
+            return true;
+        }
+        if (in_array($t, ['false', 'no', 'off'], true)) {
+            return false;
         }
         return null;
     }

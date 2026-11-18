@@ -18,6 +18,12 @@ return [
          'ayuda' => 'Cuántos litros tiene que perder parado para avisar. Por debajo es ruido del sensor.'],
         ['clave' => 'detenido_distancia_max_metros', 'nombre' => 'Distancia máxima para "detenido"', 'unidad' => 'm', 'min' => 10, 'max' => 2000,
          'ayuda' => 'Si se movió más que esto entre dos lecturas, no estaba detenido.'],
+        ['clave' => 'recuperacion_detenido_minutos', 'nombre' => 'Espera para confirmar', 'unidad' => 'min', 'min' => 20, 'max' => 720,
+         'ayuda' => 'Cuánto espera para ver si el nivel vuelve solo antes de avisar. Más alto = menos falsas alarmas, pero el aviso llega más tarde.'],
+        ['clave' => 'descarga_lenta_tasa_minima_lpm', 'nombre' => 'Velocidad mínima de descarga lenta', 'unidad' => 'L/min', 'min' => 0.2, 'max' => 20,
+         'ayuda' => 'Por debajo de esto, una bajada lenta y sostenida es la temperatura (el gasoil se enfría), no un robo.'],
+        ['clave' => 'linea_base_horas', 'nombre' => 'Horas para comparar el nivel', 'unidad' => 'h', 'min' => 2, 'max' => 72,
+         'ayuda' => 'Compara contra el nivel más bajo de estas últimas horas en el mismo lugar: si el nivel solo volvió a donde estaba, no avisa.'],
     ],
     'caida_instantanea' => [
         ['clave' => 'min_drop_liters_instant', 'nombre' => 'Litros mínimos', 'unidad' => 'L', 'min' => 1, 'max' => 1000,
@@ -33,7 +39,10 @@ return [
         ['clave' => 'min_history_points', 'nombre' => 'Historial mínimo', 'unidad' => 'caídas', 'min' => 5, 'max' => 500,
          'ayuda' => 'Cuántas caídas del vehículo hacen falta antes de poder decir qué es "normal" para él.'],
     ],
-    'agua_combustible' => [],
+    'agua_combustible' => [
+        ['clave' => 'agua_reportes_minimos_dia', 'nombre' => 'Reportes de agua por día', 'unidad' => 'reportes', 'min' => 1, 'max' => 100,
+         'ayuda' => 'Con esta cantidad de reportes de agua en un día, ese día solo se avisa el agua y no las demás anomalías de esa unidad (los sensores fallan con agua).'],
+    ],
     'ralenti' => [
         ['clave' => 'ralenti_minutos_minimos', 'nombre' => 'Minutos mínimos', 'unidad' => 'min', 'min' => 5, 'max' => 600,
          'ayuda' => 'Cuánto tiempo con el motor prendido y parado para avisar.'],

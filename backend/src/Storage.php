@@ -25,7 +25,7 @@ class Storage
      * digan lo mismo.
      */
     /** Subir este número cuando se agregue una migración (columna, índice, tabla). */
-    private const ESQUEMA_VERSION = 'v3.6';
+    private const ESQUEMA_VERSION = 'v3.8';
 
     public const TIPOS_MERMA = ['descarga_detenido', 'caida_instantanea', 'corte_alimentacion', 'carga_no_coincide', 'desconexion_sensor'];
 
@@ -189,6 +189,9 @@ class Storage
             'comentario_revision' => 'TEXT',
             // Cuándo se le mandó el PDF al cliente (botón "Notificar al cliente").
             'cliente_notificado_en' => 'TEXT',
+            // Desde cuándo viene la pérdida (la "fecha" es el final). Sirve
+            // para no abrir dos tickets por el mismo evento (18/11/2026).
+            'fecha_desde' => 'TEXT',
         ];
         foreach ($nuevasAnomalias as $columna => $tipo) {
             if (!in_array($columna, $columnasAnomalias, true)) {
@@ -806,12 +809,13 @@ class Storage
     public function guardarAnomalia(array $a): int
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO anomalias (equipo, fecha, tipo, detalle, litros_perdidos, z_score, lat, lng, alertado, creado_en)
-            VALUES (:equipo, :fecha, :tipo, :detalle, :litros_perdidos, :z_score, :lat, :lng, 0, :creado_en)
+            INSERT INTO anomalias (equipo, fecha, fecha_desde, tipo, detalle, litros_perdidos, z_score, lat, lng, alertado, creado_en)
+            VALUES (:equipo, :fecha, :fecha_desde, :tipo, :detalle, :litros_perdidos, :z_score, :lat, :lng, 0, :creado_en)
         ');
         $stmt->execute([
             ':equipo'          => $a['equipo'],
             ':fecha'           => $a['fecha']->format(DateTimeInterface::ATOM),
+            ':fecha_desde'     => isset($a['desde']) ? $a['desde']->format(DateTimeInterface::ATOM) : null,
             ':tipo'            => $a['tipo'],
             ':detalle'         => $a['detalle'],
             ':litros_perdidos' => $a['litros_perdidos'],
@@ -824,6 +828,82 @@ class Storage
     }
 
     /** Evita alertar dos veces la misma anomalía (mismo equipo+fecha+tipo). */
+    /** Tipos que describen una pérdida en un lapso: no puede haber dos tickets del mismo lapso. */
+    public const TIPOS_PERDIDA_LAPSO = ['descarga_detenido', 'caida_instantanea', 'consumo_anomalo'];
+
+    /**
+     * Guarda una anomalía detectada sin duplicar (18/11/2026).
+     *
+     * Antes cada corrida del cron podía abrir otro ticket por el mismo
+     * evento: primero la caída suelta (lectura contra lectura) y, cuando la
+     * bajada terminaba, la "descarga sostenida" que la contiene (caso
+     * AE553QC: 3 tickets del mismo evento; PLFJ79: el mismo evento dos
+     * veces). Ahora, si la pérdida se superpone en el tiempo con otra del
+     * mismo equipo:
+     *   - si alguna ya fue trabajada por el operador, no se crea nada;
+     *   - si están pendientes, quedan en UN solo ticket con la versión más
+     *     completa (la de más litros) y las demás se borran (solo si no
+     *     tienen historial).
+     *
+     * @return bool true si quedó como ticket nuevo
+     */
+    public function registrarAnomalia(array $a): bool
+    {
+        if ($this->anomaliaYaRegistrada($a['equipo'], $a['fecha'], $a['tipo'])) {
+            return false;
+        }
+        if (!isset($a['desde']) || !in_array($a['tipo'], self::TIPOS_PERDIDA_LAPSO, true)) {
+            $this->guardarAnomalia($a);
+            return true;
+        }
+
+        $margen = 15 * 60;
+        $desde = (new DateTimeImmutable('@' . ($a['desde']->getTimestamp() - $margen)))->setTimezone($a['fecha']->getTimezone());
+        $hasta = (new DateTimeImmutable('@' . ($a['fecha']->getTimestamp() + $margen)))->setTimezone($a['fecha']->getTimezone());
+        $tipos = "'" . implode("','", self::TIPOS_PERDIDA_LAPSO) . "'";
+        $stmt = $this->pdo->prepare("
+            SELECT id, estado_revision, litros_perdidos FROM anomalias
+            WHERE equipo = :equipo AND tipo IN ({$tipos})
+              AND fecha >= :desde AND COALESCE(fecha_desde, fecha) <= :hasta
+            ORDER BY id
+        ");
+        $stmt->execute([
+            ':equipo' => $a['equipo'],
+            ':desde'  => $desde->format(DateTimeInterface::ATOM),
+            ':hasta'  => $hasta->format(DateTimeInterface::ATOM),
+        ]);
+        $superpuestas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!$superpuestas) {
+            $this->guardarAnomalia($a);
+            return true;
+        }
+        foreach ($superpuestas as $f) {
+            if (($f['estado_revision'] ?? 'pendiente') !== 'pendiente') {
+                return false; // el operador ya trabajó ese evento
+            }
+        }
+
+        $queda = array_shift($superpuestas);
+        if ((float) $a['litros_perdidos'] > (float) $queda['litros_perdidos']) {
+            $upd = $this->pdo->prepare('
+                UPDATE anomalias SET tipo = :tipo, fecha = :fecha, fecha_desde = :fecha_desde, detalle = :detalle,
+                       litros_perdidos = :litros, z_score = :z, lat = COALESCE(:lat, lat), lng = COALESCE(:lng, lng)
+                WHERE id = :id
+            ');
+            $upd->execute([
+                ':tipo' => $a['tipo'], ':fecha' => $a['fecha']->format(DateTimeInterface::ATOM),
+                ':fecha_desde' => $a['desde']->format(DateTimeInterface::ATOM), ':detalle' => $a['detalle'],
+                ':litros' => $a['litros_perdidos'], ':z' => $a['z_score'], ':lat' => $a['lat'] ?? null, ':lng' => $a['lng'] ?? null,
+                ':id' => $queda['id'],
+            ]);
+        }
+        $borrar = $this->pdo->prepare('DELETE FROM anomalias WHERE id = :id AND NOT EXISTS (SELECT 1 FROM ticket_eventos WHERE anomalia_id = :id2)');
+        foreach ($superpuestas as $f) {
+            $borrar->execute([':id' => $f['id'], ':id2' => $f['id']]);
+        }
+        return false;
+    }
+
     public function anomaliaYaRegistrada(string $equipo, DateTimeInterface $fecha, string $tipo): bool
     {
         $stmt = $this->pdo->prepare('

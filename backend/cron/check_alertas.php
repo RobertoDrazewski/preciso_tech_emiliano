@@ -72,11 +72,10 @@ foreach ($lote as $equipo) {
         $storage->guardarLecturas($lecturas);
 
         foreach ($detector->analizar($equipo['id'], $hasta, $capacidadLitros) as $a) {
-            if ($storage->anomaliaYaRegistrada($a['equipo'], $a['fecha'], $a['tipo'])) {
-                continue;
+            // registrarAnomalia no duplica: mismo evento = un solo ticket.
+            if ($storage->registrarAnomalia($a)) {
+                $totalNuevas++;
             }
-            $storage->guardarAnomalia($a);
-            $totalNuevas++;
         }
     } catch (Throwable $e) {
         $log("ERROR con equipo {$equipo['id']}: " . $e->getMessage());

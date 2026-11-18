@@ -168,10 +168,9 @@ foreach ($equipos as $i => $equipoId) {
                     if ($a['fecha'] < $desde) {
                         continue; // fuera del período que estoy reprocesando
                     }
-                    if ($storage->anomaliaYaRegistrada($a['equipo'], $a['fecha'], $a['tipo'])) {
-                        continue;
+                    if (!$storage->registrarAnomalia($a)) {
+                        continue; // ya estaba, o era parte de otro evento
                     }
-                    $storage->guardarAnomalia($a);
                     $nuevas++;
                     $porTipo[$a['tipo']] = ($porTipo[$a['tipo']] ?? 0) + 1;
                 }

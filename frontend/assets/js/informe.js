@@ -126,7 +126,10 @@ function renderCharts(r) {
     // spanGaps: entre lectura y lectura de combustible hay registros sin dato
     // (TIEMPO, eventos). Sin esto, el relleno bajaba a cero en cada hueco y
     // el gráfico se llenaba de rayas verticales que parecían caídas.
-    data: { datasets: [{ label: 'Combustible (L)', data: r.serie_combustible, borderColor: '#f2a71b', backgroundColor: 'rgba(242,167,27,0.15)', fill: true, tension: 0.25, pointRadius: 0, spanGaps: true }] },
+    // Pero solo uno huecos de hasta 2 horas: si no hay nivel por más tiempo
+    // la línea se corta, en vez de dibujar una recta de días que parece un
+    // nivel real (caso de las pruebas de TTM, 24 al 30/10).
+    data: { datasets: [{ label: 'Combustible (L)', data: r.serie_combustible, borderColor: '#f2a71b', backgroundColor: 'rgba(242,167,27,0.15)', fill: true, tension: 0.25, pointRadius: 0, spanGaps: 2 * 60 * 60 * 1000 }] },
     // devicePixelRatio alto a propósito: el gráfico se ve igual en pantalla,
     // pero el canvas de fondo queda en mayor resolución — necesario para que
     // no salga borroso al exportarlo al PDF (ahí se estira para ocupar todo

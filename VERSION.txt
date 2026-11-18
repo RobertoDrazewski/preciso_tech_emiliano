@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-10-21 v3.7 (entrega final)
+Versión: 2026-11-18 v3.8 (correcciones de las pruebas de TTM)
 Desarrollado por Puma Code
 
 Incluye:
@@ -55,5 +55,19 @@ Incluye:
   mudar anomalías, tickets e historial entre instalaciones; correo del
   cliente con nombre de campo configurable (DEVICES_CAMPO_EMAIL) o desde
   data/emails_clientes.json; el resumen diario no se repite si se reinicia
+
+- v3.8 (18/11/2026), correcciones de las pruebas del equipo de TTM:
+  temperatura: con el vehículo detenido se compara contra el nivel que
+  tenía antes en el mismo lugar (pérdida neta) y la descarga lenta exige al
+  menos 1 L/min; lo que era temperatura se avisa como "variación por
+  temperatura" y no como descarga. Desconexión de un tanque: si un tanque
+  deja de reportar mientras los otros siguen, esas lecturas no se usan para
+  detectar pérdidas y se avisa como desconexión de sensor. Agua: un día con
+  3 o más reportes de agua solo avisa el agua para esa unidad; el
+  diagnóstico manual de la API de equipos ya no genera avisos de agua.
+  Detenido: se esperan 3 horas para confirmar una pérdida (una carga no
+  cuenta como recuperación). Un solo ticket por evento (antes podían salir
+  2 o 3 del mismo). El total ya no se descarta cuando coincide con la suma
+  de los tanques, y el gráfico no une huecos de más de 2 horas
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

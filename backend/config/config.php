@@ -168,6 +168,42 @@ return [
         // Un robo real rara vez es de menos de 15 L.
         'stopped_drop_liters_threshold' => 15.0,
 
+        // --- Ajustes del 18/11/2026, por las pruebas del equipo de TTM ---
+        //
+        // Con el vehículo DETENIDO espero más para confirmar una pérdida:
+        // en las pruebas hubo caídas que el nivel recuperaba solo una o dos
+        // horas después (sensor con agua, nivel que "se acomoda"). Andando
+        // sigue valiendo recovery_window_minutes. Una carga (evento CARGA)
+        // dentro de esta ventana NO cuenta como recuperación.
+        'recuperacion_detenido_minutos' => 180,
+
+        // La "descarga lenta" (bajadas seguidas con el vehículo parado) se
+        // confundía con la contracción por temperatura: de noche el nivel
+        // baja 0,2-0,5 L/min durante horas porque el gasoil (y el sensor)
+        // se enfrían. Un robo con manguera o bomba va bastante más rápido.
+        'descarga_lenta_tasa_minima_lpm' => 1.0,
+
+        // Pérdida NETA: con el vehículo detenido, comparo el nivel después de
+        // la bajada contra el nivel más bajo que tuvo en las horas anteriores
+        // en el mismo lugar. Si a la tarde el nivel "subió" con el calor y a
+        // la noche "bajó" lo mismo, no se perdió nada: volvió a donde estaba.
+        'linea_base_horas' => 24,
+
+        // Desconexión de UN tanque: si un tanque que viene reportando manda
+        // 0 (o deja de reportar) mientras los otros siguen, el nivel total
+        // de TTM cae lo que tenía ese tanque y parecía una descarga. Esas
+        // lecturas no se usan para detectar pérdidas, y se avisa como
+        // desconexión de sensor. Un tanque cuenta como "presente" si tuvo
+        // dato en esta cantidad de horas antes o después.
+        'desconexion_tanque_ventana_horas' => 12,
+
+        // Agua en el combustible: con agua los sensores dan cargas,
+        // descargas y saltos falsos. Si en un día hay al menos esta
+        // cantidad de reportes de agua, ese día se avisa SOLO "agua en
+        // combustible" para esa unidad y no se toman las demás anomalías
+        // (pedido del equipo de pruebas de TTM).
+        'agua_reportes_minimos_dia' => 3,
+
         // Equipos que NO se mueven nunca: tanques fijos, pozos, máquinas,
         // generadores. Para estos no aplican "descarga detenido", "caída
         // instantánea" ni "ralentí": un tanque fijo está siempre quieto y

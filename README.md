@@ -519,6 +519,8 @@ php scripts/importar_datos.php <archivo.jsonl.gz> # en la nueva, ANTES de arranc
 | `PANEL_SECRETO` | Opcional: texto largo al azar para firmar las sesiones |
 | `NOTIFICAR_CLIENTE_MODO_PRUEBA` | `"true"` (por defecto): el PDF de "Notificar al cliente" no le llega al cliente |
 | `NOTIFICAR_CLIENTE_EMAIL_PRUEBA` | Dónde llegan las pruebas (si está vacío, al primer correo de `ALERT_EMAILS`) |
+| `AGUA_CAMPO` | Nombre del campo de telemetría que marca agua en el combustible, si no es uno de los conocidos |
+| `AGUA_DESDE_DIAGNOSTICO_TTM` | `"true"` para generar avisos de agua desde el diagnóstico de la API de equipos (apagado por defecto) |
 | `DEVICES_CAMPO_EMAIL` | Nombre del campo de `get_devices.php` con el correo del cliente (vacío = prueba los nombres comunes) |
 | `CRON_MINUTOS` / `CRON_HORA_RESUMEN` | Solo para `cron/programador.php`: cada cuántos minutos detecta y a qué hora sale el resumen diario |
 | `ALERTAS_CADA_HORAS` / `ALERTAS_LITROS_MINIMOS` | Resumen de alertas por mail: cada cuántas horas y desde cuántos litros (4 h y 30 L por defecto) |
@@ -542,6 +544,12 @@ Todos los endpoints están en `backend/public/api/` y devuelven JSON.
 ---
 
 ## Estado actual y próximos pasos
+
+**v3.8 (18/11/2026):** correcciones de las pruebas del equipo de TTM:
+variación por temperatura que salía como descarga, desconexión de un
+tanque, días con agua, pérdidas que se recuperaban horas después,
+tickets duplicados del mismo evento y el total que se descartaba al
+superar el techo estimado. Detalle en VERSION.txt.
 
 **Entregado (v3.7, 21/10/2026):**
 - Conexión a las dos APIs reales de TTM (telemetría y flota), con token.

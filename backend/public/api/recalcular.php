@@ -134,11 +134,9 @@ try {
                     if ($a['tipo'] !== $job['tipo'] || $a['fecha'] < $desde) {
                         continue;
                     }
-                    if ($storage->anomaliaYaRegistrada($a['equipo'], $a['fecha'], $a['tipo'])) {
-                        continue;
+                    if ($storage->registrarAnomalia($a)) {
+                        $job['creadas']++;
                     }
-                    $storage->guardarAnomalia($a);
-                    $job['creadas']++;
                 }
             }
             $job['indice']++;
