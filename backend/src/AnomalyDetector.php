@@ -1020,7 +1020,45 @@ class AnomalyDetector
             ];
         }
 
-        return $confirmadas;
+        return $this->encadenarCaidas($confirmadas);
+    }
+
+    /**
+     * Junta en una sola caída los escalones seguidos (18/11/2026).
+     *
+     * Caso AE553QC: entre 11:28 y 11:54 el nivel bajó 1118 → 1081 → 1045 →
+     * 1018 → 999 (119 L en 26 min). Comparando de a pares salían escalones
+     * de 37, 36, 27 y 19 L; los dos primeros pasaban el umbral, se
+     * unificaban en un ticket y quedaba en 37 L. La pérdida real es la suma.
+     *
+     * Un escalón se suma al anterior si empieza justo donde terminó el otro
+     * y es empinado (al menos 3 L y 2 L/min, el triple de lo que consume un
+     * camión andando), y el anterior también lo era. El consumo normal
+     * (1-2 L cada 6 min) ni arranca ni continúa una cadena.
+     */
+    private function encadenarCaidas(array $caidas): array
+    {
+        $resultado = [];
+        foreach ($caidas as $c) {
+            $n = count($resultado);
+            $empinada = $c['litros_perdidos'] >= 3.0 && $c['minutos'] > 0
+                && ($c['litros_perdidos'] / $c['minutos']) >= 2.0;
+            if ($n > 0 && $empinada && $resultado[$n - 1]['empinada'] && $resultado[$n - 1]['fecha'] == $c['fecha_inicio']) {
+                $a = &$resultado[$n - 1];
+                $a['fecha'] = $c['fecha'];
+                $a['litros_perdidos'] += $c['litros_perdidos'];
+                $a['minutos'] += $c['minutos'];
+                $a['detenido'] = $a['detenido'] && $c['detenido'];
+                $a['sin_perdida_neta'] = $a['sin_perdida_neta'] && $c['sin_perdida_neta'];
+                $a['variacion_detectada'] = $a['variacion_detectada'] || $c['variacion_detectada'];
+                $a['lat'] = $c['lat'] ?? $a['lat'];
+                $a['lng'] = $c['lng'] ?? $a['lng'];
+                unset($a);
+                continue;
+            }
+            $resultado[] = $c + ['empinada' => $empinada];
+        }
+        return $resultado;
     }
 
     /**

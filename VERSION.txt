@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-11-18 v3.8 (correcciones de las pruebas de TTM)
+Versión: 2026-11-18 v3.9 (hora igual a la de TTM)
 Desarrollado por Puma Code
 
 Incluye:
@@ -69,5 +69,14 @@ Incluye:
   cuenta como recuperación). Un solo ticket por evento (antes podían salir
   2 o 3 del mismo). El total ya no se descarta cuando coincide con la suma
   de los tanques, y el gráfico no une huecos de más de 2 horas
+
+- v3.9 (18/11/2026): misma hora que la plataforma de TTM. La API de
+  telemetría manda la hora en UTC; si API_TIMEZONE quedaba vacío se tomaba
+  como hora de Mendoza y todo aparecía 3 horas más tarde. Ahora UTC es el
+  valor por defecto, cada lectura y anomalía nueva queda marcada con
+  hora_corregida y scripts/corregir_hora_lecturas.php revisa y corrige las
+  que se guardaron antes. Caídas en escalones seguidos (37 + 36 + 27 +
+  19 L en 26 min) se informan como una sola pérdida con el total (antes el
+  ticket quedaba con el escalón más grande)
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

@@ -369,8 +369,9 @@ que no está en el tanque). El aviso cuando entró más está desactivado
   actualizan solo esa fila.
 - **Horas en UTC-3**: todas las fechas se muestran en hora argentina (la de
   TTM), sin importar la zona horaria de la computadora. `APP_TIMEZONE`
-  inválida o ausente ya no deja el servidor en UTC. `API_TIMEZONE` permite
-  indicar otra zona para la API si hiciera falta; `scripts/diagnostico_hora.php`
+  inválida o ausente ya no deja el servidor en UTC. La API de telemetría
+  manda la hora en UTC, así que `API_TIMEZONE` vale `UTC` por defecto (solo
+  hay que tocarlo si TTM cambia su API); `scripts/diagnostico_hora.php`
   lo verifica.
 - **Notificar al cliente**: arma un PDF de la anomalía y lo manda por mail.
   En **modo prueba** (por defecto) llega a `NOTIFICAR_CLIENTE_EMAIL_PRUEBA`,
@@ -544,6 +545,12 @@ Todos los endpoints están en `backend/public/api/` y devuelven JSON.
 ---
 
 ## Estado actual y próximos pasos
+
+**v3.9 (18/11/2026):** las horas coinciden con las de la plataforma de TTM.
+La API de telemetría manda la hora en UTC y ahora ese es el valor por
+defecto de `API_TIMEZONE`. Para una base con lecturas guardadas antes:
+`php scripts/corregir_hora_lecturas.php <equipo>` (revisa) y
+`--arreglar` (corrige); después `php scripts/reprocesar_anomalias.php 30`.
 
 **v3.8 (18/11/2026):** correcciones de las pruebas del equipo de TTM:
 variación por temperatura que salía como descarga, desconexión de un

@@ -50,8 +50,11 @@ return [
         // hora del equipo en UTC (muy común en equipos GPS), poner "UTC": así
         // las horas de las anomalías coinciden con las de la plataforma de TTM.
         // scripts/diagnostico_hora.php dice cuál corresponde.
-        // Emiliano confirmó que TTM trabaja en UTC-3: por defecto, la de la aplicación.
-        'timezone' => Env::get('API_TIMEZONE', '') ?: date_default_timezone_get(),
+        // La plataforma de TTM MUESTRA las horas en UTC-3, pero la API de
+        // telemetría las MANDA en UTC (verificado el 18/11/2026: la última
+        // lectura venía 3 horas adelante de la hora de Mendoza). Por eso el
+        // valor por defecto es UTC. Solo cambiarlo si TTM cambia su API.
+        'timezone' => Env::get('API_TIMEZONE', '') ?: 'UTC',
 
         // API de EQUIPOS (flota completa con datos administrativos: cliente,
         // estado, capacidad de tanque, etc.) — confirmada por Emiliano el

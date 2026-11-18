@@ -64,7 +64,7 @@ if ($guardada) {
     $difGuardada = ($comoReloj->getTimestamp() - $guardadaReloj->getTimestamp()) / 60;
     echo "Última lectura guardada en Preciso (UTC-3): " . $guardadaReloj->format('Y-m-d H:i:s') . "  (atrás de la API: " . round($difGuardada) . " min)\n";
     if (abs(abs($difGuardada) - 180) < 30) {
-        echo "   ⚠️ Las lecturas guardadas están CORRIDAS 3 HORAS: revisar que APP_TIMEZONE=\"America/Argentina/Mendoza\" esté en el servicio del CRON en Railway.\n";
+        echo "   ⚠️ Las lecturas guardadas están CORRIDAS 3 HORAS: revisar API_TIMEZONE (vacío o \"UTC\") y APP_TIMEZONE=\"America/Argentina/Mendoza\" en el backend y en el cron, y correr scripts/corregir_hora_lecturas.php.\n";
     } elseif ($difGuardada >= -5 && $difGuardada < 120) {
         echo "   ✓ Las lecturas guardadas coinciden con la hora de la API (la diferencia es solo la demora del cron).\n";
     }
@@ -73,7 +73,7 @@ echo "\n";
 
 if (abs($difUtc) < abs($difLocal) && abs($difUtc) < 90) {
     echo "=> La API manda la hora en UTC.\n";
-    echo "   Poner la variable API_TIMEZONE=\"UTC\" en Railway (backend Y cron).\n";
+    echo "   Desde v3.9 es el valor por defecto: API_TIMEZONE tiene que estar vacío o en \"UTC\" (backend Y cron).\n";
 } elseif (abs($difLocal) < 90) {
     echo "=> La API manda la hora local (" . date_default_timezone_get() . "). No hay que cambiar nada de zona horaria.\n";
 } else {

@@ -25,7 +25,7 @@ class Storage
      * digan lo mismo.
      */
     /** Subir este número cuando se agregue una migración (columna, índice, tabla). */
-    private const ESQUEMA_VERSION = 'v3.8';
+    private const ESQUEMA_VERSION = 'v3.9';
 
     public const TIPOS_MERMA = ['descarga_detenido', 'caida_instantanea', 'corte_alimentacion', 'carga_no_coincide', 'desconexion_sensor'];
 
@@ -170,6 +170,9 @@ class Storage
             'wif'             => 'INTEGER',
             'altitud'         => $tipoReal,
             'temp_tanque'     => $tipoReal,
+            // 1 = la hora se guardó con la zona correcta de la API (UTC).
+            // Las que quedan en NULL las revisa scripts/corregir_hora_lecturas.php.
+            'hora_corregida'  => 'INTEGER',
         ];
         foreach ($nuevasLecturas as $columna => $tipo) {
             if (!in_array($columna, $columnasLecturas, true)) {
@@ -192,6 +195,8 @@ class Storage
             // Desde cuándo viene la pérdida (la "fecha" es el final). Sirve
             // para no abrir dos tickets por el mismo evento (18/11/2026).
             'fecha_desde' => 'TEXT',
+            // Igual que en lecturas: 1 = calculada con la hora correcta.
+            'hora_corregida' => 'INTEGER',
         ];
         foreach ($nuevasAnomalias as $columna => $tipo) {
             if (!in_array($columna, $columnasAnomalias, true)) {
@@ -637,11 +642,11 @@ class Storage
                 INSERT INTO lecturas
                     (equipo, fecha, evento, lat, lng, velocidad, combustible_litros,
                      tanque1_litros, tanque2_litros, tanque3_litros, tanque4_litros,
-                     variacion, odometro_km, motor_encendido, wif, altitud, temp_tanque)
+                     variacion, odometro_km, motor_encendido, wif, altitud, temp_tanque, hora_corregida)
                 VALUES
                     (:equipo, :fecha, :evento, :lat, :lng, :velocidad, :combustible_litros,
                      :tanque1_litros, :tanque2_litros, :tanque3_litros, :tanque4_litros,
-                     :variacion, :odometro_km, :motor_encendido, :wif, :altitud, :temp_tanque)
+                     :variacion, :odometro_km, :motor_encendido, :wif, :altitud, :temp_tanque, 1)
                 ON CONFLICT (equipo, fecha) DO NOTHING
             ';
         } else {
@@ -649,11 +654,11 @@ class Storage
                 INSERT OR IGNORE INTO lecturas
                     (equipo, fecha, evento, lat, lng, velocidad, combustible_litros,
                      tanque1_litros, tanque2_litros, tanque3_litros, tanque4_litros,
-                     variacion, odometro_km, motor_encendido, wif, altitud, temp_tanque)
+                     variacion, odometro_km, motor_encendido, wif, altitud, temp_tanque, hora_corregida)
                 VALUES
                     (:equipo, :fecha, :evento, :lat, :lng, :velocidad, :combustible_litros,
                      :tanque1_litros, :tanque2_litros, :tanque3_litros, :tanque4_litros,
-                     :variacion, :odometro_km, :motor_encendido, :wif, :altitud, :temp_tanque)
+                     :variacion, :odometro_km, :motor_encendido, :wif, :altitud, :temp_tanque, 1)
             ';
         }
         $stmt = $this->pdo->prepare($sql);
@@ -809,8 +814,8 @@ class Storage
     public function guardarAnomalia(array $a): int
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO anomalias (equipo, fecha, fecha_desde, tipo, detalle, litros_perdidos, z_score, lat, lng, alertado, creado_en)
-            VALUES (:equipo, :fecha, :fecha_desde, :tipo, :detalle, :litros_perdidos, :z_score, :lat, :lng, 0, :creado_en)
+            INSERT INTO anomalias (equipo, fecha, fecha_desde, tipo, detalle, litros_perdidos, z_score, lat, lng, alertado, creado_en, hora_corregida)
+            VALUES (:equipo, :fecha, :fecha_desde, :tipo, :detalle, :litros_perdidos, :z_score, :lat, :lng, 0, :creado_en, 1)
         ');
         $stmt->execute([
             ':equipo'          => $a['equipo'],
