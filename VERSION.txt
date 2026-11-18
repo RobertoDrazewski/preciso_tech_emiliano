@@ -84,6 +84,8 @@ Incluye:
   el que había antes de la caída, es una carga); los escalones seguidos se
   informan como caída instantánea; combustible consumido por balance
   (inicio − final + cargas − pérdidas) en lugar de sumar bajadas, que
-  inflaba el L/100 km; horas en formato 24 h en pantalla, PDF y gráficos
+  inflaba el L/100 km; horas en formato 24 h en pantalla, PDF y gráficos;
+  una caída que empieza andando y sigue detenido ya no queda tapada por el
+  tramo de "descarga detenido" (queda un ticket con el total)
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

@@ -131,9 +131,12 @@ class AnomalyDetector
         }
         foreach ($confirmadas as $c) {
             // Si esta caída es parte de una descarga lenta ya reportada, no la
-            // repito suelta.
+            // repito suelta. Pero si empezó ANTES que el tramo (AE553QC: bajó
+            // andando desde las 11:28 y siguió ya detenido hasta las 12:00),
+            // la caída es más grande que el tramo y va igual: Storage deja
+            // un solo ticket con la mayor de las dos.
             foreach ($tramos as $t) {
-                if ($c['fecha'] > $t['inicio'] && $c['fecha'] <= $t['fin']) {
+                if ($c['fecha'] > $t['inicio'] && $c['fecha'] <= $t['fin'] && $c['fecha_inicio'] >= $t['inicio']) {
                     continue 2;
                 }
             }
