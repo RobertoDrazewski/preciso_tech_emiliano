@@ -86,6 +86,7 @@ Incluye:
   (inicio − final + cargas − pérdidas) en lugar de sumar bajadas, que
   inflaba el L/100 km; horas en formato 24 h en pantalla, PDF y gráficos;
   una caída que empieza andando y sigue detenido ya no queda tapada por el
-  tramo de "descarga detenido" (queda un ticket con el total)
+  tramo de "descarga detenido" (queda un ticket con el total); no se avisa
+  "variación por temperatura" dentro de una pérdida ya informada
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

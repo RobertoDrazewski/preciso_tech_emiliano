@@ -259,6 +259,23 @@ class AnomalyDetector
         // pérdida de combustible, es un aviso de que ese sensor no es
         // confiable. Ver deteccionTemperaturaNivel() más abajo.
         $avisosTemperatura = $this->deteccionTemperaturaNivel($lecturas);
+        // Una "bajada por temperatura" que cae dentro de una pérdida ya
+        // informada no se avisa: decir "bajó por temperatura" y "perdió 55 L"
+        // en el mismo rato se contradice (AE553QC, 18/11 13:30-14:02).
+        $lapsosPerdida = [];
+        foreach ($anomalias as $a) {
+            if (isset($a['desde']) && in_array($a['tipo'], ['descarga_detenido', 'caida_instantanea', 'consumo_anomalo'], true)) {
+                $lapsosPerdida[] = [$a['desde'], $a['fecha']];
+            }
+        }
+        $this->bajadasTermicas = array_values(array_filter($this->bajadasTermicas, function ($b) use ($lapsosPerdida) {
+            foreach ($lapsosPerdida as [$ini, $fin]) {
+                if ($b['desde'] <= $fin && $b['hasta'] >= $ini) {
+                    return false;
+                }
+            }
+            return true;
+        }));
         if (!$avisosTemperatura && $this->bajadasTermicas) {
             $avisosTemperatura[] = $this->avisoBajadasTermicas($equipo);
         }
