@@ -184,8 +184,10 @@ class AnomalyDetector
                 continue;
             }
 
+            // Varios escalones empinados seguidos (ver encadenarCaidas) son
+            // una caída aunque en total duren más que la ventana.
             if (!$esEstacionario && $c['litros_perdidos'] >= $this->cfg['min_drop_liters_instant']
-                && $c['minutos'] <= $this->cfg['min_drop_window_minutes']
+                && ($c['minutos'] <= $this->cfg['min_drop_window_minutes'] || !empty($c['encadenada']))
             ) {
                 $anomalias[] = $this->construir(
                     $equipo, $c['fecha'], 'caida_instantanea',
@@ -962,23 +964,18 @@ class AnomalyDetector
             // las lecturas (no solo las que tienen combustible) para no
             // perdernos ninguna "variacion" que haya venido en un registro
             // TIEMPO en el medio.
-            $mejorNivelPosterior = $cur['combustible_litros'];
             $variacionDetectada = ($cur['variacion'] !== null && $cur['variacion'] != 0.0);
             foreach ($lecturas as $l) {
                 if ($l['fecha'] > $cur['fecha'] && $l['fecha'] <= $finVentana) {
-                    // Una carga no es "recuperación": si después del robo
-                    // cargaron, la subida no tiene que tapar la pérdida.
                     if (($l['evento'] ?? null) === 'CARGA') {
                         break;
-                    }
-                    if ($l['combustible_litros'] !== null) {
-                        $mejorNivelPosterior = max($mejorNivelPosterior, $l['combustible_litros']);
                     }
                     if ($l['variacion'] !== null && $l['variacion'] != 0.0) {
                         $variacionDetectada = true;
                     }
                 }
             }
+            $mejorNivelPosterior = $this->mejorNivelSinCarga($lecturas, $cur['fecha'], $finVentana, $cur['combustible_litros'], $prev['combustible_litros']);
 
             $recuperado = $mejorNivelPosterior - $cur['combustible_litros'];
             $fraccionRecuperada = $recuperado / $litrosPerdidos;
@@ -1024,6 +1021,60 @@ class AnomalyDetector
     }
 
     /**
+     * Mejor nivel que alcanzó el tanque después de una bajada, dentro de la
+     * ventana de recuperación, SIN contar una carga (18/11/2026).
+     *
+     * Una carga no es "recuperación": si después del robo cargaron, la
+     * subida no tiene que tapar la pérdida. Antes solo cortaba en el evento
+     * CARGA, pero ese evento puede llegar al final de la carga (AE553QC: la
+     * bajada de las 11:47 quedaba "recuperada" por la carga de las 14:30 en
+     * la YPF). Ahora además: si el nivel pasa claramente por encima del que
+     * había ANTES de la bajada, eso es una carga; vuelvo atrás hasta donde
+     * empezó a subir y solo miro lo anterior. Un rebote del sensor vuelve
+     * más o menos al nivel previo, no lo supera.
+     */
+    private function mejorNivelSinCarga(array $lecturas, DateTimeInterface $desde, DateTimeInterface $hasta, float $nivelDespues, float $nivelAntes): float
+    {
+        // Miro hasta 1 hora más allá de la ventana solo para ver si la subida
+        // del final era una carga (una carga que empieza al final de la
+        // ventana todavía no superó el nivel previo cuando la ventana cierra).
+        $horizonte = (new DateTimeImmutable('@' . $hasta->getTimestamp()))->modify('+60 minutes');
+        $niveles = [];
+        $enVentana = [];
+        foreach ($lecturas as $l) {
+            if ($l['fecha'] > $desde && $l['fecha'] <= $horizonte) {
+                if (($l['evento'] ?? null) === 'CARGA') {
+                    break;
+                }
+                if ($l['combustible_litros'] !== null) {
+                    $niveles[] = (float) $l['combustible_litros'];
+                    $enVentana[] = $l['fecha'] <= $hasta;
+                }
+            }
+        }
+        $tolerancia = max(10.0, 0.25 * max(0.0, $nivelAntes - $nivelDespues));
+        $corte = count($niveles);
+        foreach ($niveles as $k => $v) {
+            if ($v > $nivelAntes + $tolerancia) {
+                // Vuelvo hasta el punto más bajo antes de la subida.
+                $j = $k;
+                while ($j > 0 && $niveles[$j - 1] <= $niveles[$j]) {
+                    $j--;
+                }
+                $corte = $j;
+                break;
+            }
+        }
+        $mejor = $nivelDespues;
+        for ($k = 0; $k < $corte; $k++) {
+            if ($enVentana[$k]) {
+                $mejor = max($mejor, $niveles[$k]);
+            }
+        }
+        return $mejor;
+    }
+
+    /**
      * Junta en una sola caída los escalones seguidos (18/11/2026).
      *
      * Caso AE553QC: entre 11:28 y 11:54 el nivel bajó 1118 → 1081 → 1045 →
@@ -1053,6 +1104,7 @@ class AnomalyDetector
                 $a['variacion_detectada'] = $a['variacion_detectada'] || $c['variacion_detectada'];
                 $a['lat'] = $c['lat'] ?? $a['lat'];
                 $a['lng'] = $c['lng'] ?? $a['lng'];
+                $a['encadenada'] = true;
                 unset($a);
                 continue;
             }
@@ -1184,17 +1236,7 @@ class AnomalyDetector
                 $this->registrarBajadaTermica($con[$tr['idx']], ['fecha' => $tr['fin'], 'combustible_litros' => $tr['minNivel'], 'temp_tanque' => $this->tempCerca($con, $tr['fin'])]);
                 continue;
             }
-            $mejor = $tr['minNivel'];
-            foreach ($lecturas as $l) {
-                if ($l['fecha'] > $tr['fin'] && $l['fecha'] <= $finVentana) {
-                    if (($l['evento'] ?? null) === 'CARGA') {
-                        break; // una carga no es recuperación
-                    }
-                    if ($l['combustible_litros'] !== null) {
-                        $mejor = max($mejor, $l['combustible_litros']);
-                    }
-                }
-            }
+            $mejor = $this->mejorNivelSinCarga($lecturas, $tr['fin'], $finVentana, $tr['minNivel'], $tr['inicioNivel']);
             if (($mejor - $tr['minNivel']) / $litros >= $fraccion) {
                 continue; // se recuperó: pendiente o ruido
             }

@@ -114,7 +114,7 @@ function pintarTabla() {
     $t.innerHTML = '<div class="empty-state">No hay tickets en este estado. 👍</div>';
     return;
   }
-  const fecha = iso => new Date(iso).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const fecha = iso => new Date(iso).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   $t.innerHTML = `
     <table class="anomalias tk-tabla">
       <tr><th>Ticket</th><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Detalle</th><th>Litros</th><th style="min-width:220px">Observación del operador</th><th>Acciones</th></tr>
@@ -165,7 +165,7 @@ async function verHistorial(id) {
     const r = await fetch(`${window.PRECISO_CONFIG.API_BASE}/revision.php?historial=${id}`);
     const { eventos } = await r.json();
     $l.innerHTML = eventos.length === 0 ? '<div>Sin movimientos todavía.</div>' : eventos.map(e => `
-      <div class="tk-evento"><b>${new Date(e.fecha).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</b>
+      <div class="tk-evento"><b>${new Date(e.fecha).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}</b>
         ${e.estado ? (ESTADOS_TICKET[e.estado]?.label || e.estado) : 'Observación editada'}${e.observacion ? ` — ${escTicket(e.observacion)}` : ''}</div>`).join('');
   } catch (e) {
     $l.textContent = 'No se pudo cargar el historial.';

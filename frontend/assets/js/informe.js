@@ -9,6 +9,13 @@ let chartTanquesInstance = null;
 let mapaInstance = null;
 let ULTIMO_INFORME = null; // guardamos la última respuesta cargada, la usa el PDF
 
+// Eje de tiempo de los gráficos en formato 24 h, como la plataforma de TTM
+// (antes salía "7PM", "1AM").
+const EJE_TIEMPO = {
+  displayFormats: { minute: 'HH:mm', hour: 'HH:mm', day: 'dd/MM', week: 'dd/MM', month: 'MM/yyyy' },
+  tooltipFormat: 'dd/MM HH:mm',
+};
+
 function renderTabs() {
   const tabs = [
     ['diario', 'Diario'],
@@ -134,13 +141,13 @@ function renderCharts(r) {
     // pero el canvas de fondo queda en mayor resolución — necesario para que
     // no salga borroso al exportarlo al PDF (ahí se estira para ocupar todo
     // el ancho de la hoja, y una imagen de baja resolución se nota pixelada).
-    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time', time: EJE_TIEMPO }, y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
   });
 
   chartVelocidadInstance = new Chart(document.getElementById('chartVelocidad'), {
     type: 'line',
     data: { datasets: [{ label: 'Velocidad km/h', data: r.serie_velocidad, borderColor: '#0d1b2e', backgroundColor: 'rgba(13,27,46,0.08)', fill: true, tension: 0.25, pointRadius: 0 }] },
-    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time' } }, plugins: { legend: { display: false } } }
+    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time', time: EJE_TIEMPO } }, plugins: { legend: { display: false } } }
   });
 
   const coloresTanque = { 1: '#f2a71b', 2: '#0d1b2e', 3: '#1f9d55', 4: '#c0392b' };
@@ -166,7 +173,7 @@ function renderCharts(r) {
         pointRadius: 0,
       })),
     },
-    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time' }, y: { beginAtZero: true } }, plugins: { legend: { display: true } } }
+    options: { maintainAspectRatio: false, devicePixelRatio: 3, scales: { x: { type: 'time', time: EJE_TIEMPO }, y: { beginAtZero: true } }, plugins: { legend: { display: true } } }
   });
 }
 
@@ -307,11 +314,11 @@ function formatNum(n) {
 }
 function formatearFecha(iso) {
   const d = new Date(iso);
-  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 }
 function formatearFechaCorta(iso) {
   const d = new Date(iso);
-  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 }
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -374,7 +381,7 @@ async function generarPDF() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(107, 114, 128);
-    doc.text(`Equipo ${ULTIMO_INFORME.equipo.id} · Período: ${formatearFecha(ULTIMO_INFORME.desde)} — ${formatearFecha(ULTIMO_INFORME.hasta)} · Generado: ${new Date().toLocaleString('es-AR', { timeZone: ZONA_HORARIA })}`, M, y + 5);
+    doc.text(`Equipo ${ULTIMO_INFORME.equipo.id} · Período: ${formatearFecha(ULTIMO_INFORME.desde)} — ${formatearFecha(ULTIMO_INFORME.hasta)} · Generado: ${new Date().toLocaleString('es-AR', { timeZone: ZONA_HORARIA, hourCycle: 'h23' })}`, M, y + 5);
     y += 11;
     if (ULTIMO_INFORME.simulado) {
       doc.setTextColor(150, 100, 20);

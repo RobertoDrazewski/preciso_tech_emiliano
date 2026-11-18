@@ -1,5 +1,5 @@
 Preciso — Módulo de informes y detección de anomalías
-Versión: 2026-11-18 v3.9 (hora igual a la de TTM)
+Versión: 2026-11-18 v3.9.1 (hora igual a la de TTM, caídas y consumo)
 Desarrollado por Puma Code
 
 Incluye:
@@ -78,5 +78,12 @@ Incluye:
   que se guardaron antes. Caídas en escalones seguidos (37 + 36 + 27 +
   19 L en 26 min) se informan como una sola pérdida con el total (antes el
   ticket quedaba con el escalón más grande)
+
+- v3.9.1 (18/11/2026): una carga después de una caída ya no la tapa como
+  "recuperación" aunque el evento CARGA llegue al final (si el nivel supera
+  el que había antes de la caída, es una carga); los escalones seguidos se
+  informan como caída instantánea; combustible consumido por balance
+  (inicio − final + cargas − pérdidas) en lugar de sumar bajadas, que
+  inflaba el L/100 km; horas en formato 24 h en pantalla, PDF y gráficos
 
 Para confirmar que tenés esta versión:  cat VERSION.txt

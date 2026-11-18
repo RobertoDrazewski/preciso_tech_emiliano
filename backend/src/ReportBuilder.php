@@ -91,22 +91,8 @@ class ReportBuilder
         // estar razonablemente cerca de los demás.
         $puntosMapa = $this->filtrarOutliersGps($puntosMapa);
 
-        // ⚠️ Litros consumidos: el mismo criterio que usa AnomalyDetector
-        // para no confundir combustible real con ruido —
-        //   1. Comparamos lecturas de combustible VÁLIDAS consecutivas
-        //      (saltando los TIEMPO de en medio).
-        //   2. Cualquier caída menor a RUIDO_MINIMO_LITROS se ignora (vibración/chapoteo del sensor).
-        //   3. Y lo más importante: si una caída se RECUPERA SOLA dentro de
-        //      la ventana de confirmación (rebote de pendiente / ruido de
-        //      sensor erático), tampoco cuenta como consumo — si no, un
-        //      equipo con sensor ruidoso que oscila entre 0 y su nivel real
-        //      decenas de veces por semana infla el consumo calculado a
-        //      cientos de miles de litros, aunque nunca haya perdido
-        //      combustible de verdad (caso real detectado el 14/09/2026:
-        //      equipo con oscilaciones frecuentes mostraba "102.672 L
-        //      consumidos" en una semana, contra ~254L reales según el
-        //      sistema de origen para el mismo período).
-        $litrosConsumidosTotal = $this->calcularConsumoReal($lecturas, $anomalyConfig);
+        // Litros consumidos por balance (ver calcularConsumoReal).
+        $litrosConsumidosTotal = $this->calcularConsumoReal($lecturas, $anomalyConfig, $litrosAnomalos);
 
         // Consumo cada 100 km: solo si el vehículo anduvo algo. Con muy
         // pocos km (un camión parado toda la semana, en ralentí) la cuenta
@@ -174,65 +160,73 @@ class ReportBuilder
     }
 
     /**
-     * Suma el combustible realmente consumido, descontando los rebotes de
-     * pendiente / ruido de sensor (caídas que se recuperan solas) — mismo
-     * criterio que usa AnomalyDetector, para que este número no contradiga
-     * lo que dice la detección de anomalías.
+     * Combustible consumido en el período, por BALANCE (18/11/2026):
+     *
+     *   consumido = nivel al inicio − nivel al final + cargas − pérdidas
+     *
+     * Antes sumaba cada bajada entre lecturas y descontaba las que se
+     * recuperaban en 20 min. Con el chapoteo de un camión andando las
+     * bajadas que se recuperaban más tarde se sumaban igual, y las
+     * pérdidas también entraban como consumo: AE553QC daba 443 L y
+     * 90,9 L/100 km en una semana en la que el balance da ~176 L
+     * (~36 L/100 km, en línea con lo que muestra TTM).
+     *
+     * - Inicio y final: mediana de las primeras/últimas 5 lecturas, para
+     *   que un salto del sensor justo en el borde no mueva la cuenta.
+     * - Cargas: subidas sostenidas de al menos CARGA_MINIMA_LITROS (se
+     *   toleran bajaditas de ruido de hasta 3 L en el medio).
+     * - Pérdidas: las anomalías de merma del período (robos, caídas), que
+     *   no son consumo del motor.
      */
-    private function calcularConsumoReal(array $lecturas, array $anomalyConfig): float
+    private const CARGA_MINIMA_LITROS = 20.0;
+
+    private function calcularConsumoReal(array $lecturas, array $anomalyConfig, float $litrosPerdidos = 0.0): float
     {
-        $ventanaMin = $anomalyConfig['recovery_window_minutes'] ?? 20;
-        $fraccionMinRecuperacion = $anomalyConfig['recovery_min_fraction'] ?? 0.7;
-
-        $lecturasConCombustible = array_values(array_filter($lecturas, fn($l) => $l['combustible_litros'] !== null));
-
-        $total = 0.0;
-        for ($i = 1; $i < count($lecturasConCombustible); $i++) {
-            $prev = $lecturasConCombustible[$i - 1];
-            $cur = $lecturasConCombustible[$i];
-
-            $delta = $prev['combustible_litros'] - $cur['combustible_litros'];
-            if ($delta < self::RUIDO_MINIMO_LITROS) {
-                continue; // no fue caída, o fue ruido de sensor
+        $niveles = [];
+        foreach ($lecturas as $l) {
+            if ($l['combustible_litros'] !== null) {
+                $niveles[] = (float) $l['combustible_litros'];
             }
-
-            // ¿Se recuperó solo dentro de la ventana? Miramos hacia
-            // adelante en TODAS las lecturas (no solo las que tienen
-            // combustible), igual que AnomalyDetector.
-            $finVentana = $cur['fecha']->modify("+{$ventanaMin} minutes");
-            $mejorNivelPosterior = $cur['combustible_litros'];
-            $hayDatoPosterior = false;
-            foreach ($lecturasConCombustible as $l) {
-                if ($l['fecha'] > $cur['fecha'] && $l['fecha'] <= $finVentana) {
-                    $hayDatoPosterior = true;
-                    $mejorNivelPosterior = max($mejorNivelPosterior, $l['combustible_litros']);
-                }
-            }
-
-            // ⚠️ Si no hay ningún dato posterior dentro de la ventana
-            // (típicamente, la caída pasó muy cerca del final del período
-            // consultado), NO hay forma de confirmar que no se recuperó —
-            // se trata como "todavía sin confirmar" y no se cuenta, en vez
-            // de asumir que es pérdida real por defecto. Este es
-            // exactamente el bug que causó el número absurdo del
-            // 14/09/2026: la última lectura del período caía justo en
-            // medio de una oscilación de ruido, sin dato posterior para
-            // confirmar la recuperación, y se contaba entera como consumo.
-            if (!$hayDatoPosterior) {
-                continue;
-            }
-
-            $recuperado = $mejorNivelPosterior - $cur['combustible_litros'];
-            $fraccionRecuperada = $recuperado / $delta;
-
-            if ($fraccionRecuperada >= $fraccionMinRecuperacion) {
-                continue; // rebote de pendiente / ruido de sensor — no es consumo real
-            }
-
-            $total += $delta;
+        }
+        $n = count($niveles);
+        if ($n < 2) {
+            return 0.0;
         }
 
-        return $total;
+        $mediana = function (array $v): float {
+            sort($v);
+            $c = count($v);
+            return $c % 2 ? $v[intdiv($c, 2)] : ($v[$c / 2 - 1] + $v[$c / 2]) / 2;
+        };
+        $inicio = $mediana(array_slice($niveles, 0, min(5, $n)));
+        $fin = $mediana(array_slice($niveles, -min(5, $n)));
+
+        // Cargas: recorro las subidas. Un tramo de subida arranca en un piso
+        // y termina cuando el nivel baja más de 3 L desde el techo alcanzado.
+        $cargas = 0.0;
+        $piso = $niveles[0];
+        $techo = $niveles[0];
+        for ($i = 1; $i < $n; $i++) {
+            $v = $niveles[$i];
+            if ($v >= $techo) {
+                $techo = $v;
+            } elseif ($techo - $v > 3.0) {
+                if ($techo - $piso >= self::CARGA_MINIMA_LITROS) {
+                    $cargas += $techo - $piso;
+                }
+                $piso = $v;
+                $techo = $v;
+            }
+            if ($v < $piso) {
+                $piso = $v;
+                $techo = $v;
+            }
+        }
+        if ($techo - $piso >= self::CARGA_MINIMA_LITROS) {
+            $cargas += $techo - $piso;
+        }
+
+        return max(0.0, $inicio - $fin + $cargas - $litrosPerdidos);
     }
 
     /**

@@ -468,7 +468,7 @@ function renderUbicacion(lat, lng) {
 
 function formatearFechaCorta(iso) {
   const d = new Date(iso);
-  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('es-AR', { timeZone: ZONA_HORARIA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 }
 
 function escapeHtml(str) {

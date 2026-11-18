@@ -31,7 +31,7 @@ function registrarAnomalias(lista) {
 function renderEstadoTicket(a) {
   const e = ESTADOS_TICKET[a.estado_revision || 'pendiente'] || ESTADOS_TICKET.pendiente;
   const cliente = a.cliente_notificado_en
-    ? `<div class="tk-cliente-ok" title="${escTicket(new Date(a.cliente_notificado_en).toLocaleString('es-AR', { timeZone: ZONA_HORARIA }))}"><i class="fa-solid fa-envelope-circle-check"></i> Cliente notificado</div>`
+    ? `<div class="tk-cliente-ok" title="${escTicket(new Date(a.cliente_notificado_en).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, hourCycle: 'h23' }))}"><i class="fa-solid fa-envelope-circle-check"></i> Cliente notificado</div>`
     : '';
   return `<span class="tk-estado ${a.estado_revision || 'pendiente'}"><i class="fa-solid ${e.icono}"></i> ${e.label}</span>
           <div class="tk-numero">Ticket #${a.id}</div>${cliente}`;
@@ -133,7 +133,7 @@ async function pdfDeAnomalia(a) {
 
   const filas = [
     ['Tipo', String(a.tipo).replace(/_/g, ' ')],
-    ['Fecha y hora', new Date(a.fecha).toLocaleString('es-AR', { timeZone: ZONA_HORARIA })],
+    ['Fecha y hora', new Date(a.fecha).toLocaleString('es-AR', { timeZone: ZONA_HORARIA, hourCycle: 'h23' })],
     ['Detalle', a.detalle || ''],
     ['Litros', `${Number(a.litros_perdidos || 0).toFixed(1)} L`],
     ['Ubicación', a.lat != null && a.lng != null ? `${Number(a.lat).toFixed(5)}, ${Number(a.lng).toFixed(5)}  (https://maps.google.com/?q=${a.lat},${a.lng})` : '—'],
